@@ -36,6 +36,25 @@ ErrorReporter::ErrorReporter(InterpreterStage &stageRef, const std::string &file
 }
 
 /**
+ * Adds a line to the source code of the error reporter.
+ */
+void ErrorReporter::replAddLine(const std::string &sourceSegment) {
+    if (sourceSegment.empty()) return;
+
+    std::stringstream ss(sourceSegment);
+    std::string line;
+
+    // Parse the new segment and add each line to our history
+    while (std::getline(ss, line)) {
+        lines.push_back(line);
+    }
+
+    if (lines.empty() && !sourceSegment.empty()) {
+        lines.push_back(sourceSegment);
+    }
+}
+
+/**
  * Map error types to human-readable labels
  * @param type The error type to convert
  * @return String representation of the error type
@@ -76,6 +95,19 @@ std::string ErrorReporter::getStageLabel() {
  * @return The source code line, or empty string if out of range
  */
 std::string ErrorReporter::getSourceLine(size_t lineNum) {
+    /**
+     * REPL mode.
+     * Give the most recent line we have in history.
+     */
+    if (isRepl) {
+        if (lines.empty()) return "";
+        return lines.back();
+    }
+
+    /**
+     * File mode.
+     * Return the source line of the token from the source file.
+     */
     if (lines.empty() || lineNum < 1 || lineNum > lines.size()) {
         return "";
     }
@@ -119,7 +151,7 @@ void ErrorReporter::report(ErrorType type, size_t line, size_t column, const std
     }
 
     // Print previous two lines (if they exist)
-    if (line > 1) {
+    if (line > 1 && !isRepl) {
         // Determine start line (max 2 lines back, but not less than 1)
         size_t startContext = (line > 2) ? line - 2 : 1;
 
@@ -185,7 +217,7 @@ void ErrorReporter::report(ErrorType type, size_t line, size_t column, const std
 
     // Print line after
     std::string nextLine = getSourceLine(line + 1);
-    if (!nextLine.empty()) {
+    if (!nextLine.empty() && !isRepl) {
         std::string nextLineString = std::to_string(line + 1);
         std::cerr << C_GRAY << nextLineString << C_RESET;
 
@@ -199,6 +231,8 @@ void ErrorReporter::report(ErrorType type, size_t line, size_t column, const std
 
     // // Lovely message from our overlords SCSA
     // printAtarMessage();
+
+    hadError = true;
 
     throw std::runtime_error("");
 }

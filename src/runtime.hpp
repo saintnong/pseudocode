@@ -1,7 +1,6 @@
-// runtime.hpp
 #pragma once
 
-#include "ast.hpp"
+#include "token.hpp"
 #include <functional>
 #include <iostream>
 #include <map>
@@ -15,11 +14,14 @@ struct Callable;
 struct Instance;
 class Interpreter;
 
+using Null = std::monostate;
+
 // --- Value Type Definition ---
 
 // A variant to hold any supported runtime value
-using Value = std::variant<std::monostate,                                    // null
-                           double,                                            // number
+using Value = std::variant<Null,                                              // null
+                           int,                                               // integer
+                           double,                                            // decimal
                            bool,                                              // boolean
                            std::string,                                       // string
                            std::shared_ptr<std::vector<struct RuntimeValue>>, // Array (shared for
@@ -32,7 +34,6 @@ using Value = std::variant<std::monostate,                                    //
 struct RuntimeValue {
     Value value;
 
-    // Helpers to make code cleaner
     template <typename T> bool is() const {
         return std::holds_alternative<T>(value);
     }
@@ -52,14 +53,6 @@ public:
     const Token &token;
     RuntimeError(const Token &token, const std::string &message)
         : std::runtime_error(message), token(token) {
-    }
-};
-
-// Thrown to unwind stack on return statement
-class ReturnException : public std::exception {
-public:
-    RuntimeValue value;
-    ReturnException(RuntimeValue val) : value(val) {
     }
 };
 
@@ -89,21 +82,25 @@ public:
         throw RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
     }
 
+    /**
+     * Assign (not declare) a variable to this scope.
+     */
     void assign(const Token &name, RuntimeValue value) {
+        // Try assigning it to local scope.
         if (values.count(name.lexeme)) {
             values[name.lexeme] = value;
             return;
         }
+        // Try assigning it to the higher scopes.
         if (enclosing) {
             enclosing->assign(name, value);
             return;
         }
 
-        throw RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
+        // Variable does not exist in this scope or parent scopes.
+        // So we define it.
+        define(name.lexeme, value);
     }
-
-    // Helper for "ancestor" generic usage if needed later
-    std::shared_ptr<Environment> ancestor(int distance);
 };
 
 // --- Interfaces for Callables and Instances ---
@@ -122,12 +119,14 @@ struct Instance {
     Instance(std::shared_ptr<Callable> k) : klass(k) {
     }
 
+    /**
+     * Class getter
+     * Returns the class's property
+     */
     RuntimeValue get(const Token &name) {
         if (fields.count(name.lexeme)) {
             return fields.at(name.lexeme);
         }
-        // In a real implementation, we would look up methods in the 'klass' here
-        // For brevity, basic fields only:
         throw RuntimeError(name, "Undefined property '" + name.lexeme + "'.");
     }
 
@@ -136,10 +135,30 @@ struct Instance {
     }
 };
 
-// Helper to stringify values
+/**
+ * Stringify a Runtime value.
+ * Used when the values are printed.
+ */
 inline std::string stringify(const RuntimeValue &v) {
-    if (v.is<std::monostate>())
-        return "nil";
+    /**
+     * Null just goes to 'Null'
+     */
+    if (v.is<Null>())
+        return "Null";
+
+    /**
+     * Ints are converted using the C++ standard libary
+     */
+    if (v.is<int>()) {
+        std::string text = std::to_string(v.as<int>());
+        return text;
+    }
+
+    /**
+     * Doubles are converted to strings like you would expect,
+     * except they have trailing zeroes chopped off to look nicer.
+     * E.g. 4.5900000 -> 4.59
+     */
     if (v.is<double>()) {
         std::string text = std::to_string(v.as<double>());
         // Trim trailing zeros for integer-like doubles
@@ -148,11 +167,26 @@ inline std::string stringify(const RuntimeValue &v) {
             text.pop_back();
         return text;
     }
+
+    /**
+     * Bools go to true/false
+     */
     if (v.is<bool>())
         return v.as<bool>() ? "true" : "false";
+
+    /**
+     * Strings are just cast without any modification
+     */
     if (v.is<std::string>())
         return v.as<std::string>();
+
+    /**
+     * Vectors stringified recursively.
+     * It ends up looking like python:
+     * E.g. [1, 2, 3]
+     */
     if (v.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
+        // Convert this vector to a string representation
         auto arr           = v.as<std::shared_ptr<std::vector<RuntimeValue>>>();
         std::string result = "[";
         for (size_t i = 0; i < arr->size(); ++i) {
@@ -163,8 +197,19 @@ inline std::string stringify(const RuntimeValue &v) {
         result += "]";
         return result;
     }
+    /**
+     * Functions are stringified using their class method.
+     * Ends up looking like:
+     * <FUNCTION myFunc>
+     */
     if (v.is<std::shared_ptr<Callable>>())
         return v.as<std::shared_ptr<Callable>>()->toString();
+
+    /**
+     * Classes are stringified using the Instance's attached method.
+     * Ends up looking like:
+     * <CLASS myFunc>
+     */
     if (v.is<std::shared_ptr<Instance>>())
         return "Instance";
     return "unknown";

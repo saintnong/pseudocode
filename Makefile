@@ -4,6 +4,9 @@ EXE = scsa
 all:
 	$(CC) src/*.cpp -o $(EXE) -std=c++17 -Wall -Wextra -Werror
 
+debug:
+	$(CC) src/*.cpp -o $(EXE) -std=c++17 -Wall -Wextra -Werror -g
+
 format:
 	clang-format -i src/*.cpp src/*.hpp
 
@@ -13,4 +16,4 @@ format-check:
 clean:
 	rm -f $(EXE)
 
-.PHONY: all format format-check lint lint-fix clean
+.PHONY: all format format-check debug clean

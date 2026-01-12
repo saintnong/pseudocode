@@ -4,7 +4,8 @@
 #include <string>
 #include <vector>
 
-#include "lexer.hpp"
+#include "runtime.hpp"
+#include "token.hpp"
 
 // --- Forward Declarations of Concrete Nodes ---
 
@@ -35,18 +36,19 @@ struct ForInStmt;
 /**
  * Expression Visitor Interface
  * Defines the contract for operations that traverse Expression nodes.
+ * Expression nodes can return values.
  */
 struct ExprVisitor {
-    virtual ~ExprVisitor()                                   = default;
-    virtual void visitLiteralExpr(LiteralExpr *expr)         = 0;
-    virtual void visitVariableExpr(VariableExpr *expr)       = 0;
-    virtual void visitAssignExpr(AssignExpr *expr)           = 0;
-    virtual void visitBinaryExpr(BinaryExpr *expr)           = 0;
-    virtual void visitCallExpr(CallExpr *expr)               = 0;
-    virtual void visitGetExpr(GetExpr *expr)                 = 0;
-    virtual void visitArrayAccessExpr(ArrayAccessExpr *expr) = 0;
-    virtual void visitArrayLitExpr(ArrayLitExpr *expr)       = 0;
-    virtual void visitNewExpr(NewExpr *expr)                 = 0;
+    virtual ~ExprVisitor()                                           = default;
+    virtual RuntimeValue visitLiteralExpr(LiteralExpr *expr)         = 0;
+    virtual RuntimeValue visitVariableExpr(VariableExpr *expr)       = 0;
+    virtual RuntimeValue visitAssignExpr(AssignExpr *expr)           = 0;
+    virtual RuntimeValue visitBinaryExpr(BinaryExpr *expr)           = 0;
+    virtual RuntimeValue visitCallExpr(CallExpr *expr)               = 0;
+    virtual RuntimeValue visitGetExpr(GetExpr *expr)                 = 0;
+    virtual RuntimeValue visitArrayAccessExpr(ArrayAccessExpr *expr) = 0;
+    virtual RuntimeValue visitArrayLitExpr(ArrayLitExpr *expr)       = 0;
+    virtual RuntimeValue visitNewExpr(NewExpr *expr)                 = 0;
 };
 
 /**

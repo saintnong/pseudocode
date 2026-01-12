@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ast.hpp"
+#include "errors.hpp"
 
 #include <functional>
 #include <iostream>

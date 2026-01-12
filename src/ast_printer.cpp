@@ -207,11 +207,13 @@ void ASTPrinter::visitBlockStmt(BlockStmt *stmt) {
  * Prints the operator and recursively prints the left and right operands.
  * @param expr Pointer to the binary expression node
  */
-void ASTPrinter::visitBinaryExpr(BinaryExpr *expr) {
+RuntimeValue ASTPrinter::visitBinaryExpr(BinaryExpr *expr) {
     std::cout << indent << "Binary (" << expr->op.lexeme << ")" << std::endl;
     IndentScope scope(*this);
     accept(expr->left.get());
     accept(expr->right.get());
+
+    return {Null{}};
 }
 
 /**
@@ -219,7 +221,7 @@ void ASTPrinter::visitBinaryExpr(BinaryExpr *expr) {
  * Prints the assignment marker, the target (variable), and the value being assigned.
  * @param expr Pointer to the assignment expression node
  */
-void ASTPrinter::visitAssignExpr(AssignExpr *expr) {
+RuntimeValue ASTPrinter::visitAssignExpr(AssignExpr *expr) {
     std::cout << indent << "Assign (=)" << std::endl;
     IndentScope scope(*this);
 
@@ -234,6 +236,8 @@ void ASTPrinter::visitAssignExpr(AssignExpr *expr) {
         IndentScope valScope(*this);
         accept(expr->value.get());
     }
+
+    return {Null{}};
 }
 
 /**
@@ -241,8 +245,10 @@ void ASTPrinter::visitAssignExpr(AssignExpr *expr) {
  * Prints the raw value of the literal token (e.g., number, string, boolean).
  * @param expr Pointer to the literal expression node
  */
-void ASTPrinter::visitLiteralExpr(LiteralExpr *expr) {
+RuntimeValue ASTPrinter::visitLiteralExpr(LiteralExpr *expr) {
     std::cout << indent << "Literal: " << expr->token.lexeme << std::endl;
+
+    return {Null{}};
 }
 
 /**
@@ -250,8 +256,10 @@ void ASTPrinter::visitLiteralExpr(LiteralExpr *expr) {
  * Prints the name of the variable being accessed.
  * @param expr Pointer to the variable expression node
  */
-void ASTPrinter::visitVariableExpr(VariableExpr *expr) {
+RuntimeValue ASTPrinter::visitVariableExpr(VariableExpr *expr) {
     std::cout << indent << "Var: " << expr->name.lexeme << std::endl;
+
+    return {Null{}};
 }
 
 /**
@@ -259,7 +267,7 @@ void ASTPrinter::visitVariableExpr(VariableExpr *expr) {
  * Prints the call marker, the callee (function name/object), and the arguments.
  * @param expr Pointer to the call expression node
  */
-void ASTPrinter::visitCallExpr(CallExpr *expr) {
+RuntimeValue ASTPrinter::visitCallExpr(CallExpr *expr) {
     std::cout << indent << "Call" << std::endl;
     IndentScope scope(*this);
 
@@ -276,6 +284,8 @@ void ASTPrinter::visitCallExpr(CallExpr *expr) {
             accept(arg.get());
         }
     }
+
+    return {Null{}};
 }
 
 /**
@@ -283,10 +293,12 @@ void ASTPrinter::visitCallExpr(CallExpr *expr) {
  * Prints the property name and the object being accessed (e.g., object.property).
  * @param expr Pointer to the get expression node
  */
-void ASTPrinter::visitGetExpr(GetExpr *expr) {
+RuntimeValue ASTPrinter::visitGetExpr(GetExpr *expr) {
     std::cout << indent << "Get Property: ." << expr->name.lexeme << std::endl;
     IndentScope scope(*this);
     accept(expr->object.get());
+
+    return {Null{}};
 }
 
 /**
@@ -294,7 +306,7 @@ void ASTPrinter::visitGetExpr(GetExpr *expr) {
  * Prints the array access structure, the array expression, and the index expression.
  * @param expr Pointer to the array access expression node
  */
-void ASTPrinter::visitArrayAccessExpr(ArrayAccessExpr *expr) {
+RuntimeValue ASTPrinter::visitArrayAccessExpr(ArrayAccessExpr *expr) {
     std::cout << indent << "Array Index []" << std::endl;
     IndentScope scope(*this);
 
@@ -309,6 +321,8 @@ void ASTPrinter::visitArrayAccessExpr(ArrayAccessExpr *expr) {
         IndentScope idxScope(*this);
         accept(expr->index.get());
     }
+
+    return {Null{}};
 }
 
 /**
@@ -316,12 +330,14 @@ void ASTPrinter::visitArrayAccessExpr(ArrayAccessExpr *expr) {
  * Prints the array definition and recursively prints all elements inside.
  * @param expr Pointer to the array literal expression node
  */
-void ASTPrinter::visitArrayLitExpr(ArrayLitExpr *expr) {
+RuntimeValue ASTPrinter::visitArrayLitExpr(ArrayLitExpr *expr) {
     std::cout << indent << "Array Literal []" << std::endl;
     IndentScope scope(*this);
     for (const auto &elem : expr->elements) {
         accept(elem.get());
     }
+
+    return {Null{}};
 }
 
 /**
@@ -329,10 +345,12 @@ void ASTPrinter::visitArrayLitExpr(ArrayLitExpr *expr) {
  * Prints the class instantiation and the constructor arguments.
  * @param expr Pointer to the new expression node
  */
-void ASTPrinter::visitNewExpr(NewExpr *expr) {
+RuntimeValue ASTPrinter::visitNewExpr(NewExpr *expr) {
     std::cout << indent << "New " << expr->className.lexeme << std::endl;
     IndentScope scope(*this);
     for (const auto &arg : expr->args) {
         accept(arg.get());
     }
+
+    return {Null{}};
 }

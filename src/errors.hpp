@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -35,7 +36,7 @@ private:
     InterpreterStage &stage;
     // Current source file being processed
     std::string filename;
-    // Source code split by lines for O(1) access
+    // Source code split by lines
     std::vector<std::string> lines;
 
     /**
@@ -55,6 +56,8 @@ private:
      */
     std::string getSourceLine(size_t lineNum);
 
+    // Whether we're in a REPL or not
+    bool isRepl = false;
 public:
     /**
      * Construct error reporter with reference to current stage, filename, and source code
@@ -64,6 +67,12 @@ public:
      */
     ErrorReporter(InterpreterStage &stageRef, const std::string &file = "",
                   const std::string &source = "");
+    
+    /**
+     * Appends new source code lines to the existing source.
+     * Useful for REPL.
+     */
+    void replAddLine(const std::string &sourceSegment);
 
     /**
      * Report an error with full context including surrounding lines
@@ -75,4 +84,16 @@ public:
      */
     void report(ErrorType type, size_t line, size_t column, const std::string &message,
                 size_t length = 1);
+        
+    /**
+     * Sets the reporter into REPL mode so it only reports last line.
+     */
+    void setReplMode(bool active) {
+        isRepl = active;
+    }
+
+    /**
+     * Tracks if we've had an error in this session or not.
+     */
+    bool hadError = false;
 };

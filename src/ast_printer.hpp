@@ -18,15 +18,15 @@ public:
     void print(const std::vector<StmtPtr> &statements);
 
     // --- ExprVisitor Implementation ---
-    void visitLiteralExpr(LiteralExpr *expr) override;
-    void visitVariableExpr(VariableExpr *expr) override;
-    void visitAssignExpr(AssignExpr *expr) override;
-    void visitBinaryExpr(BinaryExpr *expr) override;
-    void visitCallExpr(CallExpr *expr) override;
-    void visitGetExpr(GetExpr *expr) override;
-    void visitArrayAccessExpr(ArrayAccessExpr *expr) override;
-    void visitArrayLitExpr(ArrayLitExpr *expr) override;
-    void visitNewExpr(NewExpr *expr) override;
+    RuntimeValue visitLiteralExpr(LiteralExpr *expr) override;
+    RuntimeValue visitVariableExpr(VariableExpr *expr) override;
+    RuntimeValue visitAssignExpr(AssignExpr *expr) override;
+    RuntimeValue visitBinaryExpr(BinaryExpr *expr) override;
+    RuntimeValue visitCallExpr(CallExpr *expr) override;
+    RuntimeValue visitGetExpr(GetExpr *expr) override;
+    RuntimeValue visitArrayAccessExpr(ArrayAccessExpr *expr) override;
+    RuntimeValue visitArrayLitExpr(ArrayLitExpr *expr) override;
+    RuntimeValue visitNewExpr(NewExpr *expr) override;
 
     // --- StmtVisitor Implementation ---
     void visitExpressionStmt(ExpressionStmt *stmt) override;

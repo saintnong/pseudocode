@@ -57,6 +57,9 @@ int Pseudocode::runFile(const std::string &path) {
         std::vector<Token> tokens = lexer.scanTokens();
         if (debugTokens)
             printTokenTable(tokens);
+        
+        if (reporter.hadError)
+            return 1;
 
         // Parse tokens
         stage = InterpreterStage::Parsing;
@@ -67,9 +70,12 @@ int Pseudocode::runFile(const std::string &path) {
             printer.print(statements);
         }
 
+        if (reporter.hadError)
+            return 1;
+
         // Interpret the parsed statements
         stage = InterpreterStage::Runtime;
-        Interpreter interpreter;
+        Interpreter interpreter(reporter);
         interpreter.interpret(statements);
     } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
@@ -92,8 +98,10 @@ int Pseudocode::runRepl() {
     std::cout << "For help type run this program with '--help' or '-h'" << std::endl;
     std::cout << "Type 'exit' to quit" << std::endl;
 
-    // Make an interpreter to keep state across this session
-    Interpreter interpreter;
+    // Make an interpreter and error reporter to keep state across this session
+    ErrorReporter reporter(stage, "", "");
+    reporter.setReplMode(true);
+    Interpreter interpreter(reporter);
     std::vector<StmtPtr> statements;
 
     std::string line;
@@ -106,36 +114,91 @@ int Pseudocode::runRepl() {
             continue;
         if (line == "exit")
             break;
-
-        // Create a new ErrorReporter for each line with the current source
-        ErrorReporter reporter(stage, "", line);
+        
+        reporter.replAddLine(line);
+        reporter.hadError = false;
 
         try {
-            // Tokenize the input line
+            // --- Lexing ---
             stage = InterpreterStage::Lexing;
             Lexer lexer(line, reporter);
             std::vector<Token> tokens = lexer.scanTokens();
-            if (debugTokens)
-                printTokenTable(tokens);
+            if (debugTokens) printTokenTable(tokens);
+            
+            // Check error before parsing
+            if (reporter.hadError) continue;
 
-            // Parse tokens
+            // --- Parsing ---
             stage = InterpreterStage::Parsing;
             Parser parser(tokens, line, reporter);
             std::vector<StmtPtr> parsed = parser.parse();
+            
             if (debugParse) {
                 ASTPrinter printer;
                 printer.print(parsed);
             }
 
-            // Execute parsed statements using the same interpreter instance
+            // Check error before executing
+            if (reporter.hadError) continue;
+
+            // --- Execution ---
             stage = InterpreterStage::Runtime;
             interpreter.interpret(parsed);
-
+        } catch (const std::runtime_error &e) {
+            // Do nothing
         } catch (const std::exception &e) {
-            // Display error without crashing the REPL
-            std::cerr << e.what() << std::endl;
+            // Shouldn't happen
+            std::cerr << "[This error isn't supposed to occur...] " << e.what() << std::endl;
         }
     }
 
     return 0;
+}
+
+/**
+ * Entry point for the Pseudocode interpreter
+ *
+ */
+int main(int argc, char *argv[]) {
+
+#ifdef _WIN32
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD consoleMode;
+    GetConsoleMode(hConsole, &consoleMode);
+    consoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    SetConsoleMode(hConsole, consoleMode); // Enable ANSI colours
+
+    // Set input/output code page to UTF-8
+    SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
+#endif
+
+    Pseudocode pseudocode;
+
+    if (argc > 1 && (std::string(argv[1]) == "--help" || std::string(argv[1]) == "-h")) {
+        help();
+        return 0;
+    }
+
+    // Parse optional arguments
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--debug-tokens") {
+            pseudocode.debugTokens = true;
+        } else if (arg == "--debug-parse") {
+            pseudocode.debugParse = true;
+        } else {
+            // If file ends in .scsa then treat as script
+            if (arg.size() < 5 || arg.substr(arg.size() - 5) != ".scsa") {
+                help();
+                return 1;
+            } else {
+                return pseudocode.runFile(arg);
+            }
+        }
+    }
+
+    if (argc == 1) {
+        return pseudocode.runRepl();
+    }
 }

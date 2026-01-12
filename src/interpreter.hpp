@@ -6,42 +6,65 @@
 #include <memory>
 #include <vector>
 
+/**
+ * Interpreter Class
+ */
 class Interpreter : public ExprVisitor, public StmtVisitor {
 public:
+    /**
+     * Global scope
+     * Holds native functions and top-level variables.
+     */
     std::shared_ptr<Environment> globals;
+
+    /**
+     * Current scope
+     * The current scope that the local environment the interpreter is operating in.
+     */
     std::shared_ptr<Environment> environment;
 
-    Interpreter() {
+    /**
+     * Creates an interpreter, and its environment.
+     * @returns An interpreter
+     */
+    Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
+        // Initiate our global environment, and begin interpreting in global scope.
         globals     = std::make_shared<Environment>();
         environment = globals;
-
-        // Define native functions (e.g., clock, print) in globals here if needed
     }
 
+    /**
+     * Execute each statement, until an error occurs.
+     */
     void interpret(const std::vector<StmtPtr> &statements) {
         try {
             for (const auto &stmt : statements) {
                 execute(stmt.get());
             }
         } catch (const RuntimeError &error) {
-            std::cerr << "[Runtime Error] " << error.what() << "\n[Line " << error.token.line << "]"
-                      << std::endl;
+            // Runtime error caught.
+            // Report it nicely.
+            Token token     = error.token;
+            std::string msg = error.what();
+            reporter.report(ErrorType::Runtime, token.line, token.column, msg,
+                            token.lexeme.length());
         }
     }
 
-    // Public API for executing blocks (used by Callables)
+    // Public API for executing blocks
+    // Used by Callables to execute function body.
     void executeBlock(const std::vector<StmtPtr> &statements, std::shared_ptr<Environment> env);
 
     // --- ExprVisitor ---
-    void visitLiteralExpr(LiteralExpr *expr) override;
-    void visitVariableExpr(VariableExpr *expr) override;
-    void visitAssignExpr(AssignExpr *expr) override;
-    void visitBinaryExpr(BinaryExpr *expr) override;
-    void visitCallExpr(CallExpr *expr) override;
-    void visitGetExpr(GetExpr *expr) override;
-    void visitArrayAccessExpr(ArrayAccessExpr *expr) override;
-    void visitArrayLitExpr(ArrayLitExpr *expr) override;
-    void visitNewExpr(NewExpr *expr) override;
+    RuntimeValue visitLiteralExpr(LiteralExpr *expr) override;
+    RuntimeValue visitVariableExpr(VariableExpr *expr) override;
+    RuntimeValue visitAssignExpr(AssignExpr *expr) override;
+    RuntimeValue visitBinaryExpr(BinaryExpr *expr) override;
+    RuntimeValue visitCallExpr(CallExpr *expr) override;
+    RuntimeValue visitGetExpr(GetExpr *expr) override;
+    RuntimeValue visitArrayAccessExpr(ArrayAccessExpr *expr) override;
+    RuntimeValue visitArrayLitExpr(ArrayLitExpr *expr) override;
+    RuntimeValue visitNewExpr(NewExpr *expr) override;
 
     // --- StmtVisitor ---
     void visitExpressionStmt(ExpressionStmt *stmt) override;
@@ -54,14 +77,20 @@ public:
     void visitClassStmt(ClassStmt *stmt) override;
     void visitForInStmt(ForInStmt *stmt) override;
 
+    /**
+     * Error Reporter
+     * Reporter which reports errors at a specific token.
+     */
+    ErrorReporter &reporter;
 private:
-    // Helper to hold the result of expression evaluation
-    RuntimeValue result;
-
+    // Execute a statement
     void execute(Stmt *stmt);
+
+    // Evaluate an expression
     RuntimeValue evaluate(Expr *expr);
 
-    // Truthiness logic (false and nil are false, everything else true)
+    // === Truthiness Calculators ===
+
     bool isTruthy(const RuntimeValue &object);
     bool isEqual(const RuntimeValue &a, const RuntimeValue &b);
     void checkNumberOperand(const Token &operatorToken, const RuntimeValue &operand);
