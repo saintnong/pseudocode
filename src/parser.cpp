@@ -276,7 +276,7 @@ ExprPtr Parser::dot(ExprPtr left) {
  * Parses array element access: array[index]
  */
 ExprPtr Parser::subscript(ExprPtr left) {
-    Token anchor = previous();
+    Token anchor  = previous();
     ExprPtr index = parseExpression(PREC_NONE);
     consume(TOK_RBRACKET, "Expected ']' after index.");
     return std::make_unique<ArrayAccessExpr>(anchor, std::move(left), std::move(index));
