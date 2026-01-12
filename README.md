@@ -11,11 +11,12 @@ Well guess what? It's real now, and it's horrifying. This is your fault SCSA, yo
 - While and For-in loops
 - If statements
 - Functions
-- Lists (append and properties do not work for now)
+- Lists (append does not exist for now)
 
 # WIP
 - Object Oriented Programming✨
     - This was a new, painful, stupid addition to the SCSA pseudocode "standard", when they decided that their ancient Pascal based pseudocode had to be more like a real langauge like python
+    - Classes technically exist, as in they won't error out until you try access any properties of them
 - Lists appending
 
 # Future Planned features

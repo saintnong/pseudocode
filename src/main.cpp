@@ -57,7 +57,7 @@ int Pseudocode::runFile(const std::string &path) {
         std::vector<Token> tokens = lexer.scanTokens();
         if (debugTokens)
             printTokenTable(tokens);
-        
+
         if (reporter.hadError)
             return 1;
 
@@ -114,7 +114,7 @@ int Pseudocode::runRepl() {
             continue;
         if (line == "exit")
             break;
-        
+
         reporter.replAddLine(line);
         reporter.hadError = false;
 
@@ -123,23 +123,26 @@ int Pseudocode::runRepl() {
             stage = InterpreterStage::Lexing;
             Lexer lexer(line, reporter);
             std::vector<Token> tokens = lexer.scanTokens();
-            if (debugTokens) printTokenTable(tokens);
-            
+            if (debugTokens)
+                printTokenTable(tokens);
+
             // Check error before parsing
-            if (reporter.hadError) continue;
+            if (reporter.hadError)
+                continue;
 
             // --- Parsing ---
             stage = InterpreterStage::Parsing;
             Parser parser(tokens, line, reporter);
             std::vector<StmtPtr> parsed = parser.parse();
-            
+
             if (debugParse) {
                 ASTPrinter printer;
                 printer.print(parsed);
             }
 
             // Check error before executing
-            if (reporter.hadError) continue;
+            if (reporter.hadError)
+                continue;
 
             // --- Execution ---
             stage = InterpreterStage::Runtime;

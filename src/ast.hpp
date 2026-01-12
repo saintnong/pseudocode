@@ -134,9 +134,11 @@ struct VariableExpr : Expr {
  * Represents assigning a value to a target variable or property.
  */
 struct AssignExpr : Expr {
+    Token anchor;
     ExprPtr target;
     ExprPtr value;
-    AssignExpr(ExprPtr t, ExprPtr v) : target(std::move(t)), value(std::move(v)) {
+    AssignExpr(Token an, ExprPtr t, ExprPtr v)
+        : anchor(an), target(std::move(t)), value(std::move(v)) {
     }
     void accept(ExprVisitor &visitor) override {
         visitor.visitAssignExpr(this);
@@ -163,9 +165,11 @@ struct BinaryExpr : Expr {
  * Represents a function or method call with arguments.
  */
 struct CallExpr : Expr {
+    Token anchor;
     ExprPtr callee;
     std::vector<ExprPtr> args;
-    CallExpr(ExprPtr c, std::vector<ExprPtr> a) : callee(std::move(c)), args(std::move(a)) {
+    CallExpr(Token an, ExprPtr c, std::vector<ExprPtr> a)
+        : anchor(an), callee(std::move(c)), args(std::move(a)) {
     }
     void accept(ExprVisitor &visitor) override {
         visitor.visitCallExpr(this);
@@ -191,9 +195,11 @@ struct GetExpr : Expr {
  * Represents accessing an array element by index (e.g., arr[i]).
  */
 struct ArrayAccessExpr : Expr {
+    Token anchor;
     ExprPtr array;
     ExprPtr index;
-    ArrayAccessExpr(ExprPtr a, ExprPtr i) : array(std::move(a)), index(std::move(i)) {
+    ArrayAccessExpr(Token an, ExprPtr a, ExprPtr i)
+        : anchor(an), array(std::move(a)), index(std::move(i)) {
     }
     void accept(ExprVisitor &visitor) override {
         visitor.visitArrayAccessExpr(this);
@@ -205,8 +211,9 @@ struct ArrayAccessExpr : Expr {
  * Represents the creation of a new array with inline elements (e.g., [1, 2, 3]).
  */
 struct ArrayLitExpr : Expr {
+    Token anchor;
     std::vector<ExprPtr> elements;
-    ArrayLitExpr(std::vector<ExprPtr> e) : elements(std::move(e)) {
+    ArrayLitExpr(Token a, std::vector<ExprPtr> e) : anchor(a), elements(std::move(e)) {
     }
     void accept(ExprVisitor &visitor) override {
         visitor.visitArrayLitExpr(this);
@@ -286,11 +293,12 @@ struct BlockStmt : Stmt {
  * Conditionally executes a branch of code based on a boolean expression.
  */
 struct IfStmt : Stmt {
+    Token keyword;
     ExprPtr condition;
     std::vector<StmtPtr> thenBranch;
     std::vector<StmtPtr> elseBranch;
-    IfStmt(ExprPtr c, std::vector<StmtPtr> t, std::vector<StmtPtr> e)
-        : condition(std::move(c)), thenBranch(std::move(t)), elseBranch(std::move(e)) {
+    IfStmt(Token kw, ExprPtr c, std::vector<StmtPtr> t, std::vector<StmtPtr> e)
+        : keyword(kw), condition(std::move(c)), thenBranch(std::move(t)), elseBranch(std::move(e)) {
     }
     void accept(StmtVisitor &visitor) override {
         visitor.visitIfStmt(this);
@@ -302,9 +310,11 @@ struct IfStmt : Stmt {
  * Repeats a body of code while a condition remains true.
  */
 struct WhileStmt : Stmt {
+    Token keyword;
     ExprPtr condition;
     std::vector<StmtPtr> body;
-    WhileStmt(ExprPtr c, std::vector<StmtPtr> b) : condition(std::move(c)), body(std::move(b)) {
+    WhileStmt(Token kw, ExprPtr c, std::vector<StmtPtr> b)
+        : keyword(kw), condition(std::move(c)), body(std::move(b)) {
     }
     void accept(StmtVisitor &visitor) override {
         visitor.visitWhileStmt(this);
@@ -348,12 +358,13 @@ struct ClassStmt : Stmt {
  * Represents a range/collection loop: for (item in collection) { body }
  */
 struct ForInStmt : Stmt {
+    Token keyword;
     Token variable;
     ExprPtr iterable;
     std::vector<StmtPtr> body;
 
-    ForInStmt(Token var, ExprPtr iter, std::vector<StmtPtr> b)
-        : variable(var), iterable(std::move(iter)), body(std::move(b)) {
+    ForInStmt(Token kw, Token var, ExprPtr iter, std::vector<StmtPtr> b)
+        : keyword(kw), variable(var), iterable(std::move(iter)), body(std::move(b)) {
     }
 
     void accept(StmtVisitor &visitor) override {

@@ -58,6 +58,7 @@ private:
 
     // Whether we're in a REPL or not
     bool isRepl = false;
+
 public:
     /**
      * Construct error reporter with reference to current stage, filename, and source code
@@ -67,7 +68,7 @@ public:
      */
     ErrorReporter(InterpreterStage &stageRef, const std::string &file = "",
                   const std::string &source = "");
-    
+
     /**
      * Appends new source code lines to the existing source.
      * Useful for REPL.
@@ -84,7 +85,7 @@ public:
      */
     void report(ErrorType type, size_t line, size_t column, const std::string &message,
                 size_t length = 1);
-        
+
     /**
      * Sets the reporter into REPL mode so it only reports last line.
      */

@@ -82,6 +82,7 @@ public:
      * Reporter which reports errors at a specific token.
      */
     ErrorReporter &reporter;
+
 private:
     // Execute a statement
     void execute(Stmt *stmt);

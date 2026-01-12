@@ -203,6 +203,7 @@ ExprPtr Parser::grouping() {
  * Parses array literal syntax: [elem1, elem2, ...]
  */
 ExprPtr Parser::arrayLiteral() {
+    Token anchor = previous();
     // We already consumed '['
     std::vector<ExprPtr> elements;
     if (!check(TOK_RBRACKET)) {
@@ -211,7 +212,7 @@ ExprPtr Parser::arrayLiteral() {
         } while (match(TOK_COMMA));
     }
     consume(TOK_RBRACKET, "Expected ']' after array elements.");
-    return std::make_unique<ArrayLitExpr>(std::move(elements));
+    return std::make_unique<ArrayLitExpr>(anchor, std::move(elements));
 }
 
 /**
@@ -257,8 +258,8 @@ ExprPtr Parser::call(ExprPtr left) {
             args.push_back(parseExpression(PREC_NONE));
         } while (match(TOK_COMMA));
     }
-    consume(TOK_RPAREN, "Expected ')' after arguments.");
-    return std::make_unique<CallExpr>(std::move(left), std::move(args));
+    Token anchor = consume(TOK_RPAREN, "Expected ')' after arguments.");
+    return std::make_unique<CallExpr>(anchor, std::move(left), std::move(args));
 }
 
 /**
@@ -275,9 +276,10 @@ ExprPtr Parser::dot(ExprPtr left) {
  * Parses array element access: array[index]
  */
 ExprPtr Parser::subscript(ExprPtr left) {
+    Token anchor = previous();
     ExprPtr index = parseExpression(PREC_NONE);
     consume(TOK_RBRACKET, "Expected ']' after index.");
-    return std::make_unique<ArrayAccessExpr>(std::move(left), std::move(index));
+    return std::make_unique<ArrayAccessExpr>(anchor, std::move(left), std::move(index));
 }
 
 /**
@@ -287,9 +289,9 @@ ExprPtr Parser::subscript(ExprPtr left) {
  */
 ExprPtr Parser::assignment(ExprPtr left) {
     // Left side must be a valid assignment target
+    Token assigned = tokens[current - 2];
     if (!dynamic_cast<VariableExpr *>(left.get()) && !dynamic_cast<GetExpr *>(left.get()) &&
         !dynamic_cast<ArrayAccessExpr *>(left.get())) {
-        Token assigned = tokens[current - 2];
         errorAt(assigned, "Invalid assignment target.");
         return nullptr;
     }
@@ -299,7 +301,7 @@ ExprPtr Parser::assignment(ExprPtr left) {
     // Right associative, so we parse everything to the right
     ExprPtr value = parseExpression(PREC_NONE);
 
-    return std::make_unique<AssignExpr>(std::move(left), std::move(value));
+    return std::make_unique<AssignExpr>(assigned, std::move(left), std::move(value));
 }
 
 // ============================================================
@@ -489,10 +491,10 @@ StmtPtr Parser::ifStatement() {
     }
 
     consume(TOK_END, "Expected 'END' after if.");
-    consume(TOK_IF, "Expected 'IF' after 'END'.");
+    Token keyword = consume(TOK_IF, "Expected 'IF' after 'END'.");
     traceExit("ifStatement");
 
-    return std::make_unique<IfStmt>(std::move(condition), std::move(thenBranch),
+    return std::make_unique<IfStmt>(keyword, std::move(condition), std::move(thenBranch),
                                     std::move(elseBranch));
 }
 
@@ -506,9 +508,9 @@ StmtPtr Parser::whileStatement() {
     // Pseudocode didn't strictly show "DO", but usually loop starts block
     std::vector<StmtPtr> body = block();
     consume(TOK_END, "Expected 'END' after while loop.");
-    consume(TOK_WHILE, "Expected 'WHILE' after 'END'.");
+    Token keyword = consume(TOK_WHILE, "Expected 'WHILE' after 'END'.");
     traceExit("whileStatement");
-    return std::make_unique<WhileStmt>(std::move(condition), std::move(body));
+    return std::make_unique<WhileStmt>(keyword, std::move(condition), std::move(body));
 }
 
 /**
@@ -532,10 +534,10 @@ StmtPtr Parser::forInStatement() {
 
     // Expect END FOR
     consume(TOK_END, "Expected 'END' after for loop.");
-    consume(TOK_FOR, "Expected 'FOR' after 'END'.");
+    Token keyword = consume(TOK_FOR, "Expected 'FOR' after 'END'.");
 
     traceExit("forInStatement");
-    return std::make_unique<ForInStmt>(variable, std::move(iterable), std::move(body));
+    return std::make_unique<ForInStmt>(keyword, variable, std::move(iterable), std::move(body));
 }
 
 /**

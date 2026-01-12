@@ -28,5 +28,5 @@ METHODS
 END Animal
 
 bruh = NEW Animal()
-PRINT(bruh.is_hungry)
+PRINT(bruh)
 bruh.eat("fish")

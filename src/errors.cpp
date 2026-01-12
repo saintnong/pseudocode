@@ -39,7 +39,8 @@ ErrorReporter::ErrorReporter(InterpreterStage &stageRef, const std::string &file
  * Adds a line to the source code of the error reporter.
  */
 void ErrorReporter::replAddLine(const std::string &sourceSegment) {
-    if (sourceSegment.empty()) return;
+    if (sourceSegment.empty())
+        return;
 
     std::stringstream ss(sourceSegment);
     std::string line;
@@ -100,7 +101,8 @@ std::string ErrorReporter::getSourceLine(size_t lineNum) {
      * Give the most recent line we have in history.
      */
     if (isRepl) {
-        if (lines.empty()) return "";
+        if (lines.empty())
+            return "";
         return lines.back();
     }
 
