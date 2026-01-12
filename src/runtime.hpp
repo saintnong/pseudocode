@@ -81,26 +81,6 @@ public:
 
         throw RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
     }
-
-    /**
-     * Assign (not declare) a variable to this scope.
-     */
-    void assign(const Token &name, RuntimeValue value) {
-        // Try assigning it to local scope.
-        if (values.count(name.lexeme)) {
-            values[name.lexeme] = value;
-            return;
-        }
-        // Try assigning it to the higher scopes.
-        if (enclosing) {
-            enclosing->assign(name, value);
-            return;
-        }
-
-        // Variable does not exist in this scope or parent scopes.
-        // So we define it.
-        define(name.lexeme, value);
-    }
 };
 
 // --- Interfaces for Callables and Instances ---

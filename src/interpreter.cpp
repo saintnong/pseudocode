@@ -250,7 +250,7 @@ RuntimeValue Interpreter::visitAssignExpr(AssignExpr *expr) {
     RuntimeValue value = evaluate(expr->value.get());
 
     if (auto *varExpr = dynamic_cast<VariableExpr *>(expr->target.get())) {
-        environment->assign(varExpr->name, value);
+        environment->define(varExpr->name.lexeme, value);
     } else if (auto *getExpr = dynamic_cast<GetExpr *>(expr->target.get())) {
         RuntimeValue object = evaluate(getExpr->object.get());
         if (!object.is<std::shared_ptr<Instance>>()) {
