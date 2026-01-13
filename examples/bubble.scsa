@@ -22,4 +22,4 @@ MyList = [3, 1, 2, 4, -1, 0, 9, 8]
 PRINT("Before sorting:")
 PRINT(MyList)
 PRINT("Bubble sorted list:")
-PRINT(BubbleSort(MyList, 7))
+PRINT(BubbleSort(MyList, 8))
