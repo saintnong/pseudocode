@@ -1,0 +1,38 @@
+{
+  "For Loop": {
+    "prefix": "FOR",
+    "body": [
+      "FOR ${1:item} IN ${2:collection}",
+      "\t$0",
+      "END FOR"
+    ],
+    "description": "Auto-completes a FOR block"
+  },
+  "If Statement": {
+    "prefix": "IF",
+    "body": [
+      "IF ${1:condition} THEN",
+      "\t$0",
+      "END IF"
+    ],
+    "description": "Auto-completes an IF block"
+  },
+  "While Loop": {
+    "prefix": "WHILE",
+    "body": [
+      "WHILE ${1:condition}",
+      "\t$0",
+      "END WHILE"
+    ],
+    "description": "Auto-completes a WHILE block"
+  },
+  "Function Block": {
+    "prefix": "FUNCTION",
+    "body": [
+      "FUNCTION ${1:name}(${2:params})",
+      "\t$0",
+      "END ${1:name}"
+    ],
+    "description": "Auto-completes a FUNCTION block"
+  }
+}

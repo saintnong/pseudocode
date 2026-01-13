@@ -7,13 +7,26 @@
 </p>
 
 <p align="center">
-    Pseudocode is a high-level interpreted language with support for procedural and object oriented programming (WIP).
+    Pseudocode is a high-level interpreted language with support for procedural and object oriented programming.
     Based on the WA School Curriculum and Standards Authority's (SCSA) ATAR Computer Science <a href="https://senior-secondary.scsa.wa.edu.au/__data/assets/pdf_file/0003/1090875/Year-11_12_Computer-Science_ATAR_Additional-syllabus-support-booklet-.PDF">"Pseudocode" (2024)</a>.
 </p>
 
 ---
 
 > "<em>This spec is so specific that it might as well be a real language...</em>"
+
+This repository contains a full toolchain for Pseudocode development, including an interpreter, VSCode extension with highlighting and snippets.
+
+### Installation (Linux Instructions)
+```bash
+# Build interpreter
+make
+
+# Install vscode extension
+cd vscode
+npx vsce package # (You might need to install vsce)
+code --install-extension *.vsix # Or just right click it, and click install
+```
 
 
 ## Features
@@ -24,6 +37,7 @@
     - Shared pointers for garbage collection
     - Variable scopes
 - Good error reporting which is anchored to nearest token for easy debugging
+- Visual Studio Code Highlighting Extension
 ### Supported Pseudocode Language Features
 - Basic datatypes and a dynamic typing system
     - [int, float, string, bool, Null]

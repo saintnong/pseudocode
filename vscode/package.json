@@ -1,0 +1,31 @@
+{
+  "name": "scsa-pseudocode",
+  "publisher": "SaintNong",
+  "version": "0.2.4",
+  "engines": {
+    "vscode": "^1.6.0"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "scsa",
+        "extensions": [".scsa"],
+        "aliases": ["SCSA Pseudocode", "scsa"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "scsa",
+        "scopeName": "source.scsa",
+        "path": "./syntaxes/scsa.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "scsa",
+        "path": "./snippets/snippets.json"
+      }
+    ]
+  }
+}
