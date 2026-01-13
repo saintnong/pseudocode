@@ -1,15 +1,9 @@
 <h1 align="center">SCSA Pseudocode Interpreter</h1>
 
 <p align="center">
-  <a href="https://github.com/SaintNong/pseudocode/actions/workflows/ci.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/SaintNong/pseudocode/ci.yml?branch=main&style=for-the-badge&logo=github&label=Build">
-  </a>
-  <a href="https://opensource.org/licenses/MIT">
     <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge">
-  </a>
-  <a href="https://github.com/SaintNong/pseudocode/releases">
-  <img src="https://img.shields.io/github/v/release/SaintNong/pseudocode?style=for-the-badge&label=Version&color=orange">
-</a>
+    <img src="https://img.shields.io/github/v/release/SaintNong/pseudocode?style=for-the-badge&label=Version&color=orange">
 </p>
 
 <p align="center">
