@@ -186,11 +186,11 @@ inline std::string stringify(const RuntimeValue &v) {
         return v.as<std::shared_ptr<Callable>>()->toString();
 
     /**
-     * Classes are stringified using the Instance's attached method.
+     * Classes are stringified using the Instance's parent class's attached method.
      * Ends up looking like:
      * <CLASS myFunc>
      */
     if (v.is<std::shared_ptr<Instance>>())
-        return "Instance";
+        return v.as<std::shared_ptr<Instance>>()->klass->toString();
     return "unknown";
 }
