@@ -1,0 +1,33 @@
+name: C++
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-format g++
+
+    - name: Format Check
+      run: make format-check
+
+    - name: Build Check
+      run: make all
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: scsa-linux-build
+        path: scsa
+        retention-days: 5
