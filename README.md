@@ -36,6 +36,7 @@
     - Class lexing and parsing is mostly working, but interpreter does not interpret binding functions/variables to class declarations correctly yet
 - Case statement
 - List appending
+- ELSE IF statements
 - Better string manipulation
 
 ## Future Plans
