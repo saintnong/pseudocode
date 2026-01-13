@@ -7,15 +7,18 @@
   <a href="https://opensource.org/licenses/MIT">
     <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge">
   </a>
+  <a href="https://github.com/SaintNong/pseudocode/releases">
+  <img src="https://img.shields.io/github/v/release/SaintNong/pseudocode?style=for-the-badge&label=Version&color=orange">
+</a>
 </p>
 
 <p align="center">
-  Based on the Western Australian School Curriculum and Standards Authority's (SCSA) ATAR Computer Science <a href="https://senior-secondary.scsa.wa.edu.au/__data/assets/pdf_file/0003/1090875/Year-11_12_Computer-Science_ATAR_Additional-syllabus-support-booklet-.PDF">"Pseudocode" specification (2024)</a>.
+  Based on the WA School Curriculum and Standards Authority's (SCSA) ATAR Computer Science <a href="https://senior-secondary.scsa.wa.edu.au/__data/assets/pdf_file/0003/1090875/Year-11_12_Computer-Science_ATAR_Additional-syllabus-support-booklet-.PDF">"Pseudocode" (2024)</a>.
 </p>
 
 ---
 
-<em>This spec is so specific that it might as well be a real language...</em>
+> "<em>This spec is so specific that it might as well be a real language...</em>"
 
 
 ## Features
