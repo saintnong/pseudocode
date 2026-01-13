@@ -102,7 +102,10 @@ int Pseudocode::runRepl() {
     ErrorReporter reporter(stage, "", "");
     reporter.setReplMode(true);
     Interpreter interpreter(reporter);
-    std::vector<StmtPtr> statements;
+
+    // Maintain a history of statements this session so that we don't use after free when our
+    // parser's lifetime ends.
+    std::vector<StmtPtr> sessionHistory;
 
     std::string line;
     while (true) {
@@ -147,6 +150,12 @@ int Pseudocode::runRepl() {
             // --- Execution ---
             stage = InterpreterStage::Runtime;
             interpreter.interpret(parsed);
+
+            // --- Persistence ---
+
+            // Store our statements in history so function/class declaration AST nodes are persisted
+            sessionHistory.insert(sessionHistory.end(), std::make_move_iterator(parsed.begin()),
+                                  std::make_move_iterator(parsed.end()));
         } catch (const std::runtime_error &e) {
             // Do nothing
         } catch (const std::exception &e) {

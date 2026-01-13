@@ -1,14 +1,10 @@
-// interpreter.cpp
-
 #include "interpreter.hpp"
 #include <iostream>
 
 /**
  * Return Signal
- * A special wrapper class used to propagate return values up through
- * statement execution back to the function call site. This allows us
- * to exit early from nested statement blocks without using exceptions
- * for control flow of the interpreted language.
+ * A special wrapper class used to propagate return values up through statement execution back to
+ * the function call site. This is a little cursed but what can we do about it?
  */
 struct ReturnSignal {
     RuntimeValue value;
@@ -395,7 +391,7 @@ RuntimeValue Interpreter::visitCallExpr(CallExpr *expr) {
 
     auto function = callee.as<std::shared_ptr<Callable>>();
 
-    if (arguments.size() != static_cast<size_t>(function->arity())) {
+    if (static_cast<int>(arguments.size()) != function->arity()) {
         throw RuntimeError(expr->anchor, "Expected " + std::to_string(function->arity()) +
                                              " arguments but got " +
                                              std::to_string(arguments.size()) + ".");
