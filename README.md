@@ -53,6 +53,7 @@
 - Better string manipulation
 
 ## Future Plans
+- Unit and integration testing with CI/CD
 - Custom Bytecode VM which requires:
     - Custom stack-based bytecode
     - Bytecode compiler
