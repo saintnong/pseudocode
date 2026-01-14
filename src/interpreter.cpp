@@ -424,9 +424,9 @@ RuntimeValue Interpreter::visitBinaryExpr(BinaryExpr *expr) {
             throw RuntimeError(expr->op, "'IN' operator requires right hand side to be a list.");
         }
 
-        auto arr = right.as<std::shared_ptr<std::vector<RuntimeValue>>>();
+        auto arr   = right.as<std::shared_ptr<std::vector<RuntimeValue>>>();
         bool found = false;
-        
+
         // Iterate through vector and use standard isEqual check
         for (const auto &element : *arr) {
             if (isEqual(left, element)) {
@@ -666,9 +666,9 @@ void Interpreter::visitClassStmt(ClassStmt *stmt) {
             if (auto *varExpr = dynamic_cast<VariableExpr *>(assignment->target.get())) {
                 // Assign attribute to class template
                 std::string fieldName = varExpr->name.lexeme;
-                RuntimeValue val = evaluate(assignment->value.get());
+                RuntimeValue val      = evaluate(assignment->value.get());
                 klass->addField(fieldName, val);
-            }  else {
+            } else {
                 throw RuntimeError(assignment->anchor, "Expected a valid field name.");
             }
         }

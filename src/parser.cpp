@@ -369,7 +369,7 @@ StmtPtr Parser::classDeclaration() {
             consume(TOK_ASSIGN, "Expected '=' after attribute name. Fields must be initialised.");
 
             // Parse the left and right expressions
-            ExprPtr value = parseExpression(PREC_NONE);
+            ExprPtr value  = parseExpression(PREC_NONE);
             ExprPtr target = std::make_unique<VariableExpr>(attrName);
 
             // Add to attributes list

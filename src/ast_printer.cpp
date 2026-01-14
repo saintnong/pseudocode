@@ -48,7 +48,7 @@ void ASTPrinter::visitClassStmt(ClassStmt *stmt) {
         std::cout << " < " << stmt->superclass.lexeme;
     }
     std::cout << std::endl;
-    
+
     IndentScope scope(*this);
 
     // Attributes
