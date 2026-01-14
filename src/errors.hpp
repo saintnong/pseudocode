@@ -20,6 +20,7 @@ enum class ErrorType {
 #define C_RESET "\033[0m"
 #define C_BLUE "\e[34m"
 #define C_GRAY "\033[2m"
+#define C_GREEN "\033[32m"
 
 /**
  * Print an error message from our benevolent overlord SCSA

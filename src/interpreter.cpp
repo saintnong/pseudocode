@@ -206,8 +206,8 @@ bool Interpreter::isTruthy(const RuntimeValue &object) {
         return object.as<bool>();
     if (object.is<int>())
         return object.as<int>() != 0;
-    if (object.is<float>())
-        return object.as<float>() != 0.0;
+    if (object.is<double>())
+        return object.as<double>() != 0.0;
     return true;
 }
 

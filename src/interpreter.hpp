@@ -51,6 +51,12 @@ public:
         }
     }
 
+    /**
+     * Expression evaluator
+     * Evaluates any expression into a Runtime Value.
+     */
+    RuntimeValue evaluate(Expr *expr);
+
     // Public API for executing blocks
     // Used by Callables to execute function body.
     void executeBlock(const std::vector<StmtPtr> &statements, std::shared_ptr<Environment> env);
@@ -86,9 +92,6 @@ public:
 private:
     // Execute a statement
     void execute(Stmt *stmt);
-
-    // Evaluate an expression
-    RuntimeValue evaluate(Expr *expr);
 
     // === Truthiness Calculators ===
 
