@@ -106,6 +106,7 @@ struct Token {
             return "KEYWORD(ATTRIBUTES)";
         case TOK_METHODS:
             return "KEYWORD(METHODS)";
+
         case TOK_FUNCTION:
             return "KEYWORD(FUNCTION)";
         case TOK_RETURN:

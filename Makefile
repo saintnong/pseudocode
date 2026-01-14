@@ -2,7 +2,7 @@ CC = g++
 EXE = scsa
 
 all:
-	$(CC) src/*.cpp -o $(EXE) -std=c++17 -Wall -Wextra -Werror
+	$(CC) src/*.cpp -o $(EXE) -std=c++17 -Wall -Wextra -Werror -flto
 
 debug:
 	$(CC) src/*.cpp -o $(EXE) -std=c++17 -Wall -Wextra -Werror -g

@@ -26,6 +26,21 @@ public:
         : declaration(decl), closure(closure) {
     }
 
+    /**
+     * Creates a new environment where "this" is bound to the specific instance.
+     * This allows methods to access instance fields and other methods.
+     */
+    std::shared_ptr<UserFunction> bind(std::shared_ptr<Instance> instance) {
+        auto environment = std::make_shared<Environment>(closure);
+
+        RuntimeValue instanceValue;
+        instanceValue.value = instance;
+
+        environment->define("this", instanceValue);
+
+        return std::make_shared<UserFunction>(declaration, environment);
+    }
+
     int arity() override {
         return declaration->params.size();
     }
@@ -61,16 +76,40 @@ public:
 class UserClass : public Callable, public std::enable_shared_from_this<UserClass> {
     std::string name;
     std::map<std::string, std::shared_ptr<Callable>> methods;
+    std::map<std::string, RuntimeValue> defaultFields;
 
 public:
+    // instantiation
     UserClass(const std::string &n) : name(n) {
     }
 
+    // Adds a method
     void addMethod(const std::string &methodName, std::shared_ptr<Callable> method) {
         methods[methodName] = method;
     }
 
+    // Adds a field
+    void addField(const std::string &fieldName, RuntimeValue value) {
+        defaultFields[fieldName] = value;
+    }
+
+    // Finds a method which this class has
+    std::shared_ptr<UserFunction> findMethod(const std::string &name) {
+        if (methods.count(name)) {
+            return std::dynamic_pointer_cast<UserFunction>(methods.at(name));
+        }
+
+        // TODO:
+        // Check superclass here
+
+        return nullptr;
+    }
+
     int arity() override {
+        std::shared_ptr<UserFunction> constructor = findMethod(name);
+        if (constructor != nullptr) {
+            return constructor->arity();
+        }
         return 0;
     }
 
@@ -79,13 +118,26 @@ public:
         (void) arguments;
         auto instance =
             std::make_shared<Instance>(std::static_pointer_cast<Callable>(shared_from_this()));
+
+        // Populate new instance with default field values
+        for (const auto &[key, val] : defaultFields) {
+            instance->fields[key] = val;
+        }
+
+        // Find class constructor method
+        std::shared_ptr<UserFunction> constructor = findMethod(name);
+        if (constructor != nullptr) {
+            constructor->bind(instance)->call(interpreter, arguments);
+        }
+
+        // Return results
         RuntimeValue result;
         result.value = instance;
         return result;
     }
 
     std::string toString() override {
-        return "<CLASS " + name + ">";
+        return "<CLASS INSTANCE " + name + ">";
     }
 };
 
@@ -366,6 +418,25 @@ RuntimeValue Interpreter::visitBinaryExpr(BinaryExpr *expr) {
         result.value = isEqual(left, right);
         break;
     }
+    case TOK_IN: {
+        // Ensure we can 'IN'
+        if (!right.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
+            throw RuntimeError(expr->op, "'IN' operator requires right hand side to be a list.");
+        }
+
+        auto arr = right.as<std::shared_ptr<std::vector<RuntimeValue>>>();
+        bool found = false;
+        
+        // Iterate through vector and use standard isEqual check
+        for (const auto &element : *arr) {
+            if (isEqual(left, element)) {
+                found = true;
+                break;
+            }
+        }
+        result.value = found;
+        break;
+    }
     default:
         result.value = Null{};
     }
@@ -407,11 +478,36 @@ RuntimeValue Interpreter::visitCallExpr(CallExpr *expr) {
 RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
     RuntimeValue object = evaluate(expr->object.get());
 
+    // Make sure we're getting from an instance
     if (!object.is<std::shared_ptr<Instance>>()) {
         throw RuntimeError(expr->name, "Only instances have properties.");
     }
 
-    return object.as<std::shared_ptr<Instance>>()->get(expr->name);
+    // Extract the instance and string
+    auto instance    = object.as<std::shared_ptr<Instance>>();
+    std::string name = expr->name.lexeme;
+
+    // Check for a field (variable)
+    if (instance->fields.count(name)) {
+        return instance->fields.at(name);
+    }
+
+    // Look for a method in the class
+    auto klass = std::dynamic_pointer_cast<UserClass>(instance->klass);
+
+    if (klass) {
+        auto method = klass->findMethod(name);
+        if (method) {
+            // If the method is found, we MUST bind it to the instance.
+            // This ensures that when the function is eventually called,
+            // 'this' refers to 'instance'.
+            RuntimeValue result;
+            result.value = method->bind(instance);
+            return result;
+        }
+    }
+
+    throw RuntimeError(expr->name, "Undefined property '" + name + "'.");
 }
 
 /**
@@ -564,6 +660,21 @@ void Interpreter::visitFunctionStmt(FunctionStmt *stmt) {
 void Interpreter::visitClassStmt(ClassStmt *stmt) {
     auto klass = std::make_shared<UserClass>(stmt->name.lexeme);
 
+    // Add the class's default attributes
+    for (const auto &attr : stmt->attributes) {
+        if (auto *assignment = dynamic_cast<AssignExpr *>(attr.get())) {
+            if (auto *varExpr = dynamic_cast<VariableExpr *>(assignment->target.get())) {
+                // Assign attribute to class template
+                std::string fieldName = varExpr->name.lexeme;
+                RuntimeValue val = evaluate(assignment->value.get());
+                klass->addField(fieldName, val);
+            }  else {
+                throw RuntimeError(assignment->anchor, "Expected a valid field name.");
+            }
+        }
+    }
+
+    // Add the class methods to class
     for (const auto &method : stmt->methods) {
         if (auto *funcStmt = dynamic_cast<FunctionStmt *>(method.get())) {
             auto methodFunc = std::make_shared<UserFunction>(funcStmt, environment);

@@ -355,17 +355,26 @@ StmtPtr Parser::classDeclaration() {
         superclass = consume(TOK_IDENTIFIER, "Expected superclass name.");
     }
 
-    // Attributes (Implicit or explicitly listed)
+    // Construct attributes list
+    std::vector<ExprPtr> attributes;
     if (match(TOK_ATTRIBUTES)) {
+        // Optional colon
         if (check(TOK_COLON))
             advance();
-        // We scan attributes until we hit METHODS or END
+
+        // Loop until we hit next section or end of class
         while (!check(TOK_METHODS) && !check(TOK_END) && !isAtEnd()) {
-            // Attributes are declared by just assigning
-            consume(TOK_IDENTIFIER, "Expected attribute name.");
-            if (match(TOK_ASSIGN)) {
-                parseExpression(PREC_NONE);
-            }
+            // Consume the assignment left part
+            Token attrName = consume(TOK_IDENTIFIER, "Expected attribute name.");
+            consume(TOK_ASSIGN, "Expected '=' after attribute name. Fields must be initialised.");
+
+            // Parse the left and right expressions
+            ExprPtr value = parseExpression(PREC_NONE);
+            ExprPtr target = std::make_unique<VariableExpr>(attrName);
+
+            // Add to attributes list
+            attributes.push_back(
+                std::make_unique<AssignExpr>(attrName, std::move(target), std::move(value)));
         }
     }
 
@@ -388,13 +397,13 @@ StmtPtr Parser::classDeclaration() {
     }
     traceExit("classDeclaration");
 
-    return std::make_unique<ClassStmt>(name, superclass, std::move(methods));
+    return std::make_unique<ClassStmt>(name, superclass, std::move(methods), std::move(attributes));
 }
 
 /**
  * Function declaration
  * Parses: FUNCTION name(param1, param2, ...)
- *         body
+ *             body
  *         END name
  */
 StmtPtr Parser::functionDeclaration() {

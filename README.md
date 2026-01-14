@@ -49,6 +49,9 @@ code --install-extension *.vsix # Or just right click it, and click install
 - If & If-Else statements
 - Functions
 - Lists (Append and length is WIP)
+- ✨✨Object Oriented Programming✨✨
+    - Most features working, but the syntax requires 'this' to reference object attributes/methods
+    - No inheritance and polymorphism available as of now
 
 ## Requirements
 - A C++ compiler with support for C++17
@@ -58,9 +61,11 @@ code --install-extension *.vsix # Or just right click it, and click install
     - Windows 11
 
 ## Currently WIP Features
+- INPUT
+- AND and OR keywords
 - ✨✨Object Oriented Programming✨✨
     - This was a new, painful recent addition to the SCSA pseudocode "standard", when they decided that their ancient Pascal based pseudocode had to be more **"modern"**
-    - Class lexing and parsing is mostly working, but interpreter does not interpret binding functions/variables to class declarations correctly yet
+    - Polymorphism and inheritance are WIP
 - Case statement
 - List appending
 - ELSE IF statements

@@ -345,8 +345,9 @@ struct ClassStmt : Stmt {
     Token name;
     Token superclass;
     std::vector<StmtPtr> methods;
-    ClassStmt(Token n, Token s, std::vector<StmtPtr> m)
-        : name(n), superclass(s), methods(std::move(m)) {
+    std::vector<ExprPtr> attributes;
+    ClassStmt(Token n, Token s, std::vector<StmtPtr> m, std::vector<ExprPtr> a)
+        : name(n), superclass(s), methods(std::move(m)), attributes(std::move(a)) {
     }
     void accept(StmtVisitor &visitor) override {
         visitor.visitClassStmt(this);
