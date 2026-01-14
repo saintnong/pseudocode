@@ -1,5 +1,4 @@
 FUNCTION isPositive(n)
-    # If your language supports boolean comparisons returning 1 or 0
     RETURN n > 0
 END isPositive
 

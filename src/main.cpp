@@ -156,11 +156,9 @@ int Pseudocode::runRepl() {
                 if (auto *exprStmt = dynamic_cast<ExpressionStmt *>(parsed[0].get())) {
                     try {
                         RuntimeValue value = interpreter.evaluate(exprStmt->expression.get());
-
-                        // Print the result with the green "=>" prefix
                         std::cout << C_GREEN << "=> " << C_RESET << stringify(value) << std::endl;
 
-                        // Still persist it so any side effects (like assignments) stick
+                        // Still persist so side effects stick
                         sessionHistory.push_back(std::move(parsed[0]));
                         continue;
                     } catch (const std::runtime_error &e) {
