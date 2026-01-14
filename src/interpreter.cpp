@@ -197,7 +197,7 @@ void Interpreter::executeBlock(const std::vector<StmtPtr> &statements,
 
 /**
  * Determine if a runtime value is considered "truthy"
- * Null and false are falsy, everything else is truthy
+ * Null and false are falsy, zeroes are also falsy, everything else is truthy
  */
 bool Interpreter::isTruthy(const RuntimeValue &object) {
     if (object.is<Null>())
