@@ -151,19 +151,15 @@ int Pseudocode::runRepl() {
             stage = InterpreterStage::Runtime;
             interpreter.interpret(parsed);
 
+            // Single statements
             if (parsed.size() == 1) {
-                // Print the expression's evaluation if only one statement was given.
                 if (auto *exprStmt = dynamic_cast<ExpressionStmt *>(parsed[0].get())) {
-                    try {
-                        RuntimeValue value = interpreter.evaluate(exprStmt->expression.get());
-                        std::cout << C_GREEN << "=> " << C_RESET << stringify(value) << std::endl;
+                    // Print evaluation if an expression was given to us.
+                    RuntimeValue value = interpreter.evaluate(exprStmt->expression.get());
+                    std::cout << C_GREEN << "=> " << C_RESET << stringify(value) << std::endl;
 
-                        // Still persist so side effects stick
-                        sessionHistory.push_back(std::move(parsed[0]));
-                        continue;
-                    } catch (const std::runtime_error &e) {
-                        continue;
-                    }
+                    sessionHistory.push_back(std::move(parsed[0]));
+                    continue;
                 }
             }
 
