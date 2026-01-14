@@ -72,7 +72,7 @@
     {
       "comment": "General Control Keywords",
       "name": "keyword.control.scsa",
-      "match": "\\b(IF|THEN|ELSE|FOR|WHILE|RETURN|IN)\\b"
+      "match": "\\b(IF|THEN|ELSE|FOR|WHILE|RETURN|IN|AND|OR)\\b"
     },
     {
       "comment": "Object Oriented / Storage Keywords",

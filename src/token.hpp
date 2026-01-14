@@ -49,6 +49,8 @@ enum TokenType {
     TOK_GT_OR_EQ,     // >=
     TOK_LESS_THAN,    // <
     TOK_LT_OR_EQ,     // <=
+    TOK_AND,          // AND
+    TOK_OR,           // OR
 
     // Special operators
     TOK_DOT,   // .
@@ -129,6 +131,11 @@ struct Token {
             return "KEYWORD(FOR)";
         case TOK_PRINT:
             return "KEYWORD(PRINT)";
+
+        case TOK_AND:
+            return "OPERATOR(AND)";
+        case TOK_OR:
+            return "OPERATOR(OR)";
 
         case TOK_ASSIGN:
             return "OPERATOR(=)";

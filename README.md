@@ -45,6 +45,7 @@ code --install-extension *.vsix # Or just right click it, and click install
 - Local/Global scope separation
 - PRINT library function
 - Binary operations/comparisons [+, -, *, /, >, <, >=, <=, ==]
+- Logical operators [AND, OR]
 - While and For-in loops
 - If & If-Else statements
 - Functions
@@ -62,7 +63,7 @@ code --install-extension *.vsix # Or just right click it, and click install
 
 ## Currently WIP Features
 - INPUT
-- AND and OR keywords
+- NOT
 - ✨✨Object Oriented Programming✨✨
     - This was a new, painful recent addition to the SCSA pseudocode "standard", when they decided that their ancient Pascal based pseudocode had to be more **"modern"**
     - Polymorphism and inheritance are WIP

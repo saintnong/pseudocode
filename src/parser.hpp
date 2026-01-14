@@ -45,6 +45,8 @@ private:
     enum Precedence {
         PREC_NONE       = 0,
         PREC_ASSIGNMENT = 10, // =
+        PREC_OR         = 12, // AND
+        PREC_AND        = 14, // OR
         PREC_EQUALITY   = 20, // ==
         PREC_COMPARISON = 30, // < > <= >=
         PREC_TERM       = 40, // + -

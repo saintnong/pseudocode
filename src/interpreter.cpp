@@ -204,6 +204,10 @@ bool Interpreter::isTruthy(const RuntimeValue &object) {
         return false;
     if (object.is<bool>())
         return object.as<bool>();
+    if (object.is<int>())
+        return object.as<int>() != 0;
+    if (object.is<float>())
+        return object.as<float>() != 0.0;
     return true;
 }
 
@@ -416,6 +420,18 @@ RuntimeValue Interpreter::visitBinaryExpr(BinaryExpr *expr) {
     }
     case TOK_EQUAL: {
         result.value = isEqual(left, right);
+        break;
+    }
+    case TOK_AND: {
+        if (!isTruthy(left))
+            return left;
+        return evaluate(expr->right.get());
+        break;
+    }
+    case TOK_OR: {
+        if (isTruthy(left))
+            return left;
+        return evaluate(expr->right.get());
         break;
     }
     case TOK_IN: {

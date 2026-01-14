@@ -111,6 +111,8 @@ ExprPtr Parser::parseExpression(Precedence precedence) {
         case TOK_LESS_THAN:
         case TOK_LT_OR_EQ:
         case TOK_IN:
+        case TOK_AND:
+        case TOK_OR:
             left = binary(std::move(left));
             break;
         case TOK_LPAREN:
@@ -141,6 +143,10 @@ Parser::Precedence Parser::getPrecedence(TokenType type) {
     switch (type) {
     case TOK_ASSIGN:
         return PREC_ASSIGNMENT;
+    case TOK_OR:
+        return PREC_OR;
+    case TOK_AND:
+        return PREC_AND;
     case TOK_EQUAL:
         return PREC_EQUALITY;
     case TOK_LESS_THAN:

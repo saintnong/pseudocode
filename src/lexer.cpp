@@ -28,6 +28,8 @@ Lexer::Lexer(const std::string &src, ErrorReporter &errReporter)
     keywords["ELSE"]  = TOK_ELSE;
     keywords["IN"]    = TOK_IN;
     keywords["FOR"]   = TOK_FOR;
+    keywords["AND"]   = TOK_AND;
+    keywords["OR"]    = TOK_OR;
 
     keywords["TRUE"]  = TOK_TRUE;
     keywords["FALSE"] = TOK_FALSE;
