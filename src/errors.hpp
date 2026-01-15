@@ -14,11 +14,16 @@ enum class ErrorType {
 };
 
 // ANSI color codes for terminal output
-#define C_RED "\033[31m"
-#define C_RESET "\033[0m"
-#define C_BLUE "\033[34m"
-#define C_GRAY "\033[2m"
-#define C_GREEN "\033[32m"
+extern const char *C_RED;
+extern const char *C_RESET;
+extern const char *C_BLUE;
+extern const char *C_GRAY;
+extern const char *C_GREEN;
+
+/**
+ * Initialize colors based on NO_COLOR environment variable
+ */
+void initColors();
 
 /**
  * Print an error message from our benevolent overlord SCSA
