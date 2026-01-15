@@ -57,8 +57,8 @@ Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Ins
     - `RANDOM(min, max)`: Returns a random integer between min and max.
     - `TIME()`: Returns current system time in seconds.
     - `TYPE(value)`: Returns the type of the value as a string.
-- Binary operations/comparisons [+, -, *, /, >, <, >=, <=, ==]
-- Logical operators [AND, OR]
+- Binary operations/comparisons [+, -, *, /, >, <, >=, <=, ==, !=]
+- Logical operators [AND, OR, NOT]
 - While and For-in loops
 - If & If-Else statements
 - Functions
@@ -69,7 +69,6 @@ Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Ins
 
 # Other stuff
 ## Currently WIP Features
-- NOT
 - ✨✨Object Oriented Programming✨✨
     - This was a new, painful recent addition to the SCSA pseudocode "standard", when they decided that their ancient Pascal based pseudocode had to be more **"modern"**
     - Polymorphism and inheritance are WIP
