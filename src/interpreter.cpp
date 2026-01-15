@@ -6,11 +6,17 @@
 
 /**
  * Return Signal
- * A special wrapper class used to propagate return values up through statement execution back to
- * the function call site. This is a little cursed but what can we do about it?
+ * A special exception-based mechanism used to propagate return values from deep within
+ * nested statement execution back to the function call site.
  */
 struct ReturnSignal {
+    // The value being returned from the function
     RuntimeValue value;
+
+    /**
+     * Create a new return signal
+     * @param v The value to return
+     */
     explicit ReturnSignal(RuntimeValue v) : value(v) {
     }
 };
@@ -21,21 +27,30 @@ struct ReturnSignal {
 
 /**
  * User-Defined Function
- * Represents a function defined in the Pseudocode language.
- * Implements the Callable interface to be invokable at runtime.
+ * Represents a function defined in Pseudocode source.
+ * Implements the Callable interface for runtime invocation.
  */
 class UserFunction : public Callable {
+    // The AST node where the function was defined
     FunctionStmt *declaration;
+    // The lexicographical environment where the function was created (for closures)
     std::shared_ptr<Environment> closure;
 
 public:
+    /**
+     * Create a user function
+     * @param decl The function declaration statement
+     * @param closure The surrounding environment scope
+     */
     UserFunction(FunctionStmt *decl, std::shared_ptr<Environment> closure)
         : declaration(decl), closure(closure) {
     }
 
     /**
-     * Creates a new environment where "this" is bound to the specific instance.
-     * This allows methods to access instance fields and other methods.
+     * Bind function to a class instance
+     * Creates a new environment where "this" refers to the provided instance.
+     * @param instance The object instance to bind to
+     * @return A new UserFunction with the bound environment
      */
     std::shared_ptr<UserFunction> bind(std::shared_ptr<Instance> instance) {
         auto environment = std::make_shared<Environment>(closure);
@@ -48,28 +63,44 @@ public:
         return std::make_shared<UserFunction>(declaration, environment);
     }
 
+    /**
+     * @return Number of expected parameters
+     */
     int arity() override {
         return static_cast<int>(declaration->params.size());
     }
 
+    /**
+     * Execute the function body
+     * @param interpreter The active interpreter
+     * @param arguments Evaluated argument values
+     * @return The function's return value (or Null if no return)
+     */
     RuntimeValue call(Interpreter &interpreter, std::vector<RuntimeValue> arguments) override {
         auto functionEnv = std::make_shared<Environment>(closure);
 
+        // Bind arguments to parameter names in the local scope
         for (size_t i = 0; i < declaration->params.size(); i++) {
             functionEnv->define(declaration->params[i].lexeme, arguments[i]);
         }
 
         try {
+            // Execute the body statements
             interpreter.executeBlock(declaration->body, functionEnv);
         } catch (const ReturnSignal &signal) {
+            // Intercept return signals to get the result
             return signal.value;
         }
 
+        // Default return value is Null
         RuntimeValue nullValue;
         nullValue.value = Null{};
         return nullValue;
     }
 
+    /**
+     * @return Debug string for the function
+     */
     std::string toString() override {
         return "<FUNCTION " + declaration->name.lexeme + ">";
     }
@@ -77,33 +108,45 @@ public:
 
 /**
  * Native Function
- * Lets us add standard library functions to Pseudocode easily.
+ * Bridge for C++ functions to be called within Pseudocode.
  */
 typedef std::function<RuntimeValue(Interpreter &, std::vector<RuntimeValue>)> NativeFn;
 
 class NativeFunction : public Callable {
+    // The C++ implementation of the function
     NativeFn function;
+    // Cached arity (-1 for variadic)
     int _arity;
 
 public:
+    /**
+     * Create a native function
+     * @param arity Expected number of arguments
+     * @param function The C++ implementation
+     */
     NativeFunction(int arity, NativeFn function) : function(std::move(function)), _arity(arity) {
     }
 
     /**
-     * Returns the number of arguments the native function expects.
+     * @return Function arity
      */
     int arity() override {
         return _arity;
     }
 
     /**
-     * Invokes the underlying function.
-     * Arguments are passed from the interpreter directly to the native implementation.
+     * Invoke the native implementation
+     * @param interpreter The current interpreter
+     * @param arguments Evaluated parameters
+     * @return The result from the C++ implementation
      */
     RuntimeValue call(Interpreter &interpreter, std::vector<RuntimeValue> arguments) override {
         return function(interpreter, arguments);
     }
 
+    /**
+     * @return Debug string for native functions
+     */
     std::string toString() override {
         return "<NATIVE FUNCTION>";
     }
@@ -111,41 +154,61 @@ public:
 
 /**
  * User-Defined Class
- * Represents a class defined in the Pseudocode language.
- * Classes are callable (act as constructors) and create Instance objects.
+ * Represents a class blueprint in Pseudocode.
+ * Manages its own methods and field defaults.
  */
 class UserClass : public Callable, public std::enable_shared_from_this<UserClass> {
+    // Name of the class
     std::string name;
+    // Map of method names to their implementations
     std::map<std::string, std::shared_ptr<Callable>> methods;
+    // Initial field values for new instances
     std::map<std::string, RuntimeValue> defaultFields;
 
 public:
-    // instantiation
+    /**
+     * Create a new class definition
+     * @param n The class name
+     */
     UserClass(const std::string &n) : name(n) {
     }
 
-    // Adds a method
+    /**
+     * Add a method to the class
+     * @param methodName The identifier for the method
+     * @param method The implementation callable
+     */
     void addMethod(const std::string &methodName, std::shared_ptr<Callable> method) {
         methods[methodName] = method;
     }
 
-    // Adds a field
+    /**
+     * Add a default field value
+     * @param fieldName The identifier for the attribute
+     * @param value Its initial state
+     */
     void addField(const std::string &fieldName, RuntimeValue value) {
         defaultFields[fieldName] = value;
     }
 
-    // Finds a method which this class has
+    /**
+     * Lookup a method by name
+     * @param methodName The name to search for
+     * @return Shared pointer to the method, or nullptr if not found
+     */
     std::shared_ptr<UserFunction> findMethod(const std::string &methodName) {
         if (methods.count(methodName)) {
             return std::dynamic_pointer_cast<UserFunction>(methods.at(methodName));
         }
 
-        // TODO:
-        // Check superclass here
+        // TODO: Support inheritance method lookups
 
         return nullptr;
     }
 
+    /**
+     * @return Arity of the constructor (same as the class-named method)
+     */
     int arity() override {
         std::shared_ptr<UserFunction> constructor = findMethod(name);
         if (constructor != nullptr) {
@@ -154,6 +217,13 @@ public:
         return 0;
     }
 
+    /**
+     * Class Instantiation (e.g. new MyClass())
+     * Creates a new instance, initializes fields, and runs the constructor.
+     * @param interpreter The active interpreter
+     * @param arguments Constructor arguments
+     * @return The newly created Instance
+     */
     RuntimeValue call(Interpreter &interpreter, std::vector<RuntimeValue> arguments) override {
         (void) interpreter;
         (void) arguments;
@@ -165,20 +235,23 @@ public:
             instance->fields[key] = val;
         }
 
-        // Find class constructor method
+        // Find and execute the class constructor method if it exists
         std::shared_ptr<UserFunction> constructor = findMethod(name);
         if (constructor != nullptr) {
             constructor->bind(instance)->call(interpreter, arguments);
         }
 
-        // Return results
+        // Return the instance wrapped as a runtime value
         RuntimeValue result;
         result.value = instance;
         return result;
     }
 
+    /**
+     * @return Debug string for the class
+     */
     std::string toString() override {
-        return "<CLASS INSTANCE " + name + ">";
+        return "<CLASS " + name + ">";
     }
 };
 
@@ -187,8 +260,9 @@ public:
 // =================================================================================================
 
 /**
- * Creates an interpreter, and its environment.
- * @returns An interpreter
+ * Interpreter Constructor
+ * Initializes the execution environment and registers the standard library.
+ * @param reporterRef Reference to error reporter for communicating runtime failure
  */
 Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
     // Initiate our global environment, and begin interpreting in global scope.
@@ -203,11 +277,13 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
      * INPUT native function
      * >> INPUT(prompt: String)
      * => String
-     * Returns input from stdin. Optionally takes a prompt which is printed before taking input.
+     * Reads a line of text from standard input.
+     * @param prompt Optional string to display before reading
+     * @return The input string (trimmed of newline)
      */
     auto inputNative = std::make_shared<NativeFunction>(
         VARIADIC_ARITY, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
-            // Optional prompt argument
+            // Optional prompt argument handling
             if (args.size() > 0) {
                 std::cout << stringify(args[0]);
             }
@@ -218,33 +294,31 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
                 inputLine = "";
             }
 
-            // Return te result as a RuntimeValue
+            // Return the result as a RuntimeValue variant
             RuntimeValue result;
             result.value = inputLine;
             return result;
         });
 
-    // Global scope registration
+    // Register INPUT in the global scope
     RuntimeValue inputVal;
     inputVal.value = std::static_pointer_cast<Callable>(inputNative);
     globals->define("INPUT", inputVal);
 
     /**
      * PRINT native function
-     * >> PRINT(... vars: String)
+     * >> PRINT(... vars: Any)
      * => Null
-     * Print to stdout with a trailing newline. Given multiple parameters they will be printed
-     * sequentially with a space delimiter. Parameters will converted to type String when suitable.
+     * Outputs values to the console followed by a newline.
+     * Multiple arguments are separated by spaces.
      */
     auto printNative = std::make_shared<NativeFunction>(
         VARIADIC_ARITY, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
             for (size_t i = 0; i < args.size(); ++i) {
-                // Space before every element except the first
                 if (i > 0)
                     std::cout << " ";
                 std::cout << stringify(args[i]);
             }
-            // Print a newline at the end of the statement
             std::cout << std::endl;
 
             RuntimeValue nullValue;
@@ -259,10 +333,9 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
 
     /**
      * OUTPUT native function
-     * >> OUTPUT(... vars: String)
+     * >> OUTPUT(... vars: Any)
      * => Null
-     * Print to stdout with no trailing newline. Given multiple parameters they will be printed
-     * sequentially with a space delimiter. Parameters will converted to type String when suitable.
+     * Outputs values to the console WITHOUT a trailing newline.
      */
     auto outputNative = std::make_shared<NativeFunction>(
         VARIADIC_ARITY, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
@@ -285,11 +358,8 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
     /**
      * INT native function
      * >> INT(value: Any)
-     * => Int
-     * Converts a value to an Integer.
-     * - Floats are truncated.
-     * - Bools convert to 1 (true) or 0 (false).
-     * - Strings are parsed (returns -1 if parsing fails).
+     * => Integer
+     * Explicitly casts a value to an integer.
      */
     auto intNative = std::make_shared<NativeFunction>(
         1, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
@@ -309,7 +379,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
                 try {
                     result = std::stoi(val.as<std::string>());
                 } catch (...) {
-                    // Failed conversion
+                    // Fallback for failed parsing
                     result = -1;
                 }
             }
@@ -325,9 +395,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
      * FLOAT native function
      * >> FLOAT(value: Any)
      * => Double
-     * Converts a value to a floating point number.
-     * - Ints are converted directly.
-     * - Strings are parsed (returns 0.0 if parsing fails).
+     * Explicitly casts a value to a floating point number.
      */
     auto floatNative = std::make_shared<NativeFunction>(
         1, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
@@ -381,10 +449,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
      * BOOL native function
      * >> BOOL(value: Any)
      * => Boolean
-     * Converts a value to a boolean.
-     * - Numbers: 0 is false, anything else is true.
-     * - Strings: "true" (case-sensitive) is true, everything else is false.
-     * - Null: false.
+     * Explicitly casts a value to a boolean.
      */
     auto boolNative = std::make_shared<NativeFunction>(
         1, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
@@ -416,22 +481,25 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
 
     /**
      * RANDOM native function
-     * >> RANDOM(min: Int, max: Int)
-     * => Int
-     * Returns a pseudo-random integer between min and max (inclusive).
+     * >> RANDOM(min: Integer, max: Integer)
+     * => Integer
+     * Returns a pseudo-random integer within the specified range [min, max].
      */
     auto randomNative = std::make_shared<NativeFunction>(
         2, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
             if (!args[0].is<int>() || !args[1].is<int>()) {
+                // Returns 0 if parameters are wrong type
                 return {0};
             }
 
             int min = args[0].as<int>();
             int max = args[1].as<int>();
 
+            // Handle inverted ranges
             if (min > max)
                 std::swap(min, max);
 
+            // Use static generator to maintain state across calls
             static std::mt19937 gen(std::random_device{}());
             std::uniform_int_distribution<> dis(min, max);
 
@@ -446,7 +514,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
      * TIME native function
      * >> TIME()
      * => Double
-     * Returns the current system time in seconds since the epoch.
+     * Returns the number of seconds since the Unix epoch.
      */
     auto timeNative = std::make_shared<NativeFunction>(
         0, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
@@ -455,6 +523,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
             auto duration =
                 std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
 
+            // Convert milliseconds to seconds
             RuntimeValue retVal;
             retVal.value = static_cast<double>(duration.count()) / 1000.0;
             return retVal;
@@ -466,7 +535,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
      * TYPE native function
      * >> TYPE(value: Any)
      * => String
-     * Returns a string representation of the value's type.
+     * Returns the name of the value's internal type as a string.
      */
     auto typeNative = std::make_shared<NativeFunction>(
         1, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
@@ -501,15 +570,21 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
 }
 
 /**
- * Execute a single statement by dispatching to its visitor method
+ * Execute Statement
+ * Dispatches the statement to the appropriate StmtVisitor implementation.
+ * @param stmt Pointer to the statement to execute
  */
 void Interpreter::execute(Stmt *stmt) {
     stmt->accept(*this);
 }
 
 /**
- * Evaluate an expression by dispatching to its visitor method
- * Uses dynamic dispatch to call the appropriate visit method based on expression type
+ * Evaluate Expression
+ * Evaluates an expression AST node into a concrete RuntimeValue.
+ * Uses manual dispatch (downcasting) as an alternative to the visitor pattern
+ * for better integration with return values.
+ * @param expr The expression to evaluate
+ * @return The resulting value
  */
 RuntimeValue Interpreter::evaluate(Expr *expr) {
     if (auto *e = dynamic_cast<LiteralExpr *>(expr))
@@ -531,13 +606,18 @@ RuntimeValue Interpreter::evaluate(Expr *expr) {
     if (auto *e = dynamic_cast<NewExpr *>(expr))
         return visitNewExpr(e);
 
+    // Fallback for null expressions
     RuntimeValue null;
     null.value = Null{};
     return null;
 }
 
 /**
- * Execute a block of statements in a new environment scope
+ * Execute Scoped Block
+ * Evaluates a list of statements within a provided environment.
+ * Restores the previous environment after the block finishes, even if an error occurs.
+ * @param statements Statement nodes in the block
+ * @param env The environment scope for this block
  */
 void Interpreter::executeBlock(const std::vector<StmtPtr> &statements,
                                std::shared_ptr<Environment> env) {
@@ -549,14 +629,19 @@ void Interpreter::executeBlock(const std::vector<StmtPtr> &statements,
         }
         environment = previous;
     } catch (...) {
+        // Ensure environment is restored on exceptions (like ReturnSignal)
         environment = previous;
         throw;
     }
 }
 
 /**
- * Determine if a runtime value is considered "truthy"
- * Null and false are falsy, zeroes are also falsy, everything else is truthy
+ * Logic: Truthiness
+ * Determines the boolean interpretation of any runtime value.
+ * - Null is false
+ * - False is false
+ * - 0 and 0.0 are false
+ * - Everything else is true
  */
 bool Interpreter::isTruthy(const RuntimeValue &object) {
     if (object.is<Null>())
@@ -616,8 +701,10 @@ void Interpreter::checkNumberOperands(const Token &operatorToken, const RuntimeV
 }
 
 /**
- * Visit a literal expression node
- * Converts the token to its corresponding runtime value
+ * Visit: Literal Expression
+ * Converts a primitive AST literal into its runtime equivalent.
+ * @param expr Literal node (TOK_INTEGER, TOK_FLOAT, TOK_STRING, TOK_TRUE, TOK_FALSE)
+ * @return The corresponding RuntimeValue
  */
 RuntimeValue Interpreter::visitLiteralExpr(LiteralExpr *expr) {
     RuntimeValue result;
@@ -646,29 +733,37 @@ RuntimeValue Interpreter::visitLiteralExpr(LiteralExpr *expr) {
 }
 
 /**
- * Visit a variable expression node
- * Looks up the variable in the current environment
+ * Visit: Variable Reference
+ * Retrieves the value of an identifier from the current environment scope.
+ * @param expr Variable node containing the name token
+ * @return The value currently bound to the name
  */
 RuntimeValue Interpreter::visitVariableExpr(VariableExpr *expr) {
     return environment->get(expr->name);
 }
 
 /**
- * Visit an assignment expression node
- * Evaluates the value and assigns it to the target
+ * Visit: Assignment
+ * Evaluates the right-hand side and binds it to the target (variable, field, or array element).
+ * Supports complex targets like object properties and array indices.
+ * @param expr Assignment node (target = value)
+ * @return The assigned value
  */
 RuntimeValue Interpreter::visitAssignExpr(AssignExpr *expr) {
     RuntimeValue value = evaluate(expr->value.get());
 
     if (auto *varExpr = dynamic_cast<VariableExpr *>(expr->target.get())) {
+        // Simple variable assignment
         environment->define(varExpr->name.lexeme, value);
     } else if (auto *getExpr = dynamic_cast<GetExpr *>(expr->target.get())) {
+        // Object property assignment (object.field = value)
         RuntimeValue object = evaluate(getExpr->object.get());
         if (!object.is<std::shared_ptr<Instance>>()) {
             throw RuntimeError(getExpr->name, "Only instances have fields.");
         }
         object.as<std::shared_ptr<Instance>>()->set(getExpr->name, value);
     } else if (auto *arrayAccess = dynamic_cast<ArrayAccessExpr *>(expr->target.get())) {
+        // Array element assignment (array[index] = value)
         RuntimeValue arrayVal = evaluate(arrayAccess->array.get());
         RuntimeValue indexVal = evaluate(arrayAccess->index.get());
 
@@ -693,8 +788,11 @@ RuntimeValue Interpreter::visitAssignExpr(AssignExpr *expr) {
 }
 
 /**
- * Visit a binary expression node
- * Handles arithmetic, comparison, and equality operators
+ * Visit: Binary Expression
+ * Handles arithmetic (+, -, *, /), comparison (>, >=, <, <=),
+ * equality (==), logical (AND, OR), and collection membership (IN) operators.
+ * @param expr Binary node containing operator and operands
+ * @return Result of the operation
  */
 RuntimeValue Interpreter::visitBinaryExpr(BinaryExpr *expr) {
     RuntimeValue left  = evaluate(expr->left.get());
@@ -703,6 +801,7 @@ RuntimeValue Interpreter::visitBinaryExpr(BinaryExpr *expr) {
 
     switch (expr->op.type) {
     case TOK_PLUS: {
+        // String Concatenation or Numeric Addition
         if (left.is<std::string>() && right.is<std::string>()) {
             result.value = left.as<std::string>() + right.as<std::string>();
         } else {
@@ -718,6 +817,7 @@ RuntimeValue Interpreter::visitBinaryExpr(BinaryExpr *expr) {
         break;
     }
     case TOK_MINUS: {
+        // Numeric Subtraction
         checkNumberOperands(expr->op, left, right);
         if (left.is<double>() || right.is<double>()) {
             double l     = left.is<double>() ? left.as<double>() : left.as<int>();
@@ -729,6 +829,7 @@ RuntimeValue Interpreter::visitBinaryExpr(BinaryExpr *expr) {
         break;
     }
     case TOK_MULTIPLY: {
+        // Numeric Multiplication
         checkNumberOperands(expr->op, left, right);
         if (left.is<double>() || right.is<double>()) {
             double l     = left.is<double>() ? left.as<double>() : left.as<int>();
@@ -740,6 +841,7 @@ RuntimeValue Interpreter::visitBinaryExpr(BinaryExpr *expr) {
         break;
     }
     case TOK_DIVIDE: {
+        // Numeric Division (always returns double)
         checkNumberOperands(expr->op, left, right);
         double l = left.is<double>() ? left.as<double>() : left.as<int>();
         double r = right.is<double>() ? right.as<double>() : right.as<int>();
@@ -778,38 +880,37 @@ RuntimeValue Interpreter::visitBinaryExpr(BinaryExpr *expr) {
         break;
     }
     case TOK_EQUAL: {
+        // Generic Equality Check
         result.value = isEqual(left, right);
         break;
     }
     case TOK_AND: {
+        // Logical AND (short-circuiting)
         if (!isTruthy(left))
             return left;
         return evaluate(expr->right.get());
-        break;
     }
     case TOK_OR: {
+        // Logical OR (short-circuiting)
         if (isTruthy(left))
             return left;
         return evaluate(expr->right.get());
-        break;
     }
     case TOK_IN: {
-        // Ensure we can 'IN'
+        // Collection Membership
         if (!right.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
             throw RuntimeError(expr->op, "'IN' operator requires right hand side to be a list.");
         }
 
-        auto arr   = right.as<std::shared_ptr<std::vector<RuntimeValue>>>();
-        bool found = false;
+        auto arr     = right.as<std::shared_ptr<std::vector<RuntimeValue>>>();
+        result.value = false;
 
-        // Iterate through vector and use standard isEqual check
-        for (const auto &element : *arr) {
-            if (isEqual(left, element)) {
-                found = true;
+        for (const auto &item : *arr) {
+            if (isEqual(left, item)) {
+                result.value = true;
                 break;
             }
         }
-        result.value = found;
         break;
     }
     default:
@@ -820,8 +921,10 @@ RuntimeValue Interpreter::visitBinaryExpr(BinaryExpr *expr) {
 }
 
 /**
- * Visit a function call expression, or class instantiation
- * Evaluates the callee and arguments, then invokes the function
+ * Visit: Function or Constructor Call
+ * Evaluates the callee and arguments, then invokes the call method.
+ * @param expr Call node (callee(args))
+ * @return Return value from the invocation
  */
 RuntimeValue Interpreter::visitCallExpr(CallExpr *expr) {
     RuntimeValue callee = evaluate(expr->callee.get());
@@ -831,49 +934,45 @@ RuntimeValue Interpreter::visitCallExpr(CallExpr *expr) {
         arguments.push_back(evaluate(arg.get()));
     }
 
-    // Only call things that we can call
     if (!callee.is<std::shared_ptr<Callable>>()) {
-        throw RuntimeError(expr->anchor, "You can only call functions and classes.");
+        throw RuntimeError(expr->anchor, "Can only call functions and classes.");
     }
 
-    auto function = callee.as<std::shared_ptr<Callable>>();
+    std::shared_ptr<Callable> function = callee.as<std::shared_ptr<Callable>>();
 
-    // Check that the function's arity matches our call
-    // We skip this check if the arity is variadic (any number of arguments)
-    int arity = function->arity();
-    if (arity != VARIADIC_ARITY) {
-        if (static_cast<int>(arguments.size()) != arity) {
-            throw RuntimeError(expr->anchor, "Expected " + std::to_string(arity) +
-                                                 " arguments but got " +
-                                                 std::to_string(arguments.size()) + ".");
-        }
+    // Validate argument count (arity)
+    if (function->arity() != VARIADIC_ARITY &&
+        (size_t) arguments.size() != (size_t) function->arity()) {
+        throw RuntimeError(expr->anchor, "Expected " + std::to_string(function->arity()) +
+                                             " arguments but got " +
+                                             std::to_string(arguments.size()) + ".");
     }
 
     return function->call(*this, arguments);
 }
 
 /**
- * Visit a property get expression
- * Retrieves a property value from an instance
+ * Visit: Property Access
+ * Retrieves a field or method from a class instance.
+ * @param expr Get node (object.name)
+ * @return Property value or bound method
  */
 RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
     RuntimeValue object = evaluate(expr->object.get());
 
-    // Make sure we're getting from an instance
     if (!object.is<std::shared_ptr<Instance>>()) {
         throw RuntimeError(expr->name, "Only instances have properties.");
     }
 
-    // Extract the instance and string
     auto instance    = object.as<std::shared_ptr<Instance>>();
     std::string name = expr->name.lexeme;
 
-    // Check for a field (variable)
+    // First check for fields on the instance
     if (instance->fields.count(name)) {
         return instance->fields.at(name);
     }
 
-    // Look for a method in the class
+    // Then look for methods in the instance's class
     auto klass = std::dynamic_pointer_cast<UserClass>(instance->klass);
 
     if (klass) {
@@ -892,8 +991,10 @@ RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
 }
 
 /**
- * Visit an array access expression
- * Retrieves an element from an array by index
+ * Visit: Array Access
+ * Retrieves an element from an array using a numeric index.
+ * @param expr Index node (array[index])
+ * @return The value at the specified position
  */
 RuntimeValue Interpreter::visitArrayAccessExpr(ArrayAccessExpr *expr) {
     RuntimeValue arrayVal = evaluate(expr->array.get());
@@ -917,8 +1018,10 @@ RuntimeValue Interpreter::visitArrayAccessExpr(ArrayAccessExpr *expr) {
 }
 
 /**
- * Visit an array literal expression
- * Creates a new array with the evaluated elements
+ * Visit: Array Literal
+ * Creates a new heap-allocated vector holding the evaluated elements.
+ * @param expr List of expressions [e1, e2, ...]
+ * @return A shared pointer to the new array
  */
 RuntimeValue Interpreter::visitArrayLitExpr(ArrayLitExpr *expr) {
     auto arr = std::make_shared<std::vector<RuntimeValue>>();
@@ -933,8 +1036,10 @@ RuntimeValue Interpreter::visitArrayLitExpr(ArrayLitExpr *expr) {
 }
 
 /**
- * Visit a new instance expression
- * Creates a new instance of the specified class
+ * Visit: Class Instantiation
+ * Creates a new object instance. Syntactic sugar for calling a class.
+ * @param expr New node (NEW ClassName(args))
+ * @return The created instance
  */
 RuntimeValue Interpreter::visitNewExpr(NewExpr *expr) {
     RuntimeValue classVal = environment->get(expr->className);
@@ -953,18 +1058,18 @@ RuntimeValue Interpreter::visitNewExpr(NewExpr *expr) {
 }
 
 /**
- * Visit an expression statement
- * Evaluates the expression and discards the result
+ * Visit: Expression Statement
+ * Evaluates an expression and ignores its result.
+ * Used for calls or assignments that stand alone as statements.
  */
 void Interpreter::visitExpressionStmt(ExpressionStmt *stmt) {
     evaluate(stmt->expression.get());
 }
 
 /**
- * Visit a return statement
- * Throws a ReturnSignal to unwind the statement execution back to the call site
- * The visitor pattern already returns RuntimeValue for expressions, but we need
- * this signal to break out of the statement execution loop in function bodies
+ * Visit: Return Statement
+ * Triggers a stack unwind by throwing a ReturnSignal.
+ * This is the only way to exit a function body early with a value.
  */
 void Interpreter::visitReturnStmt(ReturnStmt *stmt) {
     RuntimeValue value;
@@ -977,16 +1082,16 @@ void Interpreter::visitReturnStmt(ReturnStmt *stmt) {
 }
 
 /**
- * Visit a block statement
- * Creates a new scope and executes the statements within it
+ * Visit: Block Statement
+ * Executes a group of statements within a new local environment scope.
  */
 void Interpreter::visitBlockStmt(BlockStmt *stmt) {
     executeBlock(stmt->statements, std::make_shared<Environment>(environment));
 }
 
 /**
- * Visit an if statement
- * Evaluates the condition and executes the appropriate branch
+ * Visit: If Statement
+ * Evaluates the condition and conditionally executes the then or else branch.
  */
 void Interpreter::visitIfStmt(IfStmt *stmt) {
     RuntimeValue condition = evaluate(stmt->condition.get());
@@ -1003,8 +1108,8 @@ void Interpreter::visitIfStmt(IfStmt *stmt) {
 }
 
 /**
- * Visit a while statement
- * Repeatedly executes the body 'while' the condition is truthy
+ * Visit: While Statement
+ * Executes the body repeatedly as long as the condition remains truthy.
  */
 void Interpreter::visitWhileStmt(WhileStmt *stmt) {
     while (isTruthy(evaluate(stmt->condition.get()))) {
@@ -1015,8 +1120,8 @@ void Interpreter::visitWhileStmt(WhileStmt *stmt) {
 }
 
 /**
- * Visit a function declaration statement
- * Creates a function object and binds it to the function name
+ * Visit: Function Declaration
+ * Creates a UserFunction object and defines it in the current scope.
  */
 void Interpreter::visitFunctionStmt(FunctionStmt *stmt) {
     auto function = std::make_shared<UserFunction>(stmt, environment);
@@ -1026,17 +1131,17 @@ void Interpreter::visitFunctionStmt(FunctionStmt *stmt) {
 }
 
 /**
- * Visit a class declaration statement
- * Creates a class object and binds methods to it
+ * Visit: Class Declaration
+ * Creates a UserClass object, populates it with methods and field defaults,
+ * and defines it in the current scope.
  */
 void Interpreter::visitClassStmt(ClassStmt *stmt) {
     auto klass = std::make_shared<UserClass>(stmt->name.lexeme);
 
-    // Add the class's default attributes
+    // Add the class's default attributes (fields)
     for (const auto &attr : stmt->attributes) {
         if (auto *assignment = dynamic_cast<AssignExpr *>(attr.get())) {
             if (auto *varExpr = dynamic_cast<VariableExpr *>(assignment->target.get())) {
-                // Assign attribute to class template
                 std::string fieldName = varExpr->name.lexeme;
                 RuntimeValue val      = evaluate(assignment->value.get());
                 klass->addField(fieldName, val);
@@ -1046,7 +1151,7 @@ void Interpreter::visitClassStmt(ClassStmt *stmt) {
         }
     }
 
-    // Add the class methods to class
+    // Add methods to the class definition
     for (const auto &method : stmt->methods) {
         if (auto *funcStmt = dynamic_cast<FunctionStmt *>(method.get())) {
             auto methodFunc = std::make_shared<UserFunction>(funcStmt, environment);
@@ -1060,8 +1165,9 @@ void Interpreter::visitClassStmt(ClassStmt *stmt) {
 }
 
 /**
- * Visit a for-in statement
- * Iterates over an array, binding each element to the loop variable
+ * Visit: For-In Loop
+ * Iterates over the elements of an array, executing the body for each one.
+ * Binds the current element to a local loop variable.
  */
 void Interpreter::visitForInStmt(ForInStmt *stmt) {
     RuntimeValue iterable = evaluate(stmt->iterable.get());
@@ -1073,6 +1179,7 @@ void Interpreter::visitForInStmt(ForInStmt *stmt) {
     auto arr = iterable.as<std::shared_ptr<std::vector<RuntimeValue>>>();
 
     for (const auto &element : *arr) {
+        // Create a fresh scope for each iteration to avoid leaks between iterations
         auto loopEnv = std::make_shared<Environment>(environment);
         loopEnv->define(stmt->variable.lexeme, element);
         executeBlock(stmt->body, loopEnv);

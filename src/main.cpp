@@ -52,21 +52,20 @@ void Pseudocode::printTokenTable(const std::vector<Token> &tokens) {
 }
 
 /**
- * Run the interpreter on a file
- * Reads the file, tokenizes it, and displays the token table
- * @param path Path to the pseudocode file to execute
+ * Run Interpreter from File
+ * Coordinates the full pipeline: Lexing -> Parsing -> Execution.
+ * @param path System path to the .scsa script
  * @return 0 on success, 1 on error
  */
 int Pseudocode::runFile(const std::string &path) {
     try {
         std::string source = readFile(path);
 
-        // Initialize error reporting at the lexing stage
+        // Stage 1: Lexical Analysis
         InterpreterStage stage = InterpreterStage::Lexing;
         ErrorReporter reporter(stage, path, source);
         Lexer lexer(source, reporter);
 
-        // Tokenize the source code
         std::vector<Token> tokens = lexer.scanTokens();
         if (debugTokens)
             printTokenTable(tokens);
@@ -74,10 +73,11 @@ int Pseudocode::runFile(const std::string &path) {
         if (reporter.hadError)
             return 1;
 
-        // Parse tokens
+        // Stage 2: Parsing
         stage = InterpreterStage::Parsing;
         Parser parser(tokens, source, reporter);
         std::vector<StmtPtr> statements = parser.parse();
+
         if (debugParse) {
             ASTPrinter printer;
             printer.print(statements);
@@ -86,12 +86,13 @@ int Pseudocode::runFile(const std::string &path) {
         if (reporter.hadError)
             return 1;
 
-        // Interpret the parsed statements
+        // Stage 3: Execution
         stage = InterpreterStage::Runtime;
         Interpreter interpreter(reporter);
         interpreter.interpret(statements);
     } catch (const std::exception &e) {
-        std::cerr << e.what() << std::endl;
+        // Catch fatal system or logic errors
+        std::cerr << "Fatal Error: " << e.what() << std::endl;
         return 1;
     }
 
@@ -99,30 +100,26 @@ int Pseudocode::runFile(const std::string &path) {
 }
 
 /**
- * Run an interactive REPL (Read-Eval-Print-Loop)
- * Allows users to input pseudocode lines interactively
- * Each line is tokenized, parsed, and executed
- * @return Always returns 0
+ * Interactive REPL
+ * Provides a persistent environment for executing code line-by-line.
  */
 int Pseudocode::runRepl() {
     InterpreterStage stage = InterpreterStage::Lexing;
 
     std::cout << "Interactive SCSA Pseudocode Interpreter" << std::endl;
-    std::cout << "For help type run this program with '--help' or '-h'" << std::endl;
-    std::cout << "Type 'exit' to quit" << std::endl;
+    std::cout << "For help, run this program with '--help' or '-h'" << std::endl;
+    std::cout << "Type 'exit' or use Ctrl+D to quit" << std::endl;
 
-    // Make an interpreter and error reporter to keep state across this session
+    // Persist interpreter and reporter to maintain state between lines
     ErrorReporter reporter(stage, "", "");
     reporter.setReplMode(true);
     Interpreter interpreter(reporter);
 
-    // Maintain a history of statements this session so that we don't use after free when our
-    // parser's lifetime ends.
+    // Keep AST nodes alive for the duration of the session
     std::vector<StmtPtr> sessionHistory;
 
     std::string line;
     while (true) {
-        // Display prompt and read a line of input
         std::cout << "[SCSA] >> " << std::flush;
         if (!std::getline(std::cin, line))
             break;
@@ -135,18 +132,17 @@ int Pseudocode::runRepl() {
         reporter.hadError = false;
 
         try {
-            // --- Lexing ---
+            // Lexing
             stage = InterpreterStage::Lexing;
             Lexer lexer(line, reporter);
             std::vector<Token> tokens = lexer.scanTokens();
             if (debugTokens)
                 printTokenTable(tokens);
 
-            // Check error before parsing
             if (reporter.hadError)
                 continue;
 
-            // --- Parsing ---
+            // Parsing
             stage = InterpreterStage::Parsing;
             Parser parser(tokens, line, reporter);
             std::vector<StmtPtr> parsed = parser.parse();
@@ -156,48 +152,37 @@ int Pseudocode::runRepl() {
                 printer.print(parsed);
             }
 
-            // Check error before executing
             if (reporter.hadError)
                 continue;
 
-            // --- Execution ---
+            // Execution
             stage = InterpreterStage::Runtime;
 
-            // Simply evaluate if only given a single expression.
+            // Special Case: Standalone Expression Evaluation
             if (parsed.size() == 1) {
                 if (auto *exprStmt = dynamic_cast<ExpressionStmt *>(parsed[0].get())) {
-                    // Print evaluation if an expression was given to us.
                     try {
                         RuntimeValue value = interpreter.evaluate(exprStmt->expression.get());
                         std::cout << C_GREEN << "=> " << C_RESET << stringify(value) << std::endl;
                         sessionHistory.push_back(std::move(parsed[0]));
                     } catch (const RuntimeError &error) {
-                        // Basically a clone of what the interpreter does when it encounters error.
-                        // It's cursed to dupe it here, but I don't want to have a second try-catch
-                        // in interpreter.evaluate() so this is the only way unfortunately.
                         Token token     = error.token;
                         std::string msg = error.what();
                         reporter.report(ErrorType::Runtime, token.line, token.column, msg,
                                         token.lexeme.length());
                     }
-
                     continue;
                 }
             }
 
-            // Execute the code
+            // Standard Statement Execution
             interpreter.interpret(parsed);
 
-            // --- Persistence ---
-
-            // Store our statements in history so function/class declaration AST nodes are persisted
+            // Persist AST nodes (for multi-line block/function definitions)
             sessionHistory.insert(sessionHistory.end(), std::make_move_iterator(parsed.begin()),
                                   std::make_move_iterator(parsed.end()));
-        } catch (const std::runtime_error &) {
-            // Do nothing
         } catch (const std::exception &e) {
-            // Shouldn't happen
-            std::cerr << "[This error isn't supposed to occur...] " << e.what() << std::endl;
+            std::cerr << "Runtime Exception: " << e.what() << std::endl;
         }
     }
 
@@ -213,31 +198,32 @@ void help() {
 }
 
 /**
- * Entry point for the Pseudocode interpreter
- *
+ * Main Entry Point
+ * Orchestrates terminal setup and command-line argument parsing.
  */
 int main(int argc, char *argv[]) {
 
 #ifdef _WIN32
+    // Windows Terminal Setup: Enable ANSI color support and UTF-8
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     DWORD consoleMode;
     GetConsoleMode(hConsole, &consoleMode);
     consoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-    SetConsoleMode(hConsole, consoleMode); // Enable ANSI colours
+    SetConsoleMode(hConsole, consoleMode);
 
-    // Set input/output code page to UTF-8
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
 #endif
 
     Pseudocode pseudocode;
 
+    // Handle --help or -h
     if (argc > 1 && (std::string(argv[1]) == "--help" || std::string(argv[1]) == "-h")) {
         help();
         return 0;
     }
 
-    // Parse optional arguments
+    // Argument Parser
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
         if (arg == "--debug-tokens") {
@@ -245,7 +231,7 @@ int main(int argc, char *argv[]) {
         } else if (arg == "--debug-parse") {
             pseudocode.debugParse = true;
         } else {
-            // If file ends in .scsa then treat as script
+            // Treat anything else as a potential script path
             if (arg.size() < 5 || arg.substr(arg.size() - 5) != ".scsa") {
                 help();
                 return 1;
@@ -255,6 +241,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    // Default: Start REPL if no file provided
     if (argc == 1) {
         return pseudocode.runRepl();
     }
