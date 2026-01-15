@@ -17,17 +17,19 @@
 
 This repository contains a full toolchain for Pseudocode development, including an interpreter, VSCode extension with highlighting and snippets.
 
-### Installation (Linux Instructions)
-```bash
-# Build interpreter
-make
+## Examples
 
-# Install vscode extension
-cd vscode
-npx vsce package # (You might need to install vsce)
-code --install-extension *.vsix # Or just right click it, and click install
-```
+#### Working Bubble Sort in SCSA Pseudocode (and syntax highlights)!
+![Bubble Sort in Pseudocode](images/bubblesort.png)
+#### Integrated REPL
+![Pseudocode REPL](images/REPL.png)
 
+#### Good error messages!
+![Error message](images/error.png)
+
+## Installation
+
+Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Installation-Guide) to get started!
 
 ## Features
 - Handwritten Lexer with locatable tokens
@@ -54,13 +56,7 @@ code --install-extension *.vsix # Or just right click it, and click install
     - Most features working, but the syntax requires 'this' to reference object attributes/methods
     - No inheritance and polymorphism available as of now
 
-## Requirements
-- A C++ compiler with support for C++17
-- Terminal with ANSI colour support (Not required but highly recommended)
-- Operating systems tested:
-    - Ubuntu 24.04
-    - Windows 11
-
+# Other stuff
 ## Currently WIP Features
 - INPUT
 - NOT

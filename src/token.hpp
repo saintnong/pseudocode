@@ -77,9 +77,9 @@ struct Token {
      * These help our program print more helpful error messages by
      * telling it where the token was that caused it to crash.
      */
-    int line;   // Line number
-    int column; // Column position (0-indexed)
-    int length; // Length of the token in characters
+    size_t line;   // Line number
+    size_t column; // Column position (0-indexed)
+    size_t length; // Length of the token in characters
 
     /**
      * Converts a token type to human-readable string

@@ -334,7 +334,7 @@ StmtPtr Parser::declaration() {
         }
         traceExit("declaration");
         return statement();
-    } catch (const std::exception &e) {
+    } catch (const std::exception &) {
         // Synchronize to next valid statement to prevent cascading errors
         synchronize();
         return nullptr;

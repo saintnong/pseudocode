@@ -42,7 +42,7 @@ public:
     }
 
     int arity() override {
-        return declaration->params.size();
+        return static_cast<int>(declaration->params.size());
     }
 
     RuntimeValue call(Interpreter &interpreter, std::vector<RuntimeValue> arguments) override {
@@ -94,9 +94,9 @@ public:
     }
 
     // Finds a method which this class has
-    std::shared_ptr<UserFunction> findMethod(const std::string &name) {
-        if (methods.count(name)) {
-            return std::dynamic_pointer_cast<UserFunction>(methods.at(name));
+    std::shared_ptr<UserFunction> findMethod(const std::string &methodName) {
+        if (methods.count(methodName)) {
+            return std::dynamic_pointer_cast<UserFunction>(methods.at(methodName));
         }
 
         // TODO:

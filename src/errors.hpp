@@ -18,7 +18,7 @@ enum class ErrorType {
 // ANSI color codes for terminal output
 #define C_RED "\033[31m"
 #define C_RESET "\033[0m"
-#define C_BLUE "\e[34m"
+#define C_BLUE "\033[34m"
 #define C_GRAY "\033[2m"
 #define C_GREEN "\033[32m"
 
