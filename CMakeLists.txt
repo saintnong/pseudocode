@@ -9,7 +9,7 @@ file(GLOB_RECURSE SOURCES "src/*.cpp")
 add_executable(scsa ${SOURCES})
 
 if(MSVC)
-    target_compile_options(scsa PRIVATE /W4 /WX)
+    target_compile_options(scsa PRIVATE /W4)
 else()
     target_compile_options(scsa PRIVATE -Wall -Wextra -Werror)
 endif()

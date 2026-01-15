@@ -168,7 +168,7 @@ int Pseudocode::runRepl() {
             // Store our statements in history so function/class declaration AST nodes are persisted
             sessionHistory.insert(sessionHistory.end(), std::make_move_iterator(parsed.begin()),
                                   std::make_move_iterator(parsed.end()));
-        } catch (const std::runtime_error &e) {
+        } catch (const std::runtime_error &) {
             // Do nothing
         } catch (const std::exception &e) {
             // Shouldn't happen
