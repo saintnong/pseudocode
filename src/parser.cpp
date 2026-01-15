@@ -1,5 +1,7 @@
 #include "parser.hpp"
 
+#include <iostream>
+
 /**
  * Parser Constructor
  * Initializes the parser with a token stream and source code for error reporting

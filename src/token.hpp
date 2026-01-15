@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <vector>
 
 // Every type of token the program can encounter
 enum TokenKind {

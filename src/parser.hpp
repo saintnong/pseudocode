@@ -4,7 +4,6 @@
 #include "errors.hpp"
 
 #include <functional>
-#include <iostream>
 
 /**
  * Parser - Converts a stream of tokens into an Abstract Syntax Tree (AST)
