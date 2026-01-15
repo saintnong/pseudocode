@@ -461,10 +461,6 @@ StmtPtr Parser::statement() {
         traceExit("statement");
         return returnStatement();
     }
-    if (match(TOK_PRINT)) {
-        traceExit("statement");
-        return printStatement();
-    }
     if (match(TOK_WHILE)) {
         traceExit("statement");
         return whileStatement();
@@ -553,17 +549,6 @@ StmtPtr Parser::forInStatement() {
 
     traceExit("forInStatement");
     return std::make_unique<ForInStmt>(keyword, variable, std::move(iterable), std::move(body));
-}
-
-/**
- * Print statement
- * Parses: PRINT(expression)
- */
-StmtPtr Parser::printStatement() {
-    consume(TOK_LPAREN, "Expected '(' after PRINT.");
-    ExprPtr expr = parseExpression(PREC_NONE);
-    consume(TOK_RPAREN, "Expected ')' after PRINT argument.");
-    return std::make_unique<PrintStmt>(std::move(expr));
 }
 
 /**
@@ -678,14 +663,13 @@ void Parser::synchronize() {
 
     while (!isAtEnd()) {
         if (previous().type == TOK_END)
-            return; // 'END' often finishes blocks
+            return; // 'END' finishes blocks
 
         switch (peek().type) {
         case TOK_CLASS:
         case TOK_FUNCTION:
         case TOK_IF:
         case TOK_WHILE:
-        case TOK_PRINT:
         case TOK_RETURN:
             return; // Statement boundaries
         default:

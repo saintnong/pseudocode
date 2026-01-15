@@ -221,6 +221,26 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
     RuntimeValue inputVal;
     inputVal.value = std::static_pointer_cast<Callable>(inputNative);
     globals->define("INPUT", inputVal);
+
+    // Define the PRINT native function
+    auto printNative = std::make_shared<NativeFunction>(
+        VARIADIC_ARITY, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+            for (size_t i = 0; i < args.size(); ++i) {
+                std::cout << stringify(args[i]);
+            }
+            // Print a newline at the end of the statement
+            std::cout << std::endl;
+
+            // Return a Null value as PRINT is a void-like operation
+            RuntimeValue nullValue;
+            nullValue.value = Null{};
+            return nullValue;
+        });
+
+    // Register PRINT in the global scope
+    RuntimeValue printVal;
+    printVal.value = std::static_pointer_cast<Callable>(printNative);
+    globals->define("PRINT", printVal);
 }
 
 /**
@@ -681,15 +701,6 @@ RuntimeValue Interpreter::visitNewExpr(NewExpr *expr) {
  */
 void Interpreter::visitExpressionStmt(ExpressionStmt *stmt) {
     evaluate(stmt->expression.get());
-}
-
-/**
- * Visit a print statement
- * Evaluates the expression and outputs it to stdout
- */
-void Interpreter::visitPrintStmt(PrintStmt *stmt) {
-    RuntimeValue value = evaluate(stmt->expression.get());
-    std::cout << stringify(value) << std::endl;
 }
 
 /**

@@ -20,7 +20,6 @@ Lexer::Lexer(const std::string &src, ErrorReporter &errReporter)
     keywords["RETURN"]     = TOK_RETURN;
     keywords["END"]        = TOK_END;
     keywords["NEW"]        = TOK_NEW;
-    keywords["PRINT"]      = TOK_PRINT;
 
     keywords["WHILE"] = TOK_WHILE;
     keywords["IF"]    = TOK_IF;

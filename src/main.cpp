@@ -154,10 +154,20 @@ int Pseudocode::runRepl() {
             if (parsed.size() == 1) {
                 if (auto *exprStmt = dynamic_cast<ExpressionStmt *>(parsed[0].get())) {
                     // Print evaluation if an expression was given to us.
-                    RuntimeValue value = interpreter.evaluate(exprStmt->expression.get());
-                    std::cout << C_GREEN << "=> " << C_RESET << stringify(value) << std::endl;
+                    try {
+                        RuntimeValue value = interpreter.evaluate(exprStmt->expression.get());
+                        std::cout << C_GREEN << "=> " << C_RESET << stringify(value) << std::endl;
+                        sessionHistory.push_back(std::move(parsed[0]));
+                    } catch (const RuntimeError &error) {
+                        // Basically a clone of what the interpreter does when it encounters error.
+                        // It's cursed to dupe it here, but I don't want to have a second try-catch
+                        // in interpreter.evaluate() so this is the only way unfortunately.
+                        Token token     = error.token;
+                        std::string msg = error.what();
+                        reporter.report(ErrorType::Runtime, token.line, token.column, msg,
+                                        token.lexeme.length());
+                    }
 
-                    sessionHistory.push_back(std::move(parsed[0]));
                     continue;
                 }
             }

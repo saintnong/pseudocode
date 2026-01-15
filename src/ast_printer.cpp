@@ -172,17 +172,6 @@ void ASTPrinter::visitReturnStmt(ReturnStmt *stmt) {
 }
 
 /**
- * Visit a Print Statement
- * Prints the print marker and recursively prints the expression to be printed.
- * @param stmt Pointer to the print statement node
- */
-void ASTPrinter::visitPrintStmt(PrintStmt *stmt) {
-    std::cout << indent << "[Print]" << std::endl;
-    IndentScope scope(*this);
-    accept(stmt->expression.get());
-}
-
-/**
  * Visit an Expression Statement
  * Prints a generic expression marker and recursively prints the expression.
  * Used for expressions that stand alone as statements (e.g., function calls).

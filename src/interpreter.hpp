@@ -72,7 +72,6 @@ public:
 
     // --- StmtVisitor ---
     void visitExpressionStmt(ExpressionStmt *stmt) override;
-    void visitPrintStmt(PrintStmt *stmt) override;
     void visitReturnStmt(ReturnStmt *stmt) override;
     void visitBlockStmt(BlockStmt *stmt) override;
     void visitIfStmt(IfStmt *stmt) override;

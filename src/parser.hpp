@@ -127,11 +127,6 @@ private:
     StmtPtr forInStatement();
 
     /**
-     * Parse a print statement
-     */
-    StmtPtr printStatement();
-
-    /**
      * Parse a return statement (with optional value)
      */
     StmtPtr returnStatement();

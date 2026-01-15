@@ -33,7 +33,6 @@ enum TokenType {
     TOK_WHILE,
     TOK_FOR,
     TOK_IN,
-    TOK_PRINT,
 
     // === Operators ===
     // Normal operators
@@ -129,8 +128,6 @@ struct Token {
             return "KEYWORD(WHILE)";
         case TOK_FOR:
             return "KEYWORD(FOR)";
-        case TOK_PRINT:
-            return "KEYWORD(PRINT)";
 
         case TOK_AND:
             return "OPERATOR(AND)";
