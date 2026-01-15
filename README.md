@@ -19,10 +19,13 @@ This repository contains a full toolchain for Pseudocode development, including 
 
 ## Examples
 
-### Fully working Bubble Sort in Pseudocode
+#### Working Bubble Sort in SCSA Pseudocode
 ![Bubble Sort in Pseudocode](images/bubblesort.png)
-### Integrated REPL
+#### Integrated REPL
 ![Pseudocode REPL](images/REPL.png)
+
+#### Good error messages!
+![Error message](images/error.png)
 
 ## Installation
 
