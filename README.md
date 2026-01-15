@@ -17,6 +17,13 @@
 
 This repository contains a full toolchain for Pseudocode development, including an interpreter, VSCode extension with highlighting and snippets.
 
+## Examples
+
+### Fully working Bubble Sort in Pseudocode
+![Bubble Sort in Pseudocode](images/bubblesort.png)
+### Integrated REPL
+![Pseudocode REPL](images/REPL.png)
+
 ## Installation
 
 Simply download the [Latest Release](https://github.com/SaintNong/pseudocode/releases/latest) for your selected operating system from here!
