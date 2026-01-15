@@ -203,51 +203,70 @@ void help() {
 }
 
 /**
- * Main Entry Point
- * Orchestrates terminal setup and command-line argument parsing.
+ * Windows-specific terminal initialization
+ * Enables ANSI escape sequences and UTF-8 output
  */
-int main(int argc, char *argv[]) {
-
+void setupTerminal() {
 #ifdef _WIN32
-    // Windows Terminal Setup: Enable ANSI color support and UTF-8
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     DWORD consoleMode;
-    GetConsoleMode(hConsole, &consoleMode);
-    consoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-    SetConsoleMode(hConsole, consoleMode);
+    if (GetConsoleMode(hConsole, &consoleMode)) {
+        consoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+        SetConsoleMode(hConsole, consoleMode);
+    }
 
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
 #endif
+}
+
+/**
+ * Main Entry Point
+ */
+int main(int argc, char *argv[]) {
+    setupTerminal();
 
     Pseudocode pseudocode;
-
-    // Handle --help or -h
-    if (argc > 1 && (std::string(argv[1]) == "--help" || std::string(argv[1]) == "-h")) {
-        help();
-        return 0;
-    }
+    std::string scriptPath;
 
     // Argument Parser
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
-        if (arg == "--debug-tokens") {
+
+        if (arg == "--help" || arg == "-h") {
+            help();
+            return 0;
+        } else if (arg == "--debug-tokens") {
             pseudocode.debugTokens = true;
         } else if (arg == "--debug-parse") {
             pseudocode.debugParse = true;
+        } else if (!arg.empty() && arg[0] == '-') {
+            std::cerr << "Unknown option: " << arg << std::endl;
+            help();
+            return 1;
         } else {
-            // Treat anything else as a potential script path
-            if (arg.size() < 5 || arg.substr(arg.size() - 5) != ".scsa") {
+            // Treat as a script path
+            if (!scriptPath.empty()) {
+                std::cerr << "Error: Only one script file can be executed at a time." << std::endl;
                 help();
                 return 1;
-            } else {
-                return pseudocode.runFile(arg);
             }
+
+            // Validate extension
+            if (arg.size() < 5 || arg.substr(arg.size() - 5) != ".scsa") {
+                std::cerr << "Error: Script file must have .scsa extension: " << arg << std::endl;
+                help();
+                return 1;
+            }
+
+            scriptPath = arg;
         }
     }
 
-    // Default: Start REPL if no file provided
-    if (argc == 1) {
+    // Decide whether to run file or REPL
+    if (!scriptPath.empty()) {
+        return pseudocode.runFile(scriptPath);
+    } else {
         return pseudocode.runRepl();
     }
 }
