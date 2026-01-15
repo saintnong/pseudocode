@@ -69,13 +69,12 @@ Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Ins
 
 # Other stuff
 ## Currently WIP Features
-- INPUT
 - NOT
 - ✨✨Object Oriented Programming✨✨
     - This was a new, painful recent addition to the SCSA pseudocode "standard", when they decided that their ancient Pascal based pseudocode had to be more **"modern"**
     - Polymorphism and inheritance are WIP
 - Case statement
-- List appending
+- List appending & length
 - ELSE IF statements
 - Better string manipulation
 
