@@ -1,6 +1,7 @@
 #include "interpreter.hpp"
 #include <functional>
 #include <iostream>
+#include <random>
 
 /**
  * Return Signal
@@ -411,6 +412,34 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
         });
 
     globals->define("BOOL", {std::static_pointer_cast<Callable>(boolNative)});
+
+    /**
+     * RANDOM native function
+     * >> RANDOM(min: Int, max: Int)
+     * => Int
+     * Returns a pseudo-random integer between min and max (inclusive).
+     */
+    auto randomNative = std::make_shared<NativeFunction>(
+        2, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+            if (!args[0].is<int>() || !args[1].is<int>()) {
+                return {0};
+            }
+
+            int min = args[0].as<int>();
+            int max = args[1].as<int>();
+
+            if (min > max)
+                std::swap(min, max);
+
+            static std::mt19937 gen(std::random_device{}());
+            std::uniform_int_distribution<> dis(min, max);
+
+            RuntimeValue retVal;
+            retVal.value = dis(gen);
+            return retVal;
+        });
+
+    globals->define("RANDOM", {std::static_pointer_cast<Callable>(randomNative)});
 }
 
 /**

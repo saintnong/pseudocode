@@ -54,6 +54,7 @@ Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Ins
     - `FLOAT(value)`: Converts a value to a float.
     - `STRING(value)`: Converts a value to its string representation.
     - `BOOL(value)`: Converts a value to a boolean.
+    - `RANDOM(min, max)`: Returns a random integer between min and max.
 - Binary operations/comparisons [+, -, *, /, >, <, >=, <=, ==]
 - Logical operators [AND, OR]
 - While and For-in loops
