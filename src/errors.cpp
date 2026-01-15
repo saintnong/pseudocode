@@ -1,5 +1,9 @@
 #include "errors.hpp"
 
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+
 /**
  * Berate the user because they had an error
  */

@@ -1,5 +1,18 @@
 #include "main.hpp"
+
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <vector>
+
 #include "ast_printer.hpp"
+#include "errors.hpp"
+#include "interpreter.hpp"
+#include "lexer.hpp"
+#include "parser.hpp"
+#include "runtime.hpp"
 
 /**
  * Read the entire contents of a file into a string
@@ -189,6 +202,14 @@ int Pseudocode::runRepl() {
     }
 
     return 0;
+}
+
+void help() {
+    std::cout << "Usage: scsa [--debug-tokens] [--debug-parse] [script.scsa]" << std::endl;
+    std::cout << "Options:" << std::endl;
+    std::cout << "  --debug-tokens   Print token table after lexing" << std::endl;
+    std::cout << "  --debug-parse    Print AST after parsing" << std::endl;
+    std::cout << "If no script is provided, an interactive REPL is started." << std::endl;
 }
 
 /**

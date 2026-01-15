@@ -1,18 +1,10 @@
 #pragma once
 
-#include <algorithm>
 #include <cctype>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
 #include <string>
 #include <vector>
 
-#include "errors.hpp"
-#include "interpreter.hpp"
-#include "lexer.hpp"
-#include "parser.hpp"
+#include "token.hpp"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -59,11 +51,3 @@ private:
      */
     static void printTokenTable(const std::vector<Token> &tokens);
 };
-
-void help() {
-    std::cout << "Usage: scsa [--debug-tokens] [--debug-parse] [script.scsa]" << std::endl;
-    std::cout << "Options:" << std::endl;
-    std::cout << "  --debug-tokens   Print token table after lexing" << std::endl;
-    std::cout << "  --debug-parse    Print AST after parsing" << std::endl;
-    std::cout << "If no script is provided, an interactive REPL is started." << std::endl;
-}
