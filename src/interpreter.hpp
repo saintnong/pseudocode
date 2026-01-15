@@ -6,6 +6,8 @@
 #include <memory>
 #include <vector>
 
+#define VARIADIC_ARITY -1
+
 /**
  * Interpreter Class
  */
@@ -27,11 +29,7 @@ public:
      * Creates an interpreter, and its environment.
      * @returns An interpreter
      */
-    Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
-        // Initiate our global environment, and begin interpreting in global scope.
-        globals     = std::make_shared<Environment>();
-        environment = globals;
-    }
+    Interpreter(ErrorReporter &reporterRef);
 
     /**
      * Execute each statement, until an error occurs.

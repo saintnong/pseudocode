@@ -1,4 +1,5 @@
 #include "interpreter.hpp"
+#include <functional>
 #include <iostream>
 
 /**
@@ -11,6 +12,10 @@ struct ReturnSignal {
     explicit ReturnSignal(RuntimeValue v) : value(v) {
     }
 };
+
+// =================================================================================================
+//           Definition and Implementation of Pseudocode Functions and Classes
+// =================================================================================================
 
 /**
  * User-Defined Function
@@ -65,6 +70,40 @@ public:
 
     std::string toString() override {
         return "<FUNCTION " + declaration->name.lexeme + ">";
+    }
+};
+
+/**
+ * Native Function
+ * Lets us add standard library functions to Pseudocode easily.
+ */
+typedef std::function<RuntimeValue(Interpreter &, std::vector<RuntimeValue>)> NativeFn;
+
+class NativeFunction : public Callable {
+    NativeFn function;
+    int _arity;
+
+public:
+    NativeFunction(int arity, NativeFn function) : function(std::move(function)), _arity(arity) {
+    }
+
+    /**
+     * Returns the number of arguments the native function expects.
+     */
+    int arity() override {
+        return _arity;
+    }
+
+    /**
+     * Invokes the underlying function.
+     * Arguments are passed from the interpreter directly to the native implementation.
+     */
+    RuntimeValue call(Interpreter &interpreter, std::vector<RuntimeValue> arguments) override {
+        return function(interpreter, arguments);
+    }
+
+    std::string toString() override {
+        return "<NATIVE FUNCTION>";
     }
 };
 
@@ -140,6 +179,49 @@ public:
         return "<CLASS INSTANCE " + name + ">";
     }
 };
+
+// =================================================================================================
+//                       Interpreter Class Implementation
+// =================================================================================================
+
+/**
+ * Creates an interpreter, and its environment.
+ * @returns An interpreter
+ */
+Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
+    // Initiate our global environment, and begin interpreting in global scope.
+    globals     = std::make_shared<Environment>();
+    environment = globals;
+
+    /**
+     * Initialise our standard library native functions.
+     */
+
+    // Define the INPUT native function
+    auto inputNative = std::make_shared<NativeFunction>(
+        VARIADIC_ARITY, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+            // Optional prompt argument
+            if (args.size() > 0) {
+                std::cout << stringify(args[0]);
+            }
+
+            // Read from standard input
+            std::string inputLine;
+            if (!std::getline(std::cin, inputLine)) {
+                inputLine = "";
+            }
+
+            // Return the result as a RuntimeValue
+            RuntimeValue result;
+            result.value = inputLine;
+            return result;
+        });
+
+    // Register INPUT in global scope
+    RuntimeValue inputVal;
+    inputVal.value = std::static_pointer_cast<Callable>(inputNative);
+    globals->define("INPUT", inputVal);
+}
 
 /**
  * Execute a single statement by dispatching to its visitor method
@@ -472,16 +554,22 @@ RuntimeValue Interpreter::visitCallExpr(CallExpr *expr) {
         arguments.push_back(evaluate(arg.get()));
     }
 
+    // Only call things that we can call
     if (!callee.is<std::shared_ptr<Callable>>()) {
-        throw RuntimeError(expr->anchor, "Can only call functions and classes.");
+        throw RuntimeError(expr->anchor, "You can only call functions and classes.");
     }
 
     auto function = callee.as<std::shared_ptr<Callable>>();
 
-    if (static_cast<int>(arguments.size()) != function->arity()) {
-        throw RuntimeError(expr->anchor, "Expected " + std::to_string(function->arity()) +
-                                             " arguments but got " +
-                                             std::to_string(arguments.size()) + ".");
+    // Check that the function's arity matches our call
+    // We skip this check if the arity is variadic (any number of arguments)
+    int arity = function->arity();
+    if (arity != VARIADIC_ARITY) {
+        if (static_cast<int>(arguments.size()) != arity) {
+            throw RuntimeError(expr->anchor, "Expected " + std::to_string(arity) +
+                                                 " arguments but got " +
+                                                 std::to_string(arguments.size()) + ".");
+        }
     }
 
     return function->call(*this, arguments);

@@ -149,9 +149,8 @@ int Pseudocode::runRepl() {
 
             // --- Execution ---
             stage = InterpreterStage::Runtime;
-            interpreter.interpret(parsed);
 
-            // Single statements
+            // Simply evaluate if only given a single expression.
             if (parsed.size() == 1) {
                 if (auto *exprStmt = dynamic_cast<ExpressionStmt *>(parsed[0].get())) {
                     // Print evaluation if an expression was given to us.
@@ -162,6 +161,9 @@ int Pseudocode::runRepl() {
                     continue;
                 }
             }
+
+            // Execute the code
+            interpreter.interpret(parsed);
 
             // --- Persistence ---
 
