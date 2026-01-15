@@ -141,7 +141,7 @@ inline std::string stringify(const RuntimeValue &v) {
      */
     if (v.is<double>()) {
         std::string text = std::to_string(v.as<double>());
-        // Trim trailing zeros for integer-like doubles
+        // Trim trailing zeros
         text.erase(text.find_last_not_of('0') + 1, std::string::npos);
         if (text.back() == '.')
             text.pop_back();

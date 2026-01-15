@@ -238,9 +238,8 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
         VARIADIC_ARITY, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
             for (size_t i = 0; i < args.size(); ++i) {
                 // Space before every element except the first
-                if (i > 0) {
+                if (i > 0)
                     std::cout << " ";
-                }
                 std::cout << stringify(args[i]);
             }
             // Print a newline at the end of the statement
@@ -266,6 +265,8 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
     auto outputNative = std::make_shared<NativeFunction>(
         VARIADIC_ARITY, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
             for (size_t i = 0; i < args.size(); ++i) {
+                if (i > 0)
+                    std::cout << " ";
                 std::cout << stringify(args[i]);
             }
 
@@ -278,6 +279,134 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
     RuntimeValue outputVal;
     outputVal.value = std::static_pointer_cast<Callable>(outputNative);
     globals->define("OUTPUT", outputVal);
+
+    /**
+     * INT native function
+     * >> INT(value: Any)
+     * => Int
+     * Converts a value to an Integer.
+     * - Floats are truncated.
+     * - Bools convert to 1 (true) or 0 (false).
+     * - Strings are parsed (returns -1 if parsing fails).
+     */
+    auto intNative = std::make_shared<NativeFunction>(
+        1, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+            if (args.empty()) return { Null{} };
+            const auto &val = args[0];
+
+            int result = 0;
+
+            if (val.is<int>()) {
+                result = val.as<int>();
+            } else if (val.is<double>()) {
+                result = static_cast<int>(val.as<double>());
+            } else if (val.is<bool>()) {
+                result = val.as<bool>() ? 1 : 0;
+            } else if (val.is<std::string>()) {
+                try {
+                    result = std::stoi(val.as<std::string>());
+                } catch (...) {
+                    // Failed conversion
+                    result = -1;
+                }
+            }
+
+            RuntimeValue retVal;
+            retVal.value = result;
+            return retVal;
+        });
+
+    globals->define("INT", { std::static_pointer_cast<Callable>(intNative) });
+
+    /**
+     * FLOAT native function
+     * >> FLOAT(value: Any)
+     * => Double
+     * Converts a value to a floating point number.
+     * - Ints are converted directly.
+     * - Strings are parsed (returns 0.0 if parsing fails).
+     */
+    auto floatNative = std::make_shared<NativeFunction>(
+        1, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+            if (args.empty()) return { Null{} };
+            const auto &val = args[0];
+
+            double result = 0.0;
+
+            if (val.is<double>()) {
+                result = val.as<double>();
+            } else if (val.is<int>()) {
+                result = static_cast<double>(val.as<int>());
+            } else if (val.is<bool>()) {
+                result = val.as<bool>() ? 1.0 : 0.0;
+            } else if (val.is<std::string>()) {
+                try {
+                    result = std::stod(val.as<std::string>());
+                } catch (...) {
+                    result = 0.0;
+                }
+            }
+
+            RuntimeValue retVal;
+            retVal.value = result;
+            return retVal;
+        });
+
+    globals->define("FLOAT", { std::static_pointer_cast<Callable>(floatNative) });
+
+    /**
+     * STRING native function
+     * >> STRING(value: Any)
+     * => String
+     * Converts any value to its string representation.
+     */
+    auto stringNative = std::make_shared<NativeFunction>(
+        1, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+            if (args.empty()) return { Null{} };
+            std::string result = stringify(args[0]);
+
+            RuntimeValue retVal;
+            retVal.value = result;
+            return retVal;
+        });
+
+    globals->define("STRING", { std::static_pointer_cast<Callable>(stringNative) });
+
+    /**
+     * BOOL native function
+     * >> BOOL(value: Any)
+     * => Boolean
+     * Converts a value to a boolean.
+     * - Numbers: 0 is false, anything else is true.
+     * - Strings: "true" (case-sensitive) is true, everything else is false.
+     * - Null: false.
+     */
+    auto boolNative = std::make_shared<NativeFunction>(
+        1, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+            if (args.empty()) return { Null{} };
+            const auto &val = args[0];
+
+            bool result = false;
+
+            if (val.is<bool>()) {
+                result = val.as<bool>();
+            } else if (val.is<int>()) {
+                result = val.as<int>() != 0;
+            } else if (val.is<double>()) {
+                result = val.as<double>() != 0.0;
+            } else if (val.is<std::string>()) {
+                std::string s = val.as<std::string>();
+                result = (s == "true" || s == "TRUE");
+            } else if (!val.is<Null>()) {
+                result = true;
+            }
+
+            RuntimeValue retVal;
+            retVal.value = result;
+            return retVal;
+        });
+
+    globals->define("BOOL", { std::static_pointer_cast<Callable>(boolNative) });
 }
 
 /**
