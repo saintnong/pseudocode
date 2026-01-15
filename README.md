@@ -32,14 +32,16 @@ This repository contains a full toolchain for Pseudocode development, including 
 Simply download the [Latest Release](https://github.com/SaintNong/pseudocode/releases/latest) for your selected operating system from here!
 
 #### Requirements
-
-- [Visual Studio Code](https://code.visualstudio.com/download) if you want syntax hightlighting and snippets
-- Currently tested operating systems:
+- Current directly supported operating systems:
     - Ubuntu 24.04
     - Windows 10
+- [Visual Studio Code](https://code.visualstudio.com/download) if you want syntax hightlighting and snippets
+
+For other operating systems or if you want to contribute, head to our [manual compile instructions](#manually-compiling-the-interpreter).
+
 
 > [!TIP]
-> It's highly recommended you check that your terminal has ANSI colour support for error messages.
+> It's highly recommended you check that your terminal has ANSI colour support for those nice error messages.
 
 ### Installing the Visual Studio Code Extension
 
@@ -60,7 +62,9 @@ code --install-extension *.vsix
 > [!NOTE]
 > This part is for people who want to contribute to the project, or have an operating system not already supported by our releases. Manually compiling the interpreter is not a requirement to use it.
 
-The project uses CMake for cross-platform support.
+#### This section requires
+- A C++ compiler with support for C++17
+- CMake 3.15+
 
 ```bash
 # Configure the project
@@ -73,7 +77,6 @@ cmake --build build --config Release
 # Linux/macOS: ./build/scsa
 # Windows: .\build\scsa.exe
 ```
-
 ## Features
 - Handwritten Lexer with locatable tokens
 - Recursive descent parser for statements/blocks
@@ -99,13 +102,7 @@ cmake --build build --config Release
     - Most features working, but the syntax requires 'this' to reference object attributes/methods
     - No inheritance and polymorphism available as of now
 
-## Requirements
-- A C++ compiler with support for C++17
-- Terminal with ANSI colour support (Not required but highly recommended)
-- Operating systems tested:
-    - Ubuntu 24.04
-    - Windows 11
-
+# Other stuff
 ## Currently WIP Features
 - INPUT
 - NOT
