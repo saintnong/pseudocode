@@ -22,6 +22,7 @@ public:
     RuntimeValue visitVariableExpr(VariableExpr *expr) override;
     RuntimeValue visitAssignExpr(AssignExpr *expr) override;
     RuntimeValue visitBinaryExpr(BinaryExpr *expr) override;
+    RuntimeValue visitUnaryExpr(UnaryExpr *expr) override;
     RuntimeValue visitCallExpr(CallExpr *expr) override;
     RuntimeValue visitGetExpr(GetExpr *expr) override;
     RuntimeValue visitArrayAccessExpr(ArrayAccessExpr *expr) override;

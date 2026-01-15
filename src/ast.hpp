@@ -13,6 +13,7 @@ struct LiteralExpr;
 struct VariableExpr;
 struct AssignExpr;
 struct BinaryExpr;
+struct UnaryExpr;
 struct CallExpr;
 struct GetExpr;
 struct ArrayAccessExpr;
@@ -42,6 +43,7 @@ struct ExprVisitor {
     virtual RuntimeValue visitVariableExpr(VariableExpr *expr)       = 0;
     virtual RuntimeValue visitAssignExpr(AssignExpr *expr)           = 0;
     virtual RuntimeValue visitBinaryExpr(BinaryExpr *expr)           = 0;
+    virtual RuntimeValue visitUnaryExpr(UnaryExpr *expr)             = 0;
     virtual RuntimeValue visitCallExpr(CallExpr *expr)               = 0;
     virtual RuntimeValue visitGetExpr(GetExpr *expr)                 = 0;
     virtual RuntimeValue visitArrayAccessExpr(ArrayAccessExpr *expr) = 0;
@@ -154,6 +156,20 @@ struct BinaryExpr : Expr {
     }
     void accept(ExprVisitor &visitor) override {
         visitor.visitBinaryExpr(this);
+    }
+};
+
+/**
+ * Unary Expression
+ * Represents operations with a single operand (e.g., -x, NOT y).
+ */
+struct UnaryExpr : Expr {
+    Token op;
+    ExprPtr right;
+    UnaryExpr(Token o, ExprPtr r) : op(o), right(std::move(r)) {
+    }
+    void accept(ExprVisitor &visitor) override {
+        visitor.visitUnaryExpr(this);
     }
 };
 

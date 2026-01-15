@@ -49,6 +49,7 @@ enum TokenKind {
     TOK_LT_OR_EQ,     // <=
     TOK_AND,          // AND
     TOK_OR,           // OR
+    TOK_NOT,          // NOT
 
     // Special operators
     TOK_DOT,   // .
@@ -132,6 +133,8 @@ struct Token {
             return "OPERATOR(AND)";
         case TOK_OR:
             return "OPERATOR(OR)";
+        case TOK_NOT:
+            return "OPERATOR(NOT)";
 
         case TOK_ASSIGN:
             return "OPERATOR(=)";

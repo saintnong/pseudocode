@@ -595,6 +595,8 @@ RuntimeValue Interpreter::evaluate(Expr *expr) {
         return visitAssignExpr(e);
     if (auto *e = dynamic_cast<BinaryExpr *>(expr))
         return visitBinaryExpr(e);
+    if (auto *e = dynamic_cast<UnaryExpr *>(expr))
+        return visitUnaryExpr(e);
     if (auto *e = dynamic_cast<CallExpr *>(expr))
         return visitCallExpr(e);
     if (auto *e = dynamic_cast<GetExpr *>(expr))
@@ -785,6 +787,30 @@ RuntimeValue Interpreter::visitAssignExpr(AssignExpr *expr) {
     }
 
     return value;
+}
+
+/**
+ * Visit: Unary Expression
+ * Handles logical negation (NOT) and numeric negation (-).
+ * @param expr Unary node containing operator and operand
+ * @return Result of the operation
+ */
+RuntimeValue Interpreter::visitUnaryExpr(UnaryExpr *expr) {
+    RuntimeValue right = evaluate(expr->right.get());
+
+    // Switch for both NOT and -
+    switch (expr->op.type) {
+    case TOK_MINUS:
+        checkNumberOperand(expr->op, right);
+        if (right.is<double>()) {
+            return {-right.as<double>()};
+        }
+        return {-right.as<int>()};
+    case TOK_NOT:
+        return {!isTruthy(right)};
+    default:
+        throw RuntimeError(expr->op, "Invalid unary operator.");
+    }
 }
 
 /**

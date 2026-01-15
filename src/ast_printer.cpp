@@ -213,6 +213,19 @@ RuntimeValue ASTPrinter::visitBinaryExpr(BinaryExpr *expr) {
 }
 
 /**
+ * Visit a Unary Expression
+ * Prints the operator and recursively prints the operand.
+ * @param expr Pointer to the unary expression node
+ */
+RuntimeValue ASTPrinter::visitUnaryExpr(UnaryExpr *expr) {
+    std::cout << indent << "Unary (" << expr->op.lexeme << ")" << std::endl;
+    IndentScope scope(*this);
+    accept(expr->right.get());
+
+    return {Null{}};
+}
+
+/**
  * Visit an Assignment Expression
  * Prints the assignment marker, the target (variable), and the value being assigned.
  * @param expr Pointer to the assignment expression node
