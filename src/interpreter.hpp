@@ -7,34 +7,44 @@
 #include <vector>
 
 /**
+ * Variadic Arity Constant
+ * Used to indicate that a function accepts a variable number of arguments.
+ */
+#define VARIADIC_ARITY -1
+
+/**
  * Interpreter Class
+ * The core execution engine for the Pseudocode language.
+ * Implements the Visitor pattern for both Expressions and Statements to traverse and execute the
+ * AST.
  */
 class Interpreter : public ExprVisitor, public StmtVisitor {
 public:
     /**
-     * Global scope
-     * Holds native functions and top-level variables.
+     * Global Scope
+     * Holds native functions (std-lib) and top-level variables.
+     * Persistent throughout the lifetime of the interpreter.
      */
     std::shared_ptr<Environment> globals;
 
     /**
-     * Current scope
-     * The current scope that the local environment the interpreter is operating in.
+     * Current Scope
+     * The environment in which variables are currently being looked up and defined.
+     * Changes as the interpreter enters/exits blocks and function calls.
      */
     std::shared_ptr<Environment> environment;
 
     /**
-     * Creates an interpreter, and its environment.
-     * @returns An interpreter
+     * Initialize the interpreter
+     * Sets up the global environment and registers native functions.
+     * @param reporterRef Reference to error reporter for runtime error handling
      */
-    Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
-        // Initiate our global environment, and begin interpreting in global scope.
-        globals     = std::make_shared<Environment>();
-        environment = globals;
-    }
+    Interpreter(ErrorReporter &reporterRef);
 
     /**
-     * Execute each statement, until an error occurs.
+     * Execute a program
+     * The main entry point for running a list of statements.
+     * @param statements Vector of AST statement nodes to execute
      */
     void interpret(const std::vector<StmtPtr> &statements) {
         try {
@@ -42,8 +52,7 @@ public:
                 execute(stmt.get());
             }
         } catch (const RuntimeError &error) {
-            // Runtime error caught.
-            // Report it nicely.
+            // Catch and format runtime errors for the user
             Token token     = error.token;
             std::string msg = error.what();
             reporter.report(ErrorType::Runtime, token.line, token.column, msg,
@@ -52,16 +61,24 @@ public:
     }
 
     /**
-     * Expression evaluator
-     * Evaluates any expression into a Runtime Value.
+     * Evaluate an expression
+     * Dispatches to the appropriate visit method and returns the resulting value.
+     * @param expr Pointer to the expression node to evaluate
+     * @return The resulting RuntimeValue
      */
     RuntimeValue evaluate(Expr *expr);
 
-    // Public API for executing blocks
-    // Used by Callables to execute function body.
+    /**
+     * Execute a block of statements in a specific environment
+     * Used for function bodies and local scopes.
+     * @param statements The statements within the block
+     * @param env The environment (scope) to use for execution
+     */
     void executeBlock(const std::vector<StmtPtr> &statements, std::shared_ptr<Environment> env);
 
-    // --- ExprVisitor ---
+    // --- ExprVisitor Implementation ---
+    // These methods return a RuntimeValue resulting from evaluating the expression node.
+
     RuntimeValue visitLiteralExpr(LiteralExpr *expr) override;
     RuntimeValue visitVariableExpr(VariableExpr *expr) override;
     RuntimeValue visitAssignExpr(AssignExpr *expr) override;
@@ -72,9 +89,10 @@ public:
     RuntimeValue visitArrayLitExpr(ArrayLitExpr *expr) override;
     RuntimeValue visitNewExpr(NewExpr *expr) override;
 
-    // --- StmtVisitor ---
+    // --- StmtVisitor Implementation ---
+    // These methods execute the statement node and do not return a value.
+
     void visitExpressionStmt(ExpressionStmt *stmt) override;
-    void visitPrintStmt(PrintStmt *stmt) override;
     void visitReturnStmt(ReturnStmt *stmt) override;
     void visitBlockStmt(BlockStmt *stmt) override;
     void visitIfStmt(IfStmt *stmt) override;
@@ -85,19 +103,41 @@ public:
 
     /**
      * Error Reporter
-     * Reporter which reports errors at a specific token.
+     * Used by the interpreter to communicate runtime issues to the user.
      */
     ErrorReporter &reporter;
 
 private:
-    // Execute a statement
+    /**
+     * Internal statement execution helper
+     * @param stmt Raw pointer to the statement to execute
+     */
     void execute(Stmt *stmt);
 
-    // === Truthiness Calculators ===
+    // --- Internal Helpers ---
 
+    /**
+     * Check if a value is considered 'true' in Pseudocode.
+     * Rules: null is false, booleans are their literal value, everything else is true.
+     */
     bool isTruthy(const RuntimeValue &object);
+
+    /**
+     * Check for equality between two runtime values.
+     * Handles type mismatches and deep comparison for scalars.
+     */
     bool isEqual(const RuntimeValue &a, const RuntimeValue &b);
+
+    /**
+     * Validate that an operand is a number (int or double).
+     * @throws RuntimeError if validation fails
+     */
     void checkNumberOperand(const Token &operatorToken, const RuntimeValue &operand);
+
+    /**
+     * Validate that two operands are both numbers.
+     * @throws RuntimeError if validation fails
+     */
     void checkNumberOperands(const Token &operatorToken, const RuntimeValue &left,
                              const RuntimeValue &right);
 };

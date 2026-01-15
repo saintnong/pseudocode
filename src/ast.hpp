@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "runtime.hpp"
@@ -22,7 +21,6 @@ struct NewExpr;
 
 // Statements
 struct ExpressionStmt;
-struct PrintStmt;
 struct ReturnStmt;
 struct BlockStmt;
 struct IfStmt;
@@ -58,7 +56,6 @@ struct ExprVisitor {
 struct StmtVisitor {
     virtual ~StmtVisitor()                                 = default;
     virtual void visitExpressionStmt(ExpressionStmt *stmt) = 0;
-    virtual void visitPrintStmt(PrintStmt *stmt)           = 0;
     virtual void visitReturnStmt(ReturnStmt *stmt)         = 0;
     virtual void visitBlockStmt(BlockStmt *stmt)           = 0;
     virtual void visitIfStmt(IfStmt *stmt)                 = 0;
@@ -246,19 +243,6 @@ struct ExpressionStmt : Stmt {
     }
     void accept(StmtVisitor &visitor) override {
         visitor.visitExpressionStmt(this);
-    }
-};
-
-/**
- * Print Statement
- * Evaluates an expression and prints the result to standard output.
- */
-struct PrintStmt : Stmt {
-    ExprPtr expression;
-    PrintStmt(ExprPtr e) : expression(std::move(e)) {
-    }
-    void accept(StmtVisitor &visitor) override {
-        visitor.visitPrintStmt(this);
     }
 };
 

@@ -4,7 +4,6 @@
 #include "errors.hpp"
 
 #include <functional>
-#include <iostream>
 
 /**
  * Parser - Converts a stream of tokens into an Abstract Syntax Tree (AST)
@@ -56,14 +55,14 @@ private:
     };
 
     // --- Token Navigation ---
-    bool match(TokenType type);
-    bool check(TokenType type);
+    bool match(TokenKind type);
+    bool check(TokenKind type);
     Token advance();
-    Token consume(TokenType type, std::string message);
+    Token consume(TokenKind type, std::string message);
     Token peek();
     Token previous();
     bool isAtEnd();
-    Precedence getPrecedence(TokenType type);
+    Precedence getPrecedence(TokenKind type);
 
     // --- Debug Tracing ---
     /**
@@ -125,11 +124,6 @@ private:
      * Parse a for-in loop with variable, iterable, and body
      */
     StmtPtr forInStatement();
-
-    /**
-     * Parse a print statement
-     */
-    StmtPtr printStatement();
 
     /**
      * Parse a return statement (with optional value)

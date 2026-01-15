@@ -20,7 +20,6 @@ Lexer::Lexer(const std::string &src, ErrorReporter &errReporter)
     keywords["RETURN"]     = TOK_RETURN;
     keywords["END"]        = TOK_END;
     keywords["NEW"]        = TOK_NEW;
-    keywords["PRINT"]      = TOK_PRINT;
 
     keywords["WHILE"] = TOK_WHILE;
     keywords["IF"]    = TOK_IF;
@@ -107,7 +106,7 @@ bool Lexer::match(char expected) {
  * Add a token to the token list, extracting lexeme from source
  * @param type The type of token to add
  */
-void Lexer::addToken(TokenType type) {
+void Lexer::addToken(TokenKind type) {
     std::string text = source.substr(start, current - start);
     size_t length    = current - start;
     tokens.push_back({type, text, line, startColumn, length});
@@ -118,7 +117,7 @@ void Lexer::addToken(TokenType type) {
  * @param type The type of token to add
  * @param literal The literal value for the token
  */
-void Lexer::addToken(TokenType type, std::string literal) {
+void Lexer::addToken(TokenKind type, std::string literal) {
     size_t length = current - start;
     tokens.push_back({type, literal, line, startColumn, length});
 }
@@ -218,7 +217,7 @@ void Lexer::identifier() {
         advance();
 
     std::string text = source.substr(start, current - start);
-    TokenType type   = TOK_IDENTIFIER;
+    TokenKind type   = TOK_IDENTIFIER;
 
     // Check if the identifier is actually a reserved keyword
     if (keywords.find(text) != keywords.end()) {

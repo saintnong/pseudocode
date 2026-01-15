@@ -1,10 +1,9 @@
 #pragma once
 
 #include <string>
-#include <vector>
 
 // Every type of token the program can encounter
-enum TokenType {
+enum TokenKind {
     // End of file
     TOK_EOF,
 
@@ -33,7 +32,6 @@ enum TokenType {
     TOK_WHILE,
     TOK_FOR,
     TOK_IN,
-    TOK_PRINT,
 
     // === Operators ===
     // Normal operators
@@ -69,7 +67,7 @@ enum TokenType {
  * The smallest meaningful unit in a langauge.
  */
 struct Token {
-    TokenType type;
+    TokenKind type;
     std::string lexeme;
 
     /**
@@ -129,8 +127,6 @@ struct Token {
             return "KEYWORD(WHILE)";
         case TOK_FOR:
             return "KEYWORD(FOR)";
-        case TOK_PRINT:
-            return "KEYWORD(PRINT)";
 
         case TOK_AND:
             return "OPERATOR(AND)";

@@ -1,69 +1,58 @@
 #pragma once
 
-#include <algorithm>
-#include <cctype>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
 #include <string>
 #include <vector>
 
-#include "errors.hpp"
-#include "interpreter.hpp"
-#include "lexer.hpp"
-#include "parser.hpp"
-
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
+#include "token.hpp"
 
 /**
- * Main Pseudocode interpreter class
- * Provides both file execution and interactive REPL modes
- * Exposes a public API for running pseudocode programs
+ * Pseudocode Interpreter Entry Point
+ * This class coordinates the lexing, parsing, and execution of Pseudocode programs.
+ * It provides high-level APIs for running code from files or in an interactive REPL.
  */
 class Pseudocode {
 public:
     /**
-     * Execute pseudocode from a file
-     * @param path Path to the pseudocode file to run
-     * @return 0 on success, 1 on error
+     * Run Code from File
+     * Reads the specified file, tokenizes, parses, and executes the contents.
+     * @param path The absolute or relative system path to the source file
+     * @return 0 if the program executed successfully, 1 if errors occurred
      */
     int runFile(const std::string &path);
 
     /**
-     * Run an interactive REPL (Read-Eval-Print-Loop)
-     * Allows users to type pseudocode lines and see tokenization
-     * @return Always returns 0
+     * Start Interactive REPL
+     * Launches a Read-Eval-Print-Loop where the user can enter code line-by-line.
+     * Useful for testing expressions and small code snippets.
+     * @return 0 upon termination of the REPL (e.g., EOF or EXIT command)
      */
     int runRepl();
 
     /**
-     * Optional debug modes for debugging tokenization and parsing
+     * Debugging: Tokenization
+     * If true, the interpreter will print a formatted table of tokens after scanning.
      */
-    bool debugTokens = false; // Print token table after Lexing
-    bool debugParse  = false; // Print AST after Parsing
+    bool debugTokens = false;
+
+    /**
+     * Debugging: Parsing
+     * If true, the interpreter will print the Abstract Syntax Tree (AST) after parsing.
+     */
+    bool debugParse = false;
+
 private:
     /**
-     * Read entire file contents into a string
-     * @param path Path to the file to read
-     * @return File contents as string
+     * Internal Utility: File Loader
+     * @param path Path to the file to be read
+     * @return The complete source code as a single string
+     * @throws std::runtime_error if the file cannot be opened
      */
     static std::string readFile(const std::string &path);
 
     /**
-     * Print tokens in a formatted table
-     * @param tokens Vector of tokens to display
+     * Internal Utility: Token Visualization
+     * Prints a human-readable table to stdout showing token types, lexemes, and locations.
+     * @param tokens The list of tokens to display
      */
     static void printTokenTable(const std::vector<Token> &tokens);
 };
-
-void help() {
-    std::cout << "Usage: scsa [--debug-tokens] [--debug-parse] [script.scsa]" << std::endl;
-    std::cout << "Options:" << std::endl;
-    std::cout << "  --debug-tokens   Print token table after lexing" << std::endl;
-    std::cout << "  --debug-parse    Print AST after parsing" << std::endl;
-    std::cout << "If no script is provided, an interactive REPL is started." << std::endl;
-}

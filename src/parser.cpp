@@ -1,5 +1,7 @@
 #include "parser.hpp"
 
+#include <iostream>
+
 /**
  * Parser Constructor
  * Initializes the parser with a token stream and source code for error reporting
@@ -135,7 +137,7 @@ ExprPtr Parser::parseExpression(Precedence precedence) {
     return left;
 }
 
-Parser::Precedence Parser::getPrecedence(TokenType type) {
+Parser::Precedence Parser::getPrecedence(TokenKind type) {
     /**
      * Return the precedence level of a token operator
      * Used by Pratt parser to determine parsing order
@@ -461,10 +463,6 @@ StmtPtr Parser::statement() {
         traceExit("statement");
         return returnStatement();
     }
-    if (match(TOK_PRINT)) {
-        traceExit("statement");
-        return printStatement();
-    }
     if (match(TOK_WHILE)) {
         traceExit("statement");
         return whileStatement();
@@ -556,17 +554,6 @@ StmtPtr Parser::forInStatement() {
 }
 
 /**
- * Print statement
- * Parses: PRINT(expression)
- */
-StmtPtr Parser::printStatement() {
-    consume(TOK_LPAREN, "Expected '(' after PRINT.");
-    ExprPtr expr = parseExpression(PREC_NONE);
-    consume(TOK_RPAREN, "Expected ')' after PRINT argument.");
-    return std::make_unique<PrintStmt>(std::move(expr));
-}
-
-/**
  * Return statement
  * Parses: RETURN [expression]
  * Expression is optional
@@ -632,7 +619,7 @@ Token Parser::previous() {
 /**
  * Check if current token matches given type
  */
-bool Parser::check(TokenType type) {
+bool Parser::check(TokenKind type) {
     if (isAtEnd())
         return false;
     return peek().type == type;
@@ -641,7 +628,7 @@ bool Parser::check(TokenType type) {
 /**
  * If current token matches type, consume it and return true
  */
-bool Parser::match(TokenType type) {
+bool Parser::match(TokenKind type) {
     if (check(type)) {
         advance();
         return true;
@@ -652,7 +639,7 @@ bool Parser::match(TokenType type) {
 /**
  * Consume a token of expected type or report an error
  */
-Token Parser::consume(TokenType type, std::string message) {
+Token Parser::consume(TokenKind type, std::string message) {
     if (check(type))
         return advance();
 
@@ -678,14 +665,13 @@ void Parser::synchronize() {
 
     while (!isAtEnd()) {
         if (previous().type == TOK_END)
-            return; // 'END' often finishes blocks
+            return; // 'END' finishes blocks
 
         switch (peek().type) {
         case TOK_CLASS:
         case TOK_FUNCTION:
         case TOK_IF:
         case TOK_WHILE:
-        case TOK_PRINT:
         case TOK_RETURN:
             return; // Statement boundaries
         default:

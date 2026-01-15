@@ -38,6 +38,7 @@ Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Ins
 - Working tree walk interpreter
     - Shared pointers for garbage collection
     - Variable scopes
+- Native Functions API
 - Good error reporting which is anchored to nearest token for easy debugging
 - Visual Studio Code Highlighting Extension
 ### Supported Pseudocode Language Features
@@ -45,7 +46,17 @@ Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Ins
     - [int, float, string, bool, Null]
     - Functions and instances as variables
 - Local/Global scope separation
-- PRINT library function
+- Standard Library Functions:
+    - `PRINT(...args)`: Prints values followed by a newline.
+    - `OUTPUT(...args)`: Prints values without a trailing newline.
+    - `INPUT(prompt?)`: Reads a line of input from the user.
+    - `INT(value)`: Converts a value to an integer.
+    - `FLOAT(value)`: Converts a value to a float.
+    - `STRING(value)`: Converts a value to its string representation.
+    - `BOOL(value)`: Converts a value to a boolean.
+    - `RANDOM(min, max)`: Returns a random integer between min and max.
+    - `TIME()`: Returns current system time in seconds.
+    - `TYPE(value)`: Returns the type of the value as a string.
 - Binary operations/comparisons [+, -, *, /, >, <, >=, <=, ==]
 - Logical operators [AND, OR]
 - While and For-in loops
