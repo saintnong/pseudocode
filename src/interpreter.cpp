@@ -1,4 +1,5 @@
 #include "interpreter.hpp"
+#include <chrono>
 #include <functional>
 #include <iostream>
 #include <random>
@@ -440,6 +441,26 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
         });
 
     globals->define("RANDOM", {std::static_pointer_cast<Callable>(randomNative)});
+
+    /**
+     * TIME native function
+     * >> TIME()
+     * => Double
+     * Returns the current system time in seconds since the epoch.
+     */
+    auto timeNative = std::make_shared<NativeFunction>(
+        0, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+            (void) args;
+            auto now = std::chrono::system_clock::now();
+            auto duration =
+                std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
+
+            RuntimeValue retVal;
+            retVal.value = static_cast<double>(duration.count()) / 1000.0;
+            return retVal;
+        });
+
+    globals->define("TIME", {std::static_pointer_cast<Callable>(timeNative)});
 }
 
 /**
