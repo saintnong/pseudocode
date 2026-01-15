@@ -109,7 +109,7 @@ bool Lexer::match(char expected) {
  */
 void Lexer::addToken(TokenType type) {
     std::string text = source.substr(start, current - start);
-    size_t length       = current - start;
+    size_t length    = current - start;
     tokens.push_back({type, text, line, startColumn, length});
 }
 
