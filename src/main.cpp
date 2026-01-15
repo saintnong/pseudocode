@@ -199,6 +199,10 @@ void help() {
     std::cout << "Options:" << std::endl;
     std::cout << "  --debug-tokens   Print token table after lexing" << std::endl;
     std::cout << "  --debug-parse    Print AST after parsing" << std::endl;
+    std::cout << "" << std::endl;
+    std::cout << "Environment Variables:" << std::endl;
+    std::cout << "  NO_COLOR         Disable ANSI color output (https://no-color.org)" << std::endl;
+    std::cout << "" << std::endl;
     std::cout << "If no script is provided, an interactive REPL is started." << std::endl;
 }
 
@@ -225,6 +229,7 @@ void setupTerminal() {
  */
 int main(int argc, char *argv[]) {
     setupTerminal();
+    initColors();
 
     Pseudocode pseudocode;
     std::string scriptPath;

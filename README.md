@@ -77,6 +77,10 @@ Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Ins
 - ELSE IF statements
 - Better string manipulation
 
+## Environment Variables
+The interpreter supports the following environment variables:
+- `NO_COLOR`: If set, suppresses all ANSI escape sequences for color output. Follows the [NO_COLOR](https://no-color.org) informal standard.
+
 ## Future Plans
 - Unit and integration testing with CI/CD
 - Custom Bytecode VM which requires:
