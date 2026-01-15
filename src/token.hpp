@@ -4,7 +4,7 @@
 #include <vector>
 
 // Every type of token the program can encounter
-enum TokenType {
+enum TokenKind {
     // End of file
     TOK_EOF,
 
@@ -68,7 +68,7 @@ enum TokenType {
  * The smallest meaningful unit in a langauge.
  */
 struct Token {
-    TokenType type;
+    TokenKind type;
     std::string lexeme;
 
     /**

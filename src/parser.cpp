@@ -135,7 +135,7 @@ ExprPtr Parser::parseExpression(Precedence precedence) {
     return left;
 }
 
-Parser::Precedence Parser::getPrecedence(TokenType type) {
+Parser::Precedence Parser::getPrecedence(TokenKind type) {
     /**
      * Return the precedence level of a token operator
      * Used by Pratt parser to determine parsing order
@@ -617,7 +617,7 @@ Token Parser::previous() {
 /**
  * Check if current token matches given type
  */
-bool Parser::check(TokenType type) {
+bool Parser::check(TokenKind type) {
     if (isAtEnd())
         return false;
     return peek().type == type;
@@ -626,7 +626,7 @@ bool Parser::check(TokenType type) {
 /**
  * If current token matches type, consume it and return true
  */
-bool Parser::match(TokenType type) {
+bool Parser::match(TokenKind type) {
     if (check(type)) {
         advance();
         return true;
@@ -637,7 +637,7 @@ bool Parser::match(TokenType type) {
 /**
  * Consume a token of expected type or report an error
  */
-Token Parser::consume(TokenType type, std::string message) {
+Token Parser::consume(TokenKind type, std::string message) {
     if (check(type))
         return advance();
 

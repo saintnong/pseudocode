@@ -31,7 +31,7 @@ private:
     // Current column position in the current line (0-indexed)
     size_t column;
     // Map of keywords to their token types
-    std::unordered_map<std::string, TokenType> keywords;
+    std::unordered_map<std::string, TokenKind> keywords;
 
     // Error reporter for communicating issues
     ErrorReporter &reporter;
@@ -74,12 +74,12 @@ private:
     /**
      * Add a token to the token list from current span
      */
-    void addToken(TokenType type);
+    void addToken(TokenKind type);
 
     /**
      * Add a token with a specific literal value
      */
-    void addToken(TokenType type, std::string literal);
+    void addToken(TokenKind type, std::string literal);
 
     /**
      * Report a lexical error with context

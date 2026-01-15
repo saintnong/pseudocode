@@ -1,15 +1,9 @@
 #pragma once
 
-#include <cctype>
 #include <string>
 #include <vector>
 
 #include "token.hpp"
-
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
 
 /**
  * Pseudocode Interpreter Entry Point

@@ -7,6 +7,11 @@
 #include <stdexcept>
 #include <vector>
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+
 #include "ast_printer.hpp"
 #include "errors.hpp"
 #include "interpreter.hpp"
