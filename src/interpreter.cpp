@@ -291,7 +291,8 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
      */
     auto intNative = std::make_shared<NativeFunction>(
         1, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
-            if (args.empty()) return { Null{} };
+            if (args.empty())
+                return {Null{}};
             const auto &val = args[0];
 
             int result = 0;
@@ -316,7 +317,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
             return retVal;
         });
 
-    globals->define("INT", { std::static_pointer_cast<Callable>(intNative) });
+    globals->define("INT", {std::static_pointer_cast<Callable>(intNative)});
 
     /**
      * FLOAT native function
@@ -328,7 +329,8 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
      */
     auto floatNative = std::make_shared<NativeFunction>(
         1, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
-            if (args.empty()) return { Null{} };
+            if (args.empty())
+                return {Null{}};
             const auto &val = args[0];
 
             double result = 0.0;
@@ -352,7 +354,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
             return retVal;
         });
 
-    globals->define("FLOAT", { std::static_pointer_cast<Callable>(floatNative) });
+    globals->define("FLOAT", {std::static_pointer_cast<Callable>(floatNative)});
 
     /**
      * STRING native function
@@ -362,7 +364,8 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
      */
     auto stringNative = std::make_shared<NativeFunction>(
         1, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
-            if (args.empty()) return { Null{} };
+            if (args.empty())
+                return {Null{}};
             std::string result = stringify(args[0]);
 
             RuntimeValue retVal;
@@ -370,7 +373,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
             return retVal;
         });
 
-    globals->define("STRING", { std::static_pointer_cast<Callable>(stringNative) });
+    globals->define("STRING", {std::static_pointer_cast<Callable>(stringNative)});
 
     /**
      * BOOL native function
@@ -383,7 +386,8 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
      */
     auto boolNative = std::make_shared<NativeFunction>(
         1, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
-            if (args.empty()) return { Null{} };
+            if (args.empty())
+                return {Null{}};
             const auto &val = args[0];
 
             bool result = false;
@@ -396,7 +400,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
                 result = val.as<double>() != 0.0;
             } else if (val.is<std::string>()) {
                 std::string s = val.as<std::string>();
-                result = (s == "true" || s == "TRUE");
+                result        = (s == "true" || s == "TRUE");
             } else if (!val.is<Null>()) {
                 result = true;
             }
@@ -406,7 +410,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
             return retVal;
         });
 
-    globals->define("BOOL", { std::static_pointer_cast<Callable>(boolNative) });
+    globals->define("BOOL", {std::static_pointer_cast<Callable>(boolNative)});
 }
 
 /**
