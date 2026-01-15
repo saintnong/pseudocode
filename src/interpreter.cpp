@@ -461,6 +461,43 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
         });
 
     globals->define("TIME", {std::static_pointer_cast<Callable>(timeNative)});
+
+    /**
+     * TYPE native function
+     * >> TYPE(value: Any)
+     * => String
+     * Returns a string representation of the value's type.
+     */
+    auto typeNative = std::make_shared<NativeFunction>(
+        1, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+            if (args.empty())
+                return {"NULL"};
+            const auto &val = args[0];
+
+            std::string typeStr = "UNKNOWN";
+            if (val.is<int>())
+                typeStr = "INT";
+            else if (val.is<double>())
+                typeStr = "FLOAT";
+            else if (val.is<bool>())
+                typeStr = "BOOL";
+            else if (val.is<std::string>())
+                typeStr = "STRING";
+            else if (val.is<Null>())
+                typeStr = "NULL";
+            else if (val.is<std::shared_ptr<std::vector<RuntimeValue>>>())
+                typeStr = "LIST";
+            else if (val.is<std::shared_ptr<Callable>>())
+                typeStr = "CALLABLE";
+            else if (val.is<std::shared_ptr<Instance>>())
+                typeStr = "INSTANCE";
+
+            RuntimeValue retVal;
+            retVal.value = typeStr;
+            return retVal;
+        });
+
+    globals->define("TYPE", {std::static_pointer_cast<Callable>(typeNative)});
 }
 
 /**

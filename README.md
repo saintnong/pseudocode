@@ -56,6 +56,7 @@ Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Ins
     - `BOOL(value)`: Converts a value to a boolean.
     - `RANDOM(min, max)`: Returns a random integer between min and max.
     - `TIME()`: Returns current system time in seconds.
+    - `TYPE(value)`: Returns the type of the value as a string.
 - Binary operations/comparisons [+, -, *, /, >, <, >=, <=, ==]
 - Logical operators [AND, OR]
 - While and For-in loops
