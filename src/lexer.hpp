@@ -21,17 +21,17 @@ private:
     // Output tokens collected during scanning
     std::vector<Token> tokens;
     // Start position of current token in source
-    int start;
+    size_t start;
     // Current position in source
     size_t current;
     // Current line number (for error reporting)
-    int line;
+    size_t line;
     // Line number at the start of current token
-    int startLine;
+    size_t startLine;
     // Column at the start of current token (0-indexed)
-    int startColumn;
+    size_t startColumn;
     // Current column position in the current line (0-indexed)
-    int column;
+    size_t column;
     // Map of keywords to their token types
     std::unordered_map<std::string, TokenType> keywords;
 
