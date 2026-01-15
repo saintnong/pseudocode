@@ -910,6 +910,11 @@ RuntimeValue Interpreter::visitBinaryExpr(BinaryExpr *expr) {
         result.value = isEqual(left, right);
         break;
     }
+    case TOK_NOT_EQUAL: {
+        // Generic Inequality Check
+        result.value = !isEqual(left, right);
+        break;
+    }
     case TOK_AND: {
         // Logical AND (short-circuiting)
         if (!isTruthy(left))

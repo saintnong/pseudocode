@@ -262,6 +262,13 @@ void Lexer::scanToken() {
     case ':':
         addToken(TOK_COLON);
         break;
+    case '!':
+        if (match('=')) {
+            addToken(TOK_NOT_EQUAL);
+        } else {
+            reportError(ErrorType::Syntax, "Unexpected character '!'. Did you mean '!=' ?");
+        }
+        break;
 
     /**
      * Arithmetic tokens

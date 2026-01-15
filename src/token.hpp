@@ -43,6 +43,7 @@ enum TokenKind {
 
     // Comparison operators
     TOK_EQUAL,        // ==
+    TOK_NOT_EQUAL,    // !=
     TOK_GREATER_THAN, // >
     TOK_GT_OR_EQ,     // >=
     TOK_LESS_THAN,    // <
@@ -150,6 +151,8 @@ struct Token {
 
         case TOK_EQUAL:
             return "OPERATOR(==)";
+        case TOK_NOT_EQUAL:
+            return "OPERATOR(!=)";
         case TOK_GREATER_THAN:
             return "OPERATOR(>)";
         case TOK_GT_OR_EQ:

@@ -85,7 +85,7 @@ ExprPtr Parser::parseExpression(Precedence precedence) {
         break;
     case TOK_MINUS:
     case TOK_NOT:
-        left = std::make_unique<UnaryExpr>(prefixToken, parseExpression(PREC_CALL));
+        left = std::make_unique<UnaryExpr>(prefixToken, parseExpression(PREC_UNARY));
         break;
     default:
         errorAt(prefixToken, "Expected expression.");
@@ -103,6 +103,7 @@ ExprPtr Parser::parseExpression(Precedence precedence) {
         case TOK_MULTIPLY:
         case TOK_DIVIDE:
         case TOK_EQUAL:
+        case TOK_NOT_EQUAL:
         case TOK_GREATER_THAN:
         case TOK_GT_OR_EQ:
         case TOK_LESS_THAN:
@@ -145,6 +146,7 @@ Parser::Precedence Parser::getPrecedence(TokenKind type) {
     case TOK_AND:
         return PREC_AND;
     case TOK_EQUAL:
+    case TOK_NOT_EQUAL:
         return PREC_EQUALITY;
     case TOK_LESS_THAN:
     case TOK_GREATER_THAN:
