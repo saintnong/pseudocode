@@ -17,17 +17,52 @@
 
 This repository contains a full toolchain for Pseudocode development, including an interpreter, VSCode extension with highlighting and snippets.
 
-### Installation (Linux Instructions)
-```bash
-# Build interpreter
-make
+## Installation
 
-# Install vscode extension
-cd vscode
-npx vsce package # (You might need to install vsce)
-code --install-extension *.vsix # Or just right click it, and click install
+Simply download the [Latest Release](https://github.com/SaintNong/pseudocode/releases/latest) for your selected operating system from here!
+
+#### Requirements
+
+- [Visual Studio Code](https://code.visualstudio.com/download) if you want syntax hightlighting and snippets
+- Currently tested operating systems:
+    - Ubuntu 24.04
+    - Windows 10
+
+> [!TIP]
+> It's highly recommended you check that your terminal has ANSI colour support for error messages.
+
+### Installing the Visual Studio Code Extension
+
+To enable syntax highlighting and snippets for the `.scsa` files:
+```bash
+# You can download the zip file if you do not have git
+git clone https://github.com/SaintNong/pseudocode.git
+cd pseudocode/vscode
+# Package the extension (requires npm)
+# You will need to select 'yes' a few times
+npx vsce package
+# Install vsix file.
+code --install-extension *.vsix
 ```
 
+### Manually compiling the Interpreter
+
+> [!NOTE]
+> This part is for people who want to contribute to the project, or have an operating system not already supported by our releases. Manually compiling the interpreter is not a requirement to use it.
+
+The project uses CMake for cross-platform support.
+
+```bash
+# Configure the project
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+# Build the executable
+cmake --build build --config Release
+
+# The executable should now be in the 'build' directory
+# Linux/macOS: ./build/scsa
+# Windows: .\build\scsa.exe
+```
 
 ## Features
 - Handwritten Lexer with locatable tokens
