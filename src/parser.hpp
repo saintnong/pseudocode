@@ -44,14 +44,15 @@ private:
     enum Precedence {
         PREC_NONE       = 0,
         PREC_ASSIGNMENT = 10, // =
-        PREC_OR         = 12, // AND
-        PREC_AND        = 14, // OR
-        PREC_EQUALITY   = 20, // ==
-        PREC_COMPARISON = 30, // < > <= >=
+        PREC_OR         = 12, // OR
+        PREC_AND        = 14, // AND
+        PREC_EQUALITY   = 20, // == !=
+        PREC_COMPARISON = 30, // < > <= >= IN
         PREC_TERM       = 40, // + -
         PREC_FACTOR     = 50, // * /
-        PREC_CALL       = 60, // . () []
-        PREC_PRIMARY    = 70  // (highest)
+        PREC_UNARY      = 60, // NOT - (unary)
+        PREC_CALL       = 70, // . () []
+        PREC_PRIMARY    = 80  // (highest)
     };
 
     // --- Token Navigation ---

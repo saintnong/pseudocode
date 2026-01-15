@@ -29,6 +29,7 @@ Lexer::Lexer(const std::string &src, ErrorReporter &errReporter)
     keywords["FOR"]   = TOK_FOR;
     keywords["AND"]   = TOK_AND;
     keywords["OR"]    = TOK_OR;
+    keywords["NOT"]   = TOK_NOT;
 
     keywords["TRUE"]  = TOK_TRUE;
     keywords["FALSE"] = TOK_FALSE;
@@ -260,6 +261,13 @@ void Lexer::scanToken() {
         break;
     case ':':
         addToken(TOK_COLON);
+        break;
+    case '!':
+        if (match('=')) {
+            addToken(TOK_NOT_EQUAL);
+        } else {
+            reportError(ErrorType::Syntax, "Unexpected character '!'. Did you mean '!=' ?");
+        }
         break;
 
     /**
