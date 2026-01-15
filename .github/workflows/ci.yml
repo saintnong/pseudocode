@@ -1,4 +1,4 @@
-name: C++
+name: Build and Format
 
 on:
   push:
@@ -8,26 +8,36 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Runs job on both Windows and Ubuntu
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    
+    runs-on: ${{ matrix.os }}
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y clang-format g++
+    - name: Install clang-format
+      if: runner.os == 'Linux'
+      run: sudo apt-get update && sudo apt-get install -y clang-format
+
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
     - name: Format Check
-      run: make format-check
+      if: runner.os == 'Linux'
+      run: cmake --build build --target format-check
 
-    - name: Build Check
-      run: make all
+    - name: Build Project
+      run: cmake --build build --config Release
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: scsa-linux-build
-        path: scsa
+        name: scsa-${{ matrix.os }}
+        path: |
+          build/scsa
+          build/Release/scsa.exe
         retention-days: 5

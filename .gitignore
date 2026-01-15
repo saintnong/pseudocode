@@ -1,3 +1,33 @@
-scsa
 *.vsix
+scsa
+
+# Cmake
+build/
+bin/
+lib/
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+Makefile
+
+# Compile stuff
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
 *.exe
+*.out
+*.app
+*.d
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
