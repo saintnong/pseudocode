@@ -1,10 +1,20 @@
 name: Build and Format
 
 on:
+  # On every push/pull to main
+  # Ignore changes to documentation to save CI minutes
   push:
     branches: ["main"]
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.gitignore'
   pull_request:
     branches: ["main"]
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.gitignore'
 
 jobs:
   build:
