@@ -181,7 +181,7 @@ public:
 };
 
 // =================================================================================================
-//                       Interpreter Class Implementation
+//                             Interpreter Class Implementation
 // =================================================================================================
 
 /**
@@ -193,11 +193,16 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
     globals     = std::make_shared<Environment>();
     environment = globals;
 
-    /**
-     * Initialise our standard library native functions.
-     */
+    // =========================================================================
+    // SCSA Pseudocode Standard Library
+    // ==========================================================================
 
-    // Define the INPUT native function
+    /**
+     * INPUT native function
+     * >> INPUT(prompt: String)
+     * => String
+     * Returns input from stdin. Optionally takes a prompt which is printed before taking input.
+     */
     auto inputNative = std::make_shared<NativeFunction>(
         VARIADIC_ARITY, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
             // Optional prompt argument
@@ -211,27 +216,36 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
                 inputLine = "";
             }
 
-            // Return the result as a RuntimeValue
+            // Return te result as a RuntimeValue
             RuntimeValue result;
             result.value = inputLine;
             return result;
         });
 
-    // Register INPUT in global scope
+    // Global scope registration
     RuntimeValue inputVal;
     inputVal.value = std::static_pointer_cast<Callable>(inputNative);
     globals->define("INPUT", inputVal);
 
-    // Define the PRINT native function
+    /**
+     * PRINT native function
+     * >> PRINT(... vars: String)
+     * => Null
+     * Print to stdout with a trailing newline. Given multiple parameters they will be printed
+     * sequentially with a space delimiter. Parameters will converted to type String when suitable.
+     */
     auto printNative = std::make_shared<NativeFunction>(
         VARIADIC_ARITY, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
             for (size_t i = 0; i < args.size(); ++i) {
+                // Space before every element except the first
+                if (i > 0) {
+                    std::cout << " ";
+                }
                 std::cout << stringify(args[i]);
             }
             // Print a newline at the end of the statement
             std::cout << std::endl;
 
-            // Return a Null value as PRINT is a void-like operation
             RuntimeValue nullValue;
             nullValue.value = Null{};
             return nullValue;
@@ -241,6 +255,29 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
     RuntimeValue printVal;
     printVal.value = std::static_pointer_cast<Callable>(printNative);
     globals->define("PRINT", printVal);
+
+    /**
+     * OUTPUT native function
+     * >> OUTPUT(... vars: String)
+     * => Null
+     * Print to stdout with no trailing newline. Given multiple parameters they will be printed
+     * sequentially with a space delimiter. Parameters will converted to type String when suitable.
+     */
+    auto outputNative = std::make_shared<NativeFunction>(
+        VARIADIC_ARITY, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+            for (size_t i = 0; i < args.size(); ++i) {
+                std::cout << stringify(args[i]);
+            }
+
+            RuntimeValue nullValue;
+            nullValue.value = Null{};
+            return nullValue;
+        });
+
+    // Register OUTPUT in the global scope
+    RuntimeValue outputVal;
+    outputVal.value = std::static_pointer_cast<Callable>(outputNative);
+    globals->define("OUTPUT", outputVal);
 }
 
 /**
