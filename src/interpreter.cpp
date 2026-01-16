@@ -1025,6 +1025,9 @@ RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
             len.value = static_cast<int>(arr->size());
             return len;
         }
+
+        // Fallback
+        throw RuntimeError(expr->name, "This is not a valid array property or method.");
     }
 
     // Ensure that we are only accessing instances
