@@ -65,7 +65,10 @@ Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Ins
 - While and For-in loops
 - If & If-Else statements
 - Functions
-- Arrays (Append and length is WIP)
+- Arrays
+    - `array.slice(a, b)` Returns a shallow copy from index a to b (inclusive)
+    - `array.append(x)` Appends value to the end of the array
+    - `array.length` Returns length of the array as an integer
 - ✨✨Object Oriented Programming✨✨
     - Most features working, but the syntax requires 'this' to reference object attributes/methods which is technicaly not SCSA standard
 
@@ -90,7 +93,6 @@ The interpreter supports the following environment variables:
     - This was a new, painful recent addition to the SCSA pseudocode "standard", when they decided that their ancient Pascal based pseudocode had to be more **"modern"**
     - Polymorphism and inheritance are WIP
 - Case statement
-- Array appending & length
 - ELSE IF statements
 - Better string manipulation
 
