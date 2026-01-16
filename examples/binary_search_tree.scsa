@@ -1,0 +1,215 @@
+# Binary search tree using classes
+
+CLASS BSTNode
+    ATTRIBUTES
+        value = 0
+        left = 0
+        right = 0
+    METHODS
+        FUNCTION BSTNode(val)
+            this.value = val
+        END BSTNode
+END BSTNode
+
+CLASS BinaryTree
+    ATTRIBUTES
+        root = 0
+    METHODS
+        FUNCTION BinaryTree()
+        END BinaryTree
+
+        # BST Insertion algorithm
+        # Iterative version
+        FUNCTION insert(val)
+            new_node = NEW BSTNode(val)
+            IF this.root == 0 THEN
+                this.root = new_node
+            ELSE
+                current = this.root
+                placed = FALSE
+                WHILE placed == FALSE
+                    IF val < current.value THEN
+                        IF current.left == 0 THEN
+                            current.left = new_node
+                            placed = TRUE
+                        ELSE
+                            current = current.left
+                        END IF
+                    ELSE
+                        IF current.right == 0 THEN
+                            current.right = new_node
+                            placed = TRUE
+                        ELSE
+                            current = current.right
+                        END IF
+                    END IF
+                END WHILE
+            END IF
+        END insert
+
+        # Checks if a value exists in the tree
+        FUNCTION contains(val)
+            current = this.root
+            WHILE current != 0
+                IF val == current.value THEN
+                    RETURN TRUE
+                END IF
+                
+                IF val < current.value THEN
+                    current = current.left
+                ELSE
+                    current = current.right
+                END IF
+            END WHILE
+            RETURN FALSE
+        END contains
+
+        # Deletion
+        FUNCTION delete(val)
+            this.root = this.deleteRecursive(this.root, val)
+        END delete
+
+        FUNCTION deleteRecursive(current, val)
+            IF current == 0 THEN
+                RETURN 0
+            END IF
+
+            IF val < current.value THEN
+                current.left = this.deleteRecursive(current.left, val)
+            ELSE
+                IF val > current.value THEN
+                    current.right = this.deleteRecursive(current.right, val)
+                ELSE
+                    # Found the node to delete
+                    
+                    # Case 1: No child or only one child
+                    IF current.left == 0 THEN
+                        RETURN current.right
+                    ELSE
+                        IF current.right == 0 THEN
+                            RETURN current.left
+                        END IF
+                    END IF
+
+                    # Case 2: Node with two children
+                    # Get successor (min in right subtree)
+                    successor = this.findMin(current.right)
+                    current.value = successor.value
+                    current.right = this.deleteRecursive(current.right, successor.value)
+                END IF
+            END IF
+            RETURN current
+        END deleteRecursive
+
+        FUNCTION findMin(node)
+            current = node
+            WHILE current.left != 0
+                current = current.left
+            END WHILE
+            RETURN current
+        END findMin
+
+        # Traversals
+        FUNCTION inOrder(node)
+            IF node != 0 THEN
+                this.inOrder(node.left)
+                OUTPUT(STRING(node.value) + " ")
+                this.inOrder(node.right)
+            END IF
+        END inOrder
+
+        FUNCTION preOrder(node)
+            IF node != 0 THEN
+                OUTPUT(STRING(node.value) + " ")
+                this.preOrder(node.left)
+                this.preOrder(node.right)
+            END IF
+        END preOrder
+
+        FUNCTION postOrder(node)
+            IF node != 0 THEN
+                this.postOrder(node.left)
+                this.postOrder(node.right)
+                OUTPUT(STRING(node.value) + " ")
+            END IF
+        END postOrder
+END BinaryTree
+
+
+# Main Interactive CLI
+PRINT("--- Interactive Binary Search Tree ---")
+tree = NEW BinaryTree()
+running = TRUE
+
+WHILE running
+    PRINT("")
+    PRINT("Choose an operation:")
+    PRINT("1. Insert")
+    PRINT("2. Delete")
+    PRINT("3. Search")
+    PRINT("4. Traverse (In-order, Pre-order, Post-order)")
+    PRINT("5. Exit")
+    
+    choice = INPUT("Enter choice (1-5): ")
+    
+    IF choice == "1" THEN
+        valStr = INPUT("Enter integer to insert: ")
+        val = INT(valStr)
+        IF val == -1 AND valStr != "-1" THEN
+            PRINT("Invalid input. Please enter an integer.")
+        ELSE
+            tree.insert(val)
+            PRINT("Inserted " + STRING(val))
+        END IF
+    ELSE
+        IF choice == "2" THEN
+            valStr = INPUT("Enter integer to delete: ")
+            val = INT(valStr)
+            IF val == -1 AND valStr != "-1" THEN
+                PRINT("Invalid input. Please enter an integer.")
+            ELSE
+                tree.delete(val)
+                PRINT("Deleted " + STRING(val) + " (if it existed)")
+            END IF
+        ELSE
+            IF choice == "3" THEN
+                valStr = INPUT("Enter integer to search: ")
+                val = INT(valStr)
+                IF val == -1 AND valStr != "-1" THEN
+                    PRINT("Invalid input. Please enter an integer.")
+                ELSE
+                    IF tree.contains(val) THEN
+                        PRINT("Tree contains " + STRING(val))
+                    ELSE
+                        PRINT("Tree does not contain " + STRING(val))
+                    END IF
+                END IF
+            ELSE
+                IF choice == "4" THEN
+                    IF tree.root == 0 THEN
+                        PRINT("Tree is empty.")
+                    ELSE
+                        OUTPUT("In-order:   ")
+                        tree.inOrder(tree.root)
+                        PRINT("")
+                        
+                        OUTPUT("Pre-order:  ")
+                        tree.preOrder(tree.root)
+                        PRINT("")
+                        
+                        OUTPUT("Post-order: ")
+                        tree.postOrder(tree.root)
+                        PRINT("")
+                    END IF
+                ELSE
+                    IF choice == "5" THEN
+                        running = FALSE
+                        PRINT("Exiting...")
+                    ELSE
+                        PRINT("Invalid choice. Please enter a number between 1 and 5.")
+                    END IF
+                END IF
+            END IF
+        END IF
+    END IF
+END WHILE

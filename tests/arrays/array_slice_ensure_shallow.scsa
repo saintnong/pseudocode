@@ -1,0 +1,17 @@
+# Tests that array slices are creating shallow copies
+
+nested_list = ["initial"]
+original = [100, nested_list, 300]
+sliced = original.slice(1, 1) 
+
+# Modify internal list
+nested_list.append("modified") 
+
+# Test that array slice reflects change
+PRINT(sliced[0])
+# EXPECT: [initial, modified]
+
+# Ensure top-levels are independent
+original[1] = "replaced"
+PRINT(sliced[0])
+# EXPECT: [initial, modified] 

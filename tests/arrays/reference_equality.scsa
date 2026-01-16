@@ -1,0 +1,19 @@
+# Reference equality for complex types
+a = [1, 2]
+b = a
+PRINT(a == b) # EXPECT: true
+
+# Different arrays with same elements should not be equal
+c = [1, 2]
+PRINT(a == c) # EXPECT: false
+
+CLASS Dummy
+END Dummy
+
+d1 = NEW Dummy()
+d2 = d1
+PRINT(d1 == d2) # EXPECT: true
+
+# Different instances should not be equal
+d3 = NEW Dummy()
+PRINT(d1 == d3) # EXPECT: false

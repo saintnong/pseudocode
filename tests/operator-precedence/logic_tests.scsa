@@ -1,5 +1,8 @@
-# AND has higher precedence than OR
+# Operator precedence tests
 
+# ============================================================================
+# AND has higher precedence than OR
+# ============================================================================
 result = TRUE OR FALSE AND FALSE
 PRINT(result)
 # EXPECT: true
@@ -8,3 +11,74 @@ PRINT(result)
 result = 5 + 5 == 10 AND 2 > 1
 PRINT(result)
 # EXPECT: true
+
+# ============================================================================
+# NOT operator
+# ============================================================================
+PRINT(NOT TRUE)
+# EXPECT: false
+
+PRINT(NOT FALSE)
+# EXPECT: true
+
+# NOT has high precedence (higher than ==)
+# Evaluates as (NOT TRUE) == FALSE  => FALSE == FALSE => TRUE
+PRINT(NOT TRUE == FALSE)
+# EXPECT: true
+
+# Combined precedence
+# NOT TRUE AND FALSE => FALSE AND FALSE => FALSE
+PRINT(NOT TRUE AND FALSE)
+# EXPECT: false
+
+# ============================================================================
+# Inequality operator !=
+# ============================================================================
+PRINT(10 != 5)
+# EXPECT: true
+
+PRINT(5 != 5)
+# EXPECT: false
+
+PRINT("hello" != "world")
+# EXPECT: true
+
+PRINT(TRUE != FALSE)
+# EXPECT: true
+
+# ============================================================================
+# Comparison operators <=, >=, <, >
+# ============================================================================
+PRINT(5 <= 5)
+# EXPECT: true
+
+PRINT(4 <= 5)
+# EXPECT: true
+
+PRINT(4 < 5)
+# EXPECT: true
+
+PRINT(6 < 5)
+# EXPECT: false
+
+PRINT(10 >= 10)
+# EXPECT: true
+
+PRINT(11 >= 10)
+# EXPECT: true
+
+PRINT(11 > 10)
+# EXPECT: true
+
+PRINT(12 > 12)
+# EXPECT: false
+
+# ============================================================================
+# Longer chains of operators
+# ============================================================================
+result = 5 > 3 AND NOT (10 == 9)
+PRINT(result)
+# EXPECT: true
+
+PRINT(NOT (TRUE OR FALSE) AND FALSE)
+# EXPECT: false

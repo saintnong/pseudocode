@@ -1,7 +1,7 @@
 {
   "name": "scsa-pseudocode",
   "publisher": "SaintNong",
-  "version": "0.2.6",
+  "version": "0.2.8",
   "engines": {
     "vscode": "^1.6.0"
   },
@@ -9,8 +9,13 @@
     "languages": [
       {
         "id": "scsa",
-        "extensions": [".scsa"],
-        "aliases": ["SCSA Pseudocode", "scsa"],
+        "extensions": [
+          ".scsa"
+        ],
+        "aliases": [
+          "SCSA Pseudocode",
+          "scsa"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],

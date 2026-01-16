@@ -1,0 +1,16 @@
+# Test that class default attributes are re-evaluated per instance
+# so they don't share same mutable objects by mistake
+CLASS Node
+    ATTRIBUTES
+        children = []
+END Node
+
+n1 = NEW Node()
+n2 = NEW Node()
+
+n1.children.append("child")
+
+PRINT(n1.children.length) # EXPECT: 1
+PRINT(n2.children.length) # EXPECT: 0
+
+PRINT(n1 == n2) # EXPECT: false

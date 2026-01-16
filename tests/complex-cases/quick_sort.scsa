@@ -1,0 +1,39 @@
+# yes, quicksort in scsa pseudocode
+
+FUNCTION Swap(arr, i, j)
+    temp = arr[i]
+    arr[i] = arr[j]
+    arr[j] = temp
+END Swap
+
+FUNCTION Partition(arr, low, high)
+    pivot = arr[high]
+    i = low - 1
+    
+    j = low
+    WHILE j < high
+        IF arr[j] < pivot THEN
+            i = i + 1
+            Swap(arr, i, j)
+        END IF
+        j = j + 1
+    END WHILE
+    
+    Swap(arr, i + 1, high)
+    RETURN i + 1
+END Partition
+
+# recursion
+FUNCTION QuickSort(arr, low, high)
+    IF low < high THEN
+        pi = Partition(arr, low, high)
+        
+        QuickSort(arr, low, pi - 1)
+        QuickSort(arr, pi + 1, high)
+    END IF
+    RETURN arr
+END QuickSort
+
+my_list = [10, 7, 8, 9, 1, 5]
+PRINT(QuickSort(my_list, 0, my_list.length - 1))
+# EXPECT: [1, 5, 7, 8, 9, 10]

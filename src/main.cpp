@@ -185,8 +185,10 @@ int Pseudocode::runRepl() {
             // Persist AST nodes (for multi-line block/function definitions)
             sessionHistory.insert(sessionHistory.end(), std::make_move_iterator(parsed.begin()),
                                   std::make_move_iterator(parsed.end()));
+        } catch (const std::runtime_error &) {
+            // Caught elsewhere
         } catch (const std::exception &e) {
-            std::cerr << "Runtime Exception: " << e.what() << std::endl;
+            std::cerr << "Unexpected Error: " << e.what() << std::endl;
         }
     }
 

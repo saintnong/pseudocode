@@ -1,0 +1,3 @@
+myString = "this is a string"
+myString[16]
+# EXPECT ERROR: String index out of bounds.

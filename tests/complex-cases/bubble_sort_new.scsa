@@ -1,5 +1,8 @@
-FUNCTION BubbleSort(array_to_sort, length)
-    last = length - 1
+# Old bubble sort was before arr.length was implemented
+# This one is taken straight out of SCSA syllabus
+
+FUNCTION BubbleSort(array_to_sort)
+    last = array_to_sort.length - 1
     swapped = TRUE
     WHILE swapped
         swapped = FALSE
@@ -18,8 +21,6 @@ FUNCTION BubbleSort(array_to_sort, length)
     RETURN array_to_sort
 END BubbleSort
 
-MyList = [3, 1, 2, 4, -1, 0, 9, 8]
-PRINT("Before sorting:")
-PRINT(MyList)
-PRINT("Bubble sorted list:")
-PRINT(BubbleSort(MyList, 8))
+
+PRINT(BubbleSort([3, 4, 2, 1, 7, -9]))
+# EXPECT: [-9, 1, 2, 3, 4, 7]

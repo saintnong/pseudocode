@@ -1,4 +1,0 @@
-list = [1,2,3]
-PRINT(list[2])
-MyString = "NotFinishedString
-PRINT(MyString)

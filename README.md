@@ -62,10 +62,18 @@ Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Ins
     - `TYPE(value)`: Returns the type of the value as a string.
 - Binary operations/comparisons [+, -, *, /, >, <, >=, <=, ==, !=]
 - Logical operators [AND, OR, NOT]
-- While and For-in loops
+- While and For-In loops
 - If & If-Else statements
 - Functions
-- Lists (Append and length is WIP)
+- Strings
+    - `string[i]` Indexes into a string
+    - `string.length` Returns the length of a string
+    - `string.slice(a, b)` Returns the substring from index a to b (inclusive)
+- Arrays
+    - `array[i]` Indexes into an array
+    - `array.slice(a, b)` Returns a shallow copy from index a to b (inclusive)
+    - `array.append(x)` Appends value to the end of the array
+    - `array.length` Returns length of the array as an integer
 - ✨✨Object Oriented Programming✨✨
     - Most features working, but the syntax requires 'this' to reference object attributes/methods which is technicaly not SCSA standard
 
@@ -90,9 +98,7 @@ The interpreter supports the following environment variables:
     - This was a new, painful recent addition to the SCSA pseudocode "standard", when they decided that their ancient Pascal based pseudocode had to be more **"modern"**
     - Polymorphism and inheritance are WIP
 - Case statement
-- List appending & length
 - ELSE IF statements
-- Better string manipulation
 
 ## Future Plans
 - Custom Bytecode VM which requires:
@@ -101,8 +107,6 @@ The interpreter supports the following environment variables:
     - Bytecode virtual machine
     - Some bytecode optimisation
 - Manual garbage collector (reference based)
-
-
 
 ## Credits
 - Crafting Interpreters by Robert Nystrom

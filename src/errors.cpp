@@ -1,3 +1,11 @@
+/**
+ * Suppress warnings for using std::getenv on MSVC (C4996)
+ * This is only unsafe due to thread safety, which we don't need for this project
+ */
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include "errors.hpp"
 
 #include <cstdlib>

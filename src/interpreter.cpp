@@ -115,7 +115,7 @@ typedef std::function<RuntimeValue(Interpreter &, std::vector<RuntimeValue>)> Na
 class NativeFunction : public Callable {
     // The C++ implementation of the function
     NativeFn function;
-    // Cached arity (-1 for variadic)
+    // Cached arity
     int _arity;
 
 public:
@@ -162,8 +162,8 @@ class UserClass : public Callable, public std::enable_shared_from_this<UserClass
     std::string name;
     // Map of method names to their implementations
     std::map<std::string, std::shared_ptr<Callable>> methods;
-    // Initial field values for new instances
-    std::map<std::string, RuntimeValue> defaultFields;
+    // Initial field value expressions for new instances
+    std::map<std::string, Expr *> defaultFields;
 
 public:
     /**
@@ -183,12 +183,12 @@ public:
     }
 
     /**
-     * Add a default field value
+     * Add a default field value expression
      * @param fieldName The identifier for the attribute
-     * @param value Its initial state
+     * @param valueExpr Its initial state expression
      */
-    void addField(const std::string &fieldName, RuntimeValue value) {
-        defaultFields[fieldName] = value;
+    void addField(const std::string &fieldName, Expr *valueExpr) {
+        defaultFields[fieldName] = valueExpr;
     }
 
     /**
@@ -231,8 +231,8 @@ public:
             std::make_shared<Instance>(std::static_pointer_cast<Callable>(shared_from_this()));
 
         // Populate new instance with default field values
-        for (const auto &[key, val] : defaultFields) {
-            instance->fields[key] = val;
+        for (const auto &[key, expr] : defaultFields) {
+            instance->fields[key] = interpreter.evaluate(expr);
         }
 
         // Find and execute the class constructor method if it exists
@@ -555,7 +555,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
             else if (val.is<Null>())
                 typeStr = "NULL";
             else if (val.is<std::shared_ptr<std::vector<RuntimeValue>>>())
-                typeStr = "LIST";
+                typeStr = "ARRAY";
             else if (val.is<std::shared_ptr<Callable>>())
                 typeStr = "CALLABLE";
             else if (val.is<std::shared_ptr<Instance>>())
@@ -679,6 +679,18 @@ bool Interpreter::isEqual(const RuntimeValue &a, const RuntimeValue &b) {
         return a.as<bool>() == b.as<bool>();
     if (a.is<std::string>() && b.is<std::string>())
         return a.as<std::string>() == b.as<std::string>();
+
+    // Reference Equality for shared objects (Arrays, Instances, Callables)
+    if (a.is<std::shared_ptr<std::vector<RuntimeValue>>>() &&
+        b.is<std::shared_ptr<std::vector<RuntimeValue>>>())
+        return a.as<std::shared_ptr<std::vector<RuntimeValue>>>() ==
+               b.as<std::shared_ptr<std::vector<RuntimeValue>>>();
+
+    if (a.is<std::shared_ptr<Instance>>() && b.is<std::shared_ptr<Instance>>())
+        return a.as<std::shared_ptr<Instance>>() == b.as<std::shared_ptr<Instance>>();
+
+    if (a.is<std::shared_ptr<Callable>>() && b.is<std::shared_ptr<Callable>>())
+        return a.as<std::shared_ptr<Callable>>() == b.as<std::shared_ptr<Callable>>();
 
     return false;
 }
@@ -991,6 +1003,151 @@ RuntimeValue Interpreter::visitCallExpr(CallExpr *expr) {
 RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
     RuntimeValue object = evaluate(expr->object.get());
 
+    /**
+     * Special case: Arrays are objects
+     */
+    if (object.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
+        // Anchor token for better error reporting
+        Token anchor     = expr->name;
+        auto arr         = object.as<std::shared_ptr<std::vector<RuntimeValue>>>();
+        std::string name = expr->name.lexeme;
+
+        // ===============================
+        // Array Methods
+        // ===============================
+
+        // Appends an item to the array
+        // arr.append(item)
+        /**
+         * Appends the given item to the end of the array
+         *
+         */
+        if (name == "append") {
+            // Return a native which simply appends the list
+            auto appendMethod = std::make_shared<NativeFunction>(
+                1, [arr](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+                    arr->push_back(args[0]);
+                    return {arr};
+                });
+
+            RuntimeValue method;
+            method.value = std::static_pointer_cast<Callable>(appendMethod);
+            return method;
+        }
+
+        /**
+         * Slices the array from the start to end index (inclusive)
+         * If start is not given, the array is sliced from 0 to end.
+         * array.slice(start?, end)
+         * @param start?
+         * @param end
+         * @returns shallow copy of array
+         */
+        if (name == "slice") {
+            // Return a native function which returns the slice
+            auto sliceMethod = std::make_shared<NativeFunction>(
+                2, [arr, anchor](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+                    if (!args[0].is<int>() || !args[1].is<int>()) {
+                        throw RuntimeError(anchor, "Slice indices must be integers.");
+                    }
+
+                    int start = args[0].as<int>();
+                    int end   = args[1].as<int>();
+                    int size  = static_cast<int>(arr->size());
+
+                    // Clamp indices
+                    if (start < 0)
+                        start = 0;
+                    if (end >= size)
+                        end = size - 1;
+
+                    // New vector
+                    auto res = std::make_shared<std::vector<RuntimeValue>>();
+
+                    // Shallowly copy the old vector
+                    if (start <= end && start < size) {
+                        for (int i = start; i <= end; ++i) {
+                            res->push_back((*arr)[i]);
+                        }
+                    }
+
+                    RuntimeValue result;
+                    result.value = res;
+                    return result;
+                });
+
+            RuntimeValue method;
+            method.value = std::static_pointer_cast<Callable>(sliceMethod);
+            return method;
+        }
+
+        // ===============================
+        // Array Properties
+        // ===============================
+        // arr.length
+        if (name == "length") {
+            RuntimeValue len;
+            len.value = static_cast<int>(arr->size());
+            return len;
+        }
+
+        // Fallback
+        throw RuntimeError(expr->name, "This is not a valid array property or method.");
+    }
+
+    /**
+     * Special case: String properties
+     */
+    if (object.is<std::string>()) {
+        std::string str  = object.as<std::string>();
+        std::string name = expr->name.lexeme;
+
+        // ===============================
+        // String Properties
+        // ===============================
+
+        // str.length
+        if (name == "length") {
+            RuntimeValue len;
+            len.value = static_cast<int>(str.length());
+            return len;
+        }
+
+        // You could also add string methods here later (e.g., str.to_upper())
+        if (name == "slice") {
+            Token anchor     = expr->name;
+            auto sliceMethod = std::make_shared<NativeFunction>(
+                2, [str, anchor](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+                    if (!args[0].is<int>() || !args[1].is<int>()) {
+                        throw RuntimeError(anchor, "Slice indices must be integers.");
+                    }
+
+                    int start  = args[0].as<int>();
+                    int end    = args[1].as<int>();
+                    int length = static_cast<int>(str.length());
+
+                    // Clamp indices
+                    if (start < 0)
+                        start = 0;
+                    if (end >= length)
+                        end = length - 1;
+
+                    std::string res = "";
+                    if (start <= end && start < length) {
+                        res = str.substr(start, end - start + 1);
+                    }
+
+                    return RuntimeValue{res};
+                });
+
+            RuntimeValue method;
+            method.value = std::static_pointer_cast<Callable>(sliceMethod);
+            return method;
+        }
+        throw RuntimeError(expr->name, "Undefined property '" + name + "' on string.");
+    }
+
+    // Ensure that we are only accessing instances
     if (!object.is<std::shared_ptr<Instance>>()) {
         throw RuntimeError(expr->name, "Only instances have properties.");
     }
@@ -1022,30 +1179,45 @@ RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
 }
 
 /**
- * Visit: Array Access
- * Retrieves an element from an array using a numeric index.
- * @param expr Index node (array[index])
+ * Visit: Array and string index access node
+ * Retrieves an element from an array/string using a numeric index.
+ * @param expr Index node (container[index])
  * @return The value at the specified position
  */
 RuntimeValue Interpreter::visitArrayAccessExpr(ArrayAccessExpr *expr) {
-    RuntimeValue arrayVal = evaluate(expr->array.get());
-    RuntimeValue indexVal = evaluate(expr->index.get());
+    // Resolve both the and right
+    RuntimeValue containerVal = evaluate(expr->array.get());
+    RuntimeValue indexVal     = evaluate(expr->index.get());
 
-    if (!arrayVal.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
-        throw RuntimeError(expr->anchor, "Can only index arrays.");
-    }
+    // Ensure index is an integer
     if (!indexVal.is<int>()) {
         throw RuntimeError(expr->anchor, "Array index must be an integer.");
     }
+    int idx = indexVal.as<int>();
 
-    auto arr = arrayVal.as<std::shared_ptr<std::vector<RuntimeValue>>>();
-    int idx  = indexVal.as<int>();
+    // Case: Array indexing
+    if (containerVal.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
+        auto arr = containerVal.as<std::shared_ptr<std::vector<RuntimeValue>>>();
 
-    if (idx < 0 || idx >= static_cast<int>(arr->size())) {
-        throw RuntimeError(expr->anchor, "Array index out of bounds.");
+        if (idx < 0 || idx >= static_cast<int>(arr->size())) {
+            throw RuntimeError(expr->anchor, "Array index out of bounds.");
+        }
+        return (*arr)[idx];
     }
 
-    return (*arr)[idx];
+    // Case: String indexing
+    if (containerVal.is<std::string>()) {
+        std::string str = containerVal.as<std::string>();
+
+        if (idx < 0 || idx >= static_cast<int>(str.length())) {
+            throw RuntimeError(expr->anchor, "String index out of bounds.");
+        }
+
+        return RuntimeValue{std::string(1, str[idx])};
+    }
+
+    // Neither array nor string
+    throw RuntimeError(expr->anchor, "Can only index arrays or strings.");
 }
 
 /**
@@ -1181,8 +1353,7 @@ void Interpreter::visitClassStmt(ClassStmt *stmt) {
         if (auto *assignment = dynamic_cast<AssignExpr *>(attr.get())) {
             if (auto *varExpr = dynamic_cast<VariableExpr *>(assignment->target.get())) {
                 std::string fieldName = varExpr->name.lexeme;
-                RuntimeValue val      = evaluate(assignment->value.get());
-                klass->addField(fieldName, val);
+                klass->addField(fieldName, assignment->value.get());
             } else {
                 throw RuntimeError(assignment->anchor, "Expected a valid field name.");
             }
@@ -1204,22 +1375,37 @@ void Interpreter::visitClassStmt(ClassStmt *stmt) {
 
 /**
  * Visit: For-In Loop
- * Iterates over the elements of an array, executing the body for each one.
+ * Iterates over the elements of an iterable, executing the body for each one.
  * Binds the current element to a local loop variable.
  */
 void Interpreter::visitForInStmt(ForInStmt *stmt) {
     RuntimeValue iterable = evaluate(stmt->iterable.get());
 
-    if (!iterable.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
-        throw RuntimeError(stmt->variable, "Can only iterate over arrays.");
+    // Arrays
+    if (iterable.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
+        auto arr = iterable.as<std::shared_ptr<std::vector<RuntimeValue>>>();
+
+        for (const auto &elem : *arr) {
+            // Make loop variable
+            environment->define(stmt->variable.lexeme, elem);
+            for (const auto &s : stmt->body) {
+                execute(s.get());
+            }
+        }
     }
-
-    auto arr = iterable.as<std::shared_ptr<std::vector<RuntimeValue>>>();
-
-    for (const auto &element : *arr) {
-        // Create a fresh scope for each iteration to avoid leaks between iterations
-        auto loopEnv = std::make_shared<Environment>(environment);
-        loopEnv->define(stmt->variable.lexeme, element);
-        executeBlock(stmt->body, loopEnv);
+    // Strings
+    else if (iterable.is<std::string>()) {
+        std::string str = iterable.as<std::string>();
+        for (char c : str) {
+            // Convert to single char RuntimeValue
+            RuntimeValue charVal = RuntimeValue{std::string(1, c)};
+            environment->define(stmt->variable.lexeme, charVal);
+            for (const auto &s : stmt->body) {
+                execute(s.get());
+            }
+        }
+    } else {
+        // Neither string/array
+        throw RuntimeError(stmt->variable, "Can only iterate over arrays or strings.");
     }
 }

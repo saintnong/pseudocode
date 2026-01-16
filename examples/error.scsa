@@ -1,3 +1,0 @@
-number = 5 // this line is fine
-$ // this line should error
-x = 7

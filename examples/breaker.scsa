@@ -1,2 +1,0 @@
-FUNCTION x(y) RETURN y END x
-PRINT(x(5))

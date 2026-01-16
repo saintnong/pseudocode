@@ -1,7 +1,9 @@
 {
   "name": "scsa-pseudocode",
   "scopeName": "source.scsa",
-  "fileTypes": ["scsa"],
+  "fileTypes": [
+    "scsa"
+  ],
   "patterns": [
     {
       "name": "comment.line.scsa",
@@ -35,55 +37,73 @@
     },
     {
       "name": "constant.language.boolean.scsa",
-      "match": "\\b(TRUE|FALSE)\\b"
+      "match": "\\b(TRUE|FALSE|True|False)\\b"
     },
     {
       "comment": "Matches Class Definitions (e.g., CLASS Animal)",
       "match": "\\b(CLASS)\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
       "captures": {
-        "1": { "name": "storage.type.class.scsa" },
-        "2": { "name": "entity.name.type.class.scsa" }
+        "1": {
+          "name": "storage.type.class.scsa"
+        },
+        "2": {
+          "name": "entity.name.type.class.scsa"
+        }
       }
     },
     {
       "comment": "Matches Function Definitions (e.g., FUNCTION eat)",
       "match": "\\b(FUNCTION)\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
       "captures": {
-        "1": { "name": "storage.type.function.scsa" },
-        "2": { "name": "entity.name.function.scsa" }
+        "1": {
+          "name": "storage.type.function.scsa"
+        },
+        "2": {
+          "name": "entity.name.function.scsa"
+        }
       }
     },
     {
       "comment": "Matches structural END statements (END IF, END WHILE)",
       "match": "\\b(END)\\s+(IF|WHILE|FOR)\\b",
       "captures": {
-        "1": { "name": "keyword.control.scsa" },
-        "2": { "name": "keyword.control.scsa" }
+        "1": {
+          "name": "keyword.control.scsa"
+        },
+        "2": {
+          "name": "keyword.control.scsa"
+        }
       }
     },
     {
       "comment": "Matches named END statements (END Animal, END x) - The Edge Case",
       "match": "\\b(END)\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
       "captures": {
-        "1": { "name": "keyword.control.scsa" },
-        "2": { "name": "entity.name.function.scsa" }
+        "1": {
+          "name": "keyword.control.scsa"
+        },
+        "2": {
+          "name": "entity.name.function.scsa"
+        }
       }
     },
     {
       "comment": "General Control Keywords",
       "name": "keyword.control.scsa",
-      "match": "\\b(IF|THEN|ELSE|FOR|WHILE|RETURN|IN|AND|OR)\\b"
+      "match": "\\b(IF|THEN|ELSE|FOR|WHILE|RETURN|IN|AND|OR|NOT)\\b"
     },
     {
       "comment": "Object Oriented / Storage Keywords",
       "name": "storage.modifier.scsa",
-      "match": "\\b(ATTRIBUTES|METHODS|NEW)\\b"
+      "match": "\\b(ATTRIBUTES|Attributes|METHODS|Methods|NEW|new)\\b"
     },
     {
       "comment": "Built-in functions (like PRINT)",
       "match": "\\b(PRINT|OUTPUT)(?=\\s*\\()",
       "captures": {
-        "1": { "name": "support.function.scsa" }
+        "1": {
+          "name": "support.function.scsa"
+        }
       }
     },
     {
@@ -94,7 +114,7 @@
     {
       "comment": "Operators",
       "name": "keyword.operator.scsa",
-      "match": "(\\+|\\-|\\*|\\/|=|\\>|\\<)"
+      "match": "(!=|>=|<=|==|\\+|\\-|\\*|\\/|=|\\>|\\<)"
     }
   ]
 }

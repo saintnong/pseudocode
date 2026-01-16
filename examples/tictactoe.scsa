@@ -1,0 +1,79 @@
+# Tic Tac Toe Game
+
+board = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+currentPlayer = "X"
+gameRunning = TRUE
+turnCount = 0
+
+FUNCTION printBoard(b)
+    PRINT("")
+    PRINT(b[0] + " | " + b[1] + " | " + b[2])
+    PRINT("--+---+--")
+    PRINT(b[3] + " | " + b[4] + " | " + b[5])
+    PRINT("--+---+--")
+    PRINT(b[6] + " | " + b[7] + " | " + b[8])
+    PRINT("")
+END printBoard
+
+FUNCTION checkWin(b)
+    # Rows
+    IF b[0] == b[1] AND b[1] == b[2] THEN RETURN TRUE END IF
+    IF b[3] == b[4] AND b[4] == b[5] THEN RETURN TRUE END IF
+    IF b[6] == b[7] AND b[7] == b[8] THEN RETURN TRUE END IF
+
+    # Columns
+    IF b[0] == b[3] AND b[3] == b[6] THEN RETURN TRUE END IF
+    IF b[1] == b[4] AND b[4] == b[7] THEN RETURN TRUE END IF
+    IF b[2] == b[5] AND b[5] == b[8] THEN RETURN TRUE END IF
+
+    # Diagonals
+    IF b[0] == b[4] AND b[4] == b[8] THEN RETURN TRUE END IF
+    IF b[2] == b[4] AND b[4] == b[6] THEN RETURN TRUE END IF
+
+    RETURN FALSE
+END checkWin
+
+PRINT("Welcome to Tic Tac Toe!")
+printBoard(board)
+
+WHILE gameRunning
+    # Get input
+    validMove = FALSE
+    WHILE NOT validMove
+        inputStr = INPUT("Player " + currentPlayer + ", enter a position (1-9): ")
+        move = INT(inputStr)
+
+        IF move >= 1 AND move <= 9 THEN
+            idx = move - 1
+            IF board[idx] != "X" AND board[idx] != "O" THEN
+                board[idx] = currentPlayer
+                validMove = TRUE
+            ELSE
+                PRINT("Position already taken. Try again.")
+            END IF
+        ELSE
+            PRINT("Invalid input. Please enter a number between 1 and 9.")
+        END IF
+    END WHILE
+
+    printBoard(board)
+
+    # Check for win
+    IF checkWin(board) THEN
+        PRINT("Player " + currentPlayer + " wins!")
+        gameRunning = FALSE
+    ELSE
+        turnCount = turnCount + 1
+        IF turnCount == 9 THEN
+            PRINT("It's a draw!")
+            gameRunning = FALSE
+        ELSE
+            # Switch player
+            IF currentPlayer == "X" THEN
+                currentPlayer = "O"
+            ELSE
+                currentPlayer = "X"
+            END IF
+        END IF
+    END IF
+END WHILE

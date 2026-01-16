@@ -1,3 +1,6 @@
+# NOTE: This is from before the language's arrays had a .length
+# property.
+
 FUNCTION BubbleSort(array_to_sort, length)
     last = length - 1
     swapped = TRUE

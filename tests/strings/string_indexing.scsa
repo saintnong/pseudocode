@@ -1,0 +1,13 @@
+s = "Language"
+
+PRINT(s[0])
+# EXPECT: L
+
+PRINT(s[3])
+# EXPECT: g
+
+PRINT(s[7])
+# EXPECT: e
+
+PRINT("Hello"[1])
+# EXPECT: e

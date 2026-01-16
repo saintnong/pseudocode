@@ -1,0 +1,8 @@
+my_string = "Disestablismentarianism"
+
+FOR char IN my_string
+    OUTPUT(char)
+END FOR
+PRINT()
+
+# EXPECT: Disestablismentarianism

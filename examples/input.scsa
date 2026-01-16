@@ -1,6 +1,0 @@
-name = INPUT("What's your name? ")
-PRINT("Hello " + name + "!")
-
-empty_input = INPUT()
-PRINT("wow")
-PRINT(empty_input)
