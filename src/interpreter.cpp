@@ -555,7 +555,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
             else if (val.is<Null>())
                 typeStr = "NULL";
             else if (val.is<std::shared_ptr<std::vector<RuntimeValue>>>())
-                typeStr = "LIST";
+                typeStr = "ARRAY";
             else if (val.is<std::shared_ptr<Callable>>())
                 typeStr = "CALLABLE";
             else if (val.is<std::shared_ptr<Instance>>())

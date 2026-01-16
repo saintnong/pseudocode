@@ -1,0 +1,22 @@
+# Very common pattern
+
+FUNCTION filter_evens(arr)
+    evens = []
+    FOR n IN arr
+        IF (INT(n / 2) * 2) == n THEN
+            evens.append(n)
+        END IF
+    END FOR
+
+    RETURN evens
+END filter_evens
+
+start_arr = []
+k = 0
+WHILE k < 15
+    start_arr.append(k)
+    k = k + 1
+END WHILE
+
+PRINT(filter_evens(start_arr))
+# EXPECT: [0, 2, 4, 6, 8, 10, 12, 14]

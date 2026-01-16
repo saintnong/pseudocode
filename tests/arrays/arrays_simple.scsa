@@ -1,0 +1,21 @@
+
+# Array creation and simple access
+list = [19, 2, 3]
+PRINT(list[0])
+# EXPECT: 19
+
+# Mutation via index
+PRINT(list[1]) # EXPECT: 2
+list[1] = "This thing"
+PRINT(list[1]) # EXPECT: This thing
+
+# Appending
+list.append(75)
+PRINT(list[3])
+# EXPECT: 75
+
+PRINT(list)
+# EXPECT: [19, This thing, 3, 75]
+
+PRINT(TYPE(list))
+# EXPECT: LIST

@@ -1,0 +1,17 @@
+# Tests primitive list methods and indexing
+list = [10, 20, 30]
+
+# Test indexing
+PRINT(list[1])
+# EXPECT: 20
+
+# Test the '5-line' append logic
+list.append(40)
+PRINT(list[3])
+# EXPECT: 40
+
+# Mutation in 2d list
+matrix = [[1, 2], [3, 4]]
+matrix[0].append(99)
+PRINT(matrix[0][2])
+# EXPECT: 99
