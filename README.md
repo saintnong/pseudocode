@@ -2,6 +2,7 @@
 
 <p align="center">
     <img src="https://img.shields.io/github/actions/workflow/status/SaintNong/pseudocode/ci.yml?branch=main&style=for-the-badge&logo=github&label=Build">
+    <img src="https://img.shields.io/github/actions/workflow/status/SaintNong/pseudocode/ci.yml?branch=main&style=for-the-badge&logo=cplusplus&label=Tests">
     <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge">
     <img src="https://img.shields.io/github/v/release/SaintNong/pseudocode?style=for-the-badge&label=Version&color=orange">
 </p>
@@ -15,7 +16,7 @@
 
 > "<em>This spec is so specific that it might as well be a real language...</em>"
 
-This repository contains a full toolchain for Pseudocode development, including an interpreter, VSCode extension with highlighting and snippets.
+This repository contains a full toolchain for Pseudocode development, including an interpreter written in C++, and a VSCode extension with highlighting and snippets.
 
 ## Examples
 
@@ -41,6 +42,8 @@ Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Ins
 - Native Functions API
 - Good error reporting which is anchored to nearest token for easy debugging
 - Visual Studio Code Highlighting Extension
+- Integration tests
+
 ### Supported Pseudocode Language Features
 - Basic datatypes and a dynamic typing system
     - [int, float, string, bool, Null]
@@ -64,8 +67,7 @@ Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Ins
 - Functions
 - Lists (Append and length is WIP)
 - ✨✨Object Oriented Programming✨✨
-    - Most features working, but the syntax requires 'this' to reference object attributes/methods
-    - No inheritance and polymorphism available as of now
+    - Most features working, but the syntax requires 'this' to reference object attributes/methods which is technicaly not SCSA standard
 
 # Other stuff
 ## Currently WIP Features
@@ -82,13 +84,24 @@ The interpreter supports the following environment variables:
 - `NO_COLOR`: If set, suppresses all ANSI escape sequences for color output. Follows the [NO_COLOR](https://no-color.org) informal standard.
 
 ## Future Plans
-- Unit and integration testing with CI/CD
 - Custom Bytecode VM which requires:
     - Custom stack-based bytecode
     - Bytecode compiler
     - Bytecode virtual machine
     - Some bytecode optimisation
 - Manual garbage collector (reference based)
+
+## Testing
+This project uses a small custom Python test harness integrated with CTest for CI/CD. Tests execute `.scsa.` files and check that the interpreter output matches what is expected in the comments. To run tests:
+
+1. Build the project ([see installation](https://github.com/SaintNong/pseudocode/wiki/Installation-Guide))
+2. Run the tests from the `/tests` directory
+
+```bash
+# Runs the integration tests
+python3 tester.py <path-to-your-binary>
+```
+
 
 ## Credits
 - Crafting Interpreters by Robert Nystrom
