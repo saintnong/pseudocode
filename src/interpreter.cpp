@@ -991,6 +991,43 @@ RuntimeValue Interpreter::visitCallExpr(CallExpr *expr) {
 RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
     RuntimeValue object = evaluate(expr->object.get());
 
+    /**
+     * Special case: Arrays as objects
+     */
+    if (object.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
+        auto arr         = object.as<std::shared_ptr<std::vector<RuntimeValue>>>();
+        std::string name = expr->name.lexeme;
+
+        // ===============================
+        // Array Methods
+        // ===============================
+        // arr.append('item')
+        if (name == "append") {
+            // Return a native which simply appends the list
+            auto appendMethod = std::make_shared<NativeFunction>(
+                1, [arr](Interpreter&, std::vector<RuntimeValue> args) -> RuntimeValue {
+                    arr->push_back(args[0]);
+                    return {arr};
+                }
+            );
+
+            RuntimeValue method;
+            method.value = std::static_pointer_cast<Callable>(appendMethod);
+            return method;
+        }
+
+        // ===============================
+        // Array Properties
+        // ===============================
+        // arr.length
+        if (name == "length") {
+            RuntimeValue len;
+            len.value = static_cast<int>(arr->size());
+            return len;
+        }
+    }
+
+    // Ensure that we are only accessing instances
     if (!object.is<std::shared_ptr<Instance>>()) {
         throw RuntimeError(expr->name, "Only instances have properties.");
     }
