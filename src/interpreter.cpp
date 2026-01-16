@@ -992,7 +992,7 @@ RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
     RuntimeValue object = evaluate(expr->object.get());
 
     /**
-     * Special case: Arrays are fake objects
+     * Special case: Arrays are objects
      */
     if (object.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
         // Anchor token for better error reporting
@@ -1081,6 +1081,30 @@ RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
 
         // Fallback
         throw RuntimeError(expr->name, "This is not a valid array property or method.");
+    }
+
+    /**
+     * Special case: String properties
+     */
+    if (object.is<std::string>()) {
+        std::string str = object.as<std::string>();
+        std::string name = expr->name.lexeme;
+
+        // ===============================
+        // String Properties
+        // ===============================
+        
+        // str.length
+        if (name == "length") {
+            RuntimeValue len;
+            len.value = static_cast<int>(str.length());
+            return len;
+        }
+
+        // You could also add string methods here later (e.g., str.to_upper())
+        
+        // Fallback for strings
+        throw RuntimeError(expr->name, "Undefined property '" + name + "' on string.");
     }
 
     // Ensure that we are only accessing instances

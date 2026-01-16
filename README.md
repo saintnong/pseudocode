@@ -62,11 +62,14 @@ Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Ins
     - `TYPE(value)`: Returns the type of the value as a string.
 - Binary operations/comparisons [+, -, *, /, >, <, >=, <=, ==, !=]
 - Logical operators [AND, OR, NOT]
-- While and For-in loops
+- While and For-In loops
 - If & If-Else statements
 - Functions
-- Iterable and indexable strings
+- Strings
+    - `string[i]` Indexes into a string
+    - `string.length` Returns the length of a string
 - Arrays
+    - `array[i]` Indexes into an array
     - `array.slice(a, b)` Returns a shallow copy from index a to b (inclusive)
     - `array.append(x)` Appends value to the end of the array
     - `array.length` Returns length of the array as an integer
