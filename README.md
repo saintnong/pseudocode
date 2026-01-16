@@ -97,10 +97,13 @@ The interpreter supports the following environment variables:
 - ✨✨Object Oriented Programming✨✨
     - This was a new, painful recent addition to the SCSA pseudocode "standard", when they decided that their ancient Pascal based pseudocode had to be more **"modern"**
     - Polymorphism and inheritance are WIP
+- FOR-TO loop support
 - Case statement
 - ELSE IF statements
 
 ## Future Plans
+- Integrated file IO in standard library
+- Subprocess in standard library
 - Custom Bytecode VM which requires:
     - Custom stack-based bytecode
     - Bytecode compiler
