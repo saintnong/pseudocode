@@ -1114,8 +1114,36 @@ RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
         }
 
         // You could also add string methods here later (e.g., str.to_upper())
+        if (name == "slice") {
+            Token anchor     = expr->name;
+            auto sliceMethod = std::make_shared<NativeFunction>(
+                2, [str, anchor](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+                    if (!args[0].is<int>() || !args[1].is<int>()) {
+                        throw RuntimeError(anchor, "Slice indices must be integers.");
+                    }
 
-        // Fallback for strings
+                    int start  = args[0].as<int>();
+                    int end    = args[1].as<int>();
+                    int length = static_cast<int>(str.length());
+
+                    // Clamp indices
+                    if (start < 0)
+                        start = 0;
+                    if (end >= length)
+                        end = length - 1;
+
+                    std::string res = "";
+                    if (start <= end && start < length) {
+                        res = str.substr(start, end - start + 1);
+                    }
+
+                    return RuntimeValue{res};
+                });
+
+            RuntimeValue method;
+            method.value = std::static_pointer_cast<Callable>(sliceMethod);
+            return method;
+        }
         throw RuntimeError(expr->name, "Undefined property '" + name + "' on string.");
     }
 

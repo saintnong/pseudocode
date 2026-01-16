@@ -68,6 +68,7 @@ Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Ins
 - Strings
     - `string[i]` Indexes into a string
     - `string.length` Returns the length of a string
+    - `string.slice(a, b)` Returns the substring from index a to b (inclusive)
 - Arrays
     - `array[i]` Indexes into an array
     - `array.slice(a, b)` Returns a shallow copy from index a to b (inclusive)

@@ -1,0 +1,4 @@
+# Test that string.slice expects integer arguments
+s = "abc"
+s.slice("0", 1)
+# EXPECT ERROR: Slice indices must be integers.
