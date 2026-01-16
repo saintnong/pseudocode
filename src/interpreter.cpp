@@ -162,8 +162,8 @@ class UserClass : public Callable, public std::enable_shared_from_this<UserClass
     std::string name;
     // Map of method names to their implementations
     std::map<std::string, std::shared_ptr<Callable>> methods;
-    // Initial field values for new instances
-    std::map<std::string, RuntimeValue> defaultFields;
+    // Initial field value expressions for new instances
+    std::map<std::string, Expr *> defaultFields;
 
 public:
     /**
@@ -183,12 +183,12 @@ public:
     }
 
     /**
-     * Add a default field value
+     * Add a default field value expression
      * @param fieldName The identifier for the attribute
-     * @param value Its initial state
+     * @param valueExpr Its initial state expression
      */
-    void addField(const std::string &fieldName, RuntimeValue value) {
-        defaultFields[fieldName] = value;
+    void addField(const std::string &fieldName, Expr *valueExpr) {
+        defaultFields[fieldName] = valueExpr;
     }
 
     /**
@@ -231,8 +231,8 @@ public:
             std::make_shared<Instance>(std::static_pointer_cast<Callable>(shared_from_this()));
 
         // Populate new instance with default field values
-        for (const auto &[key, val] : defaultFields) {
-            instance->fields[key] = val;
+        for (const auto &[key, expr] : defaultFields) {
+            instance->fields[key] = interpreter.evaluate(expr);
         }
 
         // Find and execute the class constructor method if it exists
@@ -680,6 +680,18 @@ bool Interpreter::isEqual(const RuntimeValue &a, const RuntimeValue &b) {
     if (a.is<std::string>() && b.is<std::string>())
         return a.as<std::string>() == b.as<std::string>();
 
+    // Reference Equality for shared objects (Arrays, Instances, Callables)
+    if (a.is<std::shared_ptr<std::vector<RuntimeValue>>>() &&
+        b.is<std::shared_ptr<std::vector<RuntimeValue>>>())
+        return a.as<std::shared_ptr<std::vector<RuntimeValue>>>() ==
+               b.as<std::shared_ptr<std::vector<RuntimeValue>>>();
+
+    if (a.is<std::shared_ptr<Instance>>() && b.is<std::shared_ptr<Instance>>())
+        return a.as<std::shared_ptr<Instance>>() == b.as<std::shared_ptr<Instance>>();
+
+    if (a.is<std::shared_ptr<Callable>>() && b.is<std::shared_ptr<Callable>>())
+        return a.as<std::shared_ptr<Callable>>() == b.as<std::shared_ptr<Callable>>();
+
     return false;
 }
 
@@ -1087,13 +1099,13 @@ RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
      * Special case: String properties
      */
     if (object.is<std::string>()) {
-        std::string str = object.as<std::string>();
+        std::string str  = object.as<std::string>();
         std::string name = expr->name.lexeme;
 
         // ===============================
         // String Properties
         // ===============================
-        
+
         // str.length
         if (name == "length") {
             RuntimeValue len;
@@ -1102,7 +1114,7 @@ RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
         }
 
         // You could also add string methods here later (e.g., str.to_upper())
-        
+
         // Fallback for strings
         throw RuntimeError(expr->name, "Undefined property '" + name + "' on string.");
     }
@@ -1313,8 +1325,7 @@ void Interpreter::visitClassStmt(ClassStmt *stmt) {
         if (auto *assignment = dynamic_cast<AssignExpr *>(attr.get())) {
             if (auto *varExpr = dynamic_cast<VariableExpr *>(assignment->target.get())) {
                 std::string fieldName = varExpr->name.lexeme;
-                RuntimeValue val      = evaluate(assignment->value.get());
-                klass->addField(fieldName, val);
+                klass->addField(fieldName, assignment->value.get());
             } else {
                 throw RuntimeError(assignment->anchor, "Expected a valid field name.");
             }
@@ -1342,13 +1353,15 @@ void Interpreter::visitClassStmt(ClassStmt *stmt) {
 void Interpreter::visitForInStmt(ForInStmt *stmt) {
     RuntimeValue iterable = evaluate(stmt->iterable.get());
 
+    // Create a single loop environment to store the loop variable and persist other local changes
+    // between iterations.
+    auto loopEnv = std::make_shared<Environment>(environment);
+
     // Arrays
     if (iterable.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
         auto arr = iterable.as<std::shared_ptr<std::vector<RuntimeValue>>>();
 
         for (const auto &elem : *arr) {
-            // Don't pollute scope with our iterated variable
-            auto loopEnv = std::make_shared<Environment>(environment);
             loopEnv->define(stmt->variable.lexeme, elem);
             executeBlock(stmt->body, loopEnv);
         }
@@ -1360,7 +1373,6 @@ void Interpreter::visitForInStmt(ForInStmt *stmt) {
             // Convert to single char
             RuntimeValue charVal = RuntimeValue{std::string(1, c)};
 
-            auto loopEnv = std::make_shared<Environment>(environment);
             loopEnv->define(stmt->variable.lexeme, charVal);
             executeBlock(stmt->body, loopEnv);
         }
