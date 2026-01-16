@@ -1086,10 +1086,10 @@ RuntimeValue Interpreter::visitNewExpr(NewExpr *expr) {
 
     auto klass = classVal.as<std::shared_ptr<Callable>>();
 
-    if (klass->arity() != VARIADIC_ARITY && 
-        arguments.size() != (size_t)klass->arity()) {
-        throw RuntimeError(expr->className, "Expected " + std::to_string(klass->arity()) + 
-                           " arguments but got " + std::to_string(arguments.size()) + ".");
+    if (klass->arity() != VARIADIC_ARITY && arguments.size() != (size_t) klass->arity()) {
+        throw RuntimeError(expr->className, "Expected " + std::to_string(klass->arity()) +
+                                                " arguments but got " +
+                                                std::to_string(arguments.size()) + ".");
     }
 
     return klass->call(*this, arguments);

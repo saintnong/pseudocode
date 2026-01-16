@@ -1,4 +1,4 @@
-name: Build and Format
+name: Build and Test
 
 on:
   # On every push/pull to main
@@ -29,6 +29,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
     - name: Install clang-format
       if: runner.os == 'Linux'
       run: sudo apt-get update && sudo apt-get install -y clang-format
@@ -42,6 +47,9 @@ jobs:
 
     - name: Build Project
       run: cmake --build build --config Release
+
+    - name: Run Integration Tests
+      run: ctest --test-dir build -C Release --output-on-failure
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
