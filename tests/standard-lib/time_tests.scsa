@@ -1,0 +1,10 @@
+# Type check
+t1 = TIME()
+PRINT(TYPE(t1))           # EXPECT: FLOAT
+
+# Make sure we're in the 2020s
+PRINT(t1 > 1700000000)    # EXPECT: true
+
+t2 = TIME()
+PRINT(t2 >= t1)           # EXPECT: true
+PRINT(TYPE(t1 + 1.0))     # EXPECT: FLOAT

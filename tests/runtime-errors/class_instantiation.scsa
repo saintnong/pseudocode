@@ -1,0 +1,3 @@
+array = [1,2,3]
+x = NEW array()
+# EXPECT ERROR: Can only instantiate

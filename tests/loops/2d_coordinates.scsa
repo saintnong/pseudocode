@@ -1,0 +1,18 @@
+# 2d coordinates printer
+
+y = 0
+WHILE y < 3
+    x = 0
+    WHILE x < 3
+        i = x + (y * 3) 
+        OUTPUT("(" + STRING(x) + "," + STRING(y) + ") ")
+        x = x + 1
+    END WHILE
+    
+    y = y + 1
+    PRINT("")
+END WHILE
+
+# EXPECT: (0,0) (1,0) (2,0) 
+# EXPECT: (0,1) (1,1) (2,1) 
+# EXPECT: (0,2) (1,2) (2,2)

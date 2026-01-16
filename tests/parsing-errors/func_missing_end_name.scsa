@@ -1,0 +1,4 @@
+FUNCTION greet()
+    PRINT("Hello")
+END
+# EXPECT ERROR: Expected function name after 'END'.

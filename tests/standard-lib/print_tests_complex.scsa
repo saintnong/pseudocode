@@ -1,0 +1,42 @@
+# More complex print tests
+# stuff like recursive stringification, printing functions etc
+
+# =====================================
+#    Printing out Functions
+# =====================================
+FUNCTION myfunc()
+    RETURN 0
+END myfunc
+PRINT([1, myfunc])
+# EXPECT: [1, <FUNCTION myfunc>]
+
+PRINT(PRINT)
+# EXPECT: <NATIVE FUNCTION>
+
+# =====================================
+#    Nested Arrays
+# =====================================
+
+that = [[1, 2], [3, 4]]
+PRINT(that)
+# EXPECT: [[1, 2], [3, 4]]
+
+this = [[[1]], [[2]]]
+PRINT(this)
+# EXPECT: [[[1]], [[2]]]
+
+mixed = [1, "hi", [TRUE, FALSE], myfunc]
+PRINT(mixed)
+# EXPECT: [1, hi, [true, false], <FUNCTION myfunc>]
+
+PRINT([1, [2, [3]]])
+# EXPECT: [1, [2, [3]]]
+
+# =====================================
+#    Output vs Print newline
+# =====================================
+
+OUTPUT("Part 1")
+OUTPUT(" & Part 2")
+PRINT(" (Done)")
+# EXPECT: Part 1 & Part 2 (Done)

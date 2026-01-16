@@ -1,0 +1,3 @@
+x = "I am a string"
+x.height = 100
+# EXPECT ERROR: Only instances have fields.

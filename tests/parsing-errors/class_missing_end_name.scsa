@@ -1,0 +1,5 @@
+CLASS Car
+    ATTRIBUTES:
+        wheels = 4
+END
+# EXPECT ERROR: Expected class name after 'END'.

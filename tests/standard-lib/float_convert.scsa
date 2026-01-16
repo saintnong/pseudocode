@@ -1,0 +1,10 @@
+# NOTE: floats chop off trailing zeroes when stringified
+
+PRINT(FLOAT(10))      # EXPECT: 10
+PRINT(FLOAT("3.14"))  # EXPECT: 3.14
+PRINT(FLOAT(TRUE))    # EXPECT: 1
+PRINT(FLOAT(FALSE))   # EXPECT: 0
+PRINT(FLOAT("0.001")) # EXPECT: 0.001
+
+# Return 0 on failure
+PRINT(FLOAT("scsa")) # EXPECT: 0

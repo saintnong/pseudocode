@@ -1,0 +1,4 @@
+# The ! character must be followed by '='
+
+x = !(TRUE OR FALSE)
+# EXPECT ERROR: Unexpected character

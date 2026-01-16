@@ -1,0 +1,13 @@
+# Numeric truthiness
+PRINT(BOOL(1))        # EXPECT: true
+PRINT(BOOL(0))        # EXPECT: false
+PRINT(BOOL(0.0))      # EXPECT: false
+PRINT(BOOL(3.14))     # EXPECT: true
+
+# String truthiness
+PRINT(BOOL("true"))   # EXPECT: true
+PRINT(BOOL("TRUE"))   # EXPECT: true
+PRINT(BOOL("false"))  # EXPECT: false
+
+# Object/List truthiness 
+PRINT(BOOL([0]))      # EXPECT: true

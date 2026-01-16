@@ -1,0 +1,13 @@
+a = 0
+b = 0
+c = 10 + 5
+d = 69
+
+# Assignment should chain right to left
+a = b = c = d
+PRINT(a)
+PRINT(b)
+PRINT(c)
+# EXPECT: 69
+# EXPECT: 69
+# EXPECT: 69

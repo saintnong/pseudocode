@@ -1,0 +1,15 @@
+# Scope shadowing test
+# Don't overwrite globals
+
+x = 100
+
+FUNCTION overwrite_test(val)
+    x = val
+    PRINT(x)
+END overwrite_test
+
+overwrite_test(50)
+PRINT(x)
+
+# EXPECT: 50
+# EXPECT: 100

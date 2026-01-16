@@ -1,0 +1,5 @@
+CLASS Animal
+    ATTRIBUTES:
+        species = "Unknown"
+END CLASS
+# EXPECT ERROR: Expected class name after 'END'

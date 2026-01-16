@@ -1,0 +1,4 @@
+x = 15
+y = 0
+this = x / y
+# EXPECT ERROR: Division by zero

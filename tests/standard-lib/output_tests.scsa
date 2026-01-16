@@ -1,0 +1,41 @@
+# Tests for OUTPUT native funnc
+
+# =====================================
+#    Return type and conversion
+# =====================================
+PRINT(OUTPUT("wow thats a "))
+# EXPECT: wow thats a Null
+
+# =====================================
+#    Space delimiter
+# =====================================
+OUTPUT("give me", "back", "my atar")
+PRINT("!") 
+# EXPECT: give me back my atar!
+
+# =====================================
+#    No Newline
+# =====================================
+OUTPUT("testing")
+OUTPUT(123)
+OUTPUT("done")
+PRINT("")
+# EXPECT: testing123done
+
+# =====================================
+#    Float, Integer, Bool
+# =====================================
+OUTPUT(3.14, 42, TRUE, FALSE)
+PRINT("") 
+# EXPECT: 3.14 42 true false
+
+# =====================================
+#    Arrays and Callables
+# =====================================
+FUNCTION test() 
+    RETURN 1 
+END test
+
+OUTPUT([1, 2], test)
+PRINT("")
+# EXPECT: [1, 2] <FUNCTION test>

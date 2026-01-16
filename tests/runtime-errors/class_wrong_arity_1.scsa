@@ -1,0 +1,9 @@
+CLASS Cat
+    METHODS
+        FUNCTION Cat(name, age)
+            this.name = name
+        END Cat
+END Cat
+
+c = NEW Cat("Luna") 
+# EXPECT ERROR: Expected 2 arguments but got 1.

@@ -1,0 +1,14 @@
+# Tests that local variables shadow global ones
+
+a = 10
+b = 20
+
+FUNCTION swap_math(a, b)
+    RETURN a - b
+END swap_math
+
+PRINT(swap_math(5, 2))
+PRINT(a)
+
+# EXPECT: 3
+# EXPECT: 10

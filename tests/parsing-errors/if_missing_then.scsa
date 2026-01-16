@@ -1,0 +1,4 @@
+IF 10 > 5
+    PRINT("Bad")
+END IF
+# EXPECT ERROR: Expected 'THEN' after if condition.

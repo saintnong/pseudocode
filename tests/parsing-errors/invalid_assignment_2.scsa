@@ -1,0 +1,3 @@
+"" = 5
+
+# EXPECT ERROR: Invalid assignment target.

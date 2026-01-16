@@ -1,0 +1,4 @@
+# Forgetting to close the constructor call
+obj = NEW ComputerScienceStudent("Ning", 3
+
+# EXPECT ERROR: Expected ')' after arguments.

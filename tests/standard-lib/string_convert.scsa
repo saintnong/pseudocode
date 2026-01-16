@@ -1,0 +1,8 @@
+PRINT(STRING(123))      # EXPECT: 123
+PRINT(STRING(3.14))     # EXPECT: 3.14
+PRINT(STRING(TRUE))     # EXPECT: true
+PRINT(STRING([1, 2]))   # EXPECT: [1, 2]
+
+val = 52
+PRINT("Math test score: " + STRING(val))
+# EXPECT: Math test score: 52

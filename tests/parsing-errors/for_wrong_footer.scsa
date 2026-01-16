@@ -1,0 +1,4 @@
+FOR x IN [1]
+    PRINT(x)
+END IF
+# EXPECT ERROR: Expected 'FOR' after 'END'.

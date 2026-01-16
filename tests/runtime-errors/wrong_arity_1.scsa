@@ -1,0 +1,5 @@
+FUNCTION my_function()
+    PRINT("This function takes no variables!")
+END my_function
+my_function("yeet")
+# EXPECT ERROR: Expected 0 arguments but got 1

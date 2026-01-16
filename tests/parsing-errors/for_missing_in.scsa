@@ -1,0 +1,4 @@
+FOR x [1, 2, 3]
+    PRINT(x)
+END FOR
+# EXPECT ERROR: Expected 'IN' after for loop variable.

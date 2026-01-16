@@ -1,0 +1,4 @@
+FUNCTION calculate_total(a, b)
+    RETURN a + b
+END total_calculation
+# EXPECT ERROR: Function name after 'END' does not match function declaration.

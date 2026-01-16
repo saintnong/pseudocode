@@ -1,0 +1,6 @@
+FUNCTION square(x)
+    RETURN x * x
+END square
+
+square(75, 12)
+# EXPECT ERROR: Expected 1 arguments but got 2

@@ -1,0 +1,41 @@
+# Can SCSA do BIMDAS?
+
+result1 = 2 + 3 * 4
+PRINT(result1)
+# EXPECT: 14
+
+result2 = 10 - 4 / 2
+PRINT(result2)
+# EXPECT: 8
+
+result3 = (2 + 3) * 4
+PRINT(result3)
+# EXPECT: 20
+
+result4 = 2 * (15 - (3 + 2))
+PRINT(result4)
+# EXPECT: 20
+
+result5 = 12 / 3 * 2
+PRINT(result5)
+# EXPECT: 8
+
+result6 = 5 * 4 + 3 * 2
+PRINT(result6)
+# EXPECT: 26
+
+result7 = 20 - 10 / 5 + 1
+PRINT(result7)
+# EXPECT: 19
+
+result8 = (100 - 50) / (5 * 2)
+PRINT(result8)
+# EXPECT: 5
+
+result9 = 50 + 10 - 5 * 4
+PRINT(result9)
+# EXPECT: 40
+
+result10 = (10 + 2) / (6 - 3) * 5
+PRINT(result10)
+# EXPECT: 20

@@ -1,0 +1,5 @@
+FOR x IN [1, 3, 5, 7, 9]
+    OUTPUT(x * 3)
+    OUTPUT(" ")
+END FOR
+# EXPECT: 3 9 15 21 27

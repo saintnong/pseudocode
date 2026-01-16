@@ -1,0 +1,4 @@
+IF TRUE THEN
+    PRINT("no END in sight...")
+    OUTPUT("hahaha im so funny")
+# EXPECT ERROR: Expected 'END' after if.

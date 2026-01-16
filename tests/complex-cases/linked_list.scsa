@@ -1,0 +1,75 @@
+# List Node definition
+CLASS Node
+    ATTRIBUTES
+        value = 0
+        next = 0
+    METHODS
+        FUNCTION Node(val)
+            this.value = val
+        END Node
+END Node
+
+# Linked List definition
+CLASS LinkedList
+    ATTRIBUTES
+        head = 0
+    METHODS
+        FUNCTION LinkedList()
+        END LinkedList
+
+        # Links nodes to the end of the chain
+        # This is literally COMP2521 omg
+        FUNCTION add(val)
+            new_node = NEW Node(val)
+            
+            IF this.head == 0 THEN
+                this.head = new_node
+            ELSE
+                current = this.head
+                WHILE current.next != 0
+                    current = current.next
+                END WHILE
+                current.next = new_node
+            END IF
+        END add
+
+        # Traverses the list to calculate a sum
+        FUNCTION get_sum()
+            total = 0
+            current = this.head
+            WHILE current != 0
+                total = total + current.value
+                current = current.next
+            END WHILE
+            RETURN total
+        END get_sum
+END LinkedList
+
+
+# Program Start
+
+list = NEW LinkedList()
+list.add(10)
+list.add(20)
+list.add(30)
+
+# Take head value
+PRINT(list.head.value)
+# EXPECT: 10
+
+# Reference chain test
+PRINT(list.head.next.next.value)
+# EXPECT: 30
+
+# Traverse the list
+total_sum = list.get_sum()
+PRINT(total_sum)
+# EXPECT: 60
+
+# Modify a node
+node_ref = list.head.next
+node_ref.value = 50
+
+# Now sum should be 10 + 50 + 30 = 90
+PRINT(list.get_sum())
+# EXPECT: 90

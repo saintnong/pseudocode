@@ -1,0 +1,2 @@
+grid = [[1, 2], [3, 4]
+# EXPECT ERROR: Expected ']' after array elements.

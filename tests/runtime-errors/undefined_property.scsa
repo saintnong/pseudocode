@@ -1,0 +1,6 @@
+CLASS Dog
+END Dog
+
+d = NEW Dog()
+PRINT(d.age)
+# EXPECT ERROR: Undefined property 'age'.

@@ -1,0 +1,114 @@
+CLASS BSTNode
+    ATTRIBUTES
+        value = 0
+        left = 0
+        right = 0
+    METHODS
+        FUNCTION BSTNode(val)
+            this.value = val
+        END BSTNode
+END BSTNode
+
+CLASS BinaryTree
+    ATTRIBUTES
+        root = 0
+    METHODS
+        FUNCTION BinaryTree()
+        END BinaryTree
+
+        // BST Insertion algorithm
+        // Iterative version
+        FUNCTION insert(val)
+            new_node = NEW BSTNode(val)
+            IF this.root == 0 THEN
+                this.root = new_node
+            ELSE
+                current = this.root
+                placed = FALSE
+                WHILE placed == FALSE
+                    IF val < current.value THEN
+                        IF current.left == 0 THEN
+                            current.left = new_node
+                            placed = TRUE
+                        ELSE
+                            current = current.left
+                        END IF
+                    ELSE
+                        IF current.right == 0 THEN
+                            current.right = new_node
+                            placed = TRUE
+                        ELSE
+                            current = current.right
+                        END IF
+                    END IF
+                END WHILE
+            END IF
+        END insert
+
+        # Checks if a value exists in the tree
+        FUNCTION contains(val)
+            current = this.root
+            WHILE current != 0
+                IF val == current.value THEN
+                    RETURN TRUE
+                END IF
+                
+                IF val < current.value THEN
+                    current = current.left
+                ELSE
+                    current = current.right
+                END IF
+            END WHILE
+            RETURN FALSE
+        END contains
+END BinaryTree
+
+tree = NEW BinaryTree()
+
+# Build the tree
+#        50
+#       /  \
+#      30   70
+#     /
+#    20
+tree.insert(50)
+tree.insert(30)
+tree.insert(70)
+tree.insert(20)
+
+# Check Root
+PRINT(tree.root.value) # EXPECT: 50
+
+# 50 -> left -> 30
+PRINT(tree.root.left.value) # EXPECT: 30
+
+# 50 -> left -> 30 -> left -> 20
+PRINT(tree.root.left.left.value) # EXPECT: 20
+
+PRINT(tree.contains(70))  # EXPECT: true
+PRINT(tree.contains(69)) # EXPECT: false
+
+# Manually grab the node with value 70 and change it
+found_node = tree.root.right
+found_node.value = 85
+
+PRINT(tree.contains(85)) # EXPECT: true
+PRINT(tree.contains(70)) # EXPECT: false
+
+# Test recursive traversal algorithm on tree
+# COMP2521 flashbacks belike:
+FUNCTION inOrderTraverse(t)
+    IF t != 0 THEN
+        # visit left
+        inOrderTraverse(t.left)
+
+        # visit current
+        OUTPUT(STRING(t.value) + " ")
+
+        # visit right
+        inOrderTraverse(t.right)
+    END IF
+END inOrderTraverse
+
+inOrderTraverse(tree.root)
+# EXPECT: 20 30 50 85

@@ -1,0 +1,3 @@
+myInt = 1984
+PRINT(myInt())
+# EXPECT ERROR: Can only call functions

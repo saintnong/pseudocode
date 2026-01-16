@@ -1,0 +1,4 @@
+var1 = 12345
+var2 = 8
+PRINT(var2 IN var1)
+# EXPECT ERROR: requires right hand side to be a

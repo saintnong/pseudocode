@@ -1,0 +1,10 @@
+r = RANDOM(1, 100)
+PRINT(TYPE(r))
+# EXPECT: INT
+
+PRINT(r <= 100 AND r >= 1)
+# EXPECT: true
+
+# RANDOM goes to zero on failure
+PRINT(RANDOM("bruh", "idk"))
+# EXPECT: 0

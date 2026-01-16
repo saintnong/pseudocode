@@ -1,0 +1,19 @@
+# Recursive function test
+
+FUNCTION fibonacci(n)
+    IF n <= 1 THEN
+        RETURN n
+    END IF
+    
+    a = n - 1
+    b = n - 2
+    RETURN fibonacci(a) + fibonacci(b)
+END fibonacci
+
+result = fibonacci(7)
+PRINT(result)
+# EXPECT: 13
+PRINT(fibonacci(15))
+# EXPECT: 610
+PRINT(fibonacci(1))
+# EXPECT: 1

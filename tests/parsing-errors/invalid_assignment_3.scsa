@@ -1,0 +1,4 @@
+# technically true lol
+3.14159 = pi
+
+# EXPECT ERROR: Invalid assignment target.

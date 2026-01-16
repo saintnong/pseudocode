@@ -1,0 +1,11 @@
+# Multi argument functions
+
+FUNCTION calculate_volume(length, width, height)
+    area = length * width
+    volume = area * height
+    RETURN volume
+END calculate_volume
+
+v = calculate_volume(5, 10, 2)
+PRINT(v)
+# EXPECT: 100

@@ -336,6 +336,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
      * >> OUTPUT(... vars: Any)
      * => Null
      * Outputs values to the console WITHOUT a trailing newline.
+     * Multiple arguments are separated by spaces.
      */
     auto outputNative = std::make_shared<NativeFunction>(
         VARIADIC_ARITY, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
@@ -495,11 +496,10 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
             int min = args[0].as<int>();
             int max = args[1].as<int>();
 
-            // Handle inverted ranges
+            // Inverted ranges when the user is a dumbass
             if (min > max)
                 std::swap(min, max);
 
-            // Use static generator to maintain state across calls
             static std::mt19937 gen(std::random_device{}());
             std::uniform_int_distribution<> dis(min, max);
 
