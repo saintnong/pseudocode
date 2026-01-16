@@ -930,7 +930,7 @@ RuntimeValue Interpreter::visitBinaryExpr(BinaryExpr *expr) {
     case TOK_IN: {
         // Collection Membership
         if (!right.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
-            throw RuntimeError(expr->op, "'IN' operator requires right hand side to be a list.");
+            throw RuntimeError(expr->op, "'IN' operator requires right hand side to be an array.");
         }
 
         auto arr     = right.as<std::shared_ptr<std::vector<RuntimeValue>>>();
@@ -1085,6 +1085,13 @@ RuntimeValue Interpreter::visitNewExpr(NewExpr *expr) {
     }
 
     auto klass = classVal.as<std::shared_ptr<Callable>>();
+
+    if (klass->arity() != VARIADIC_ARITY && 
+        arguments.size() != (size_t)klass->arity()) {
+        throw RuntimeError(expr->className, "Expected " + std::to_string(klass->arity()) + 
+                           " arguments but got " + std::to_string(arguments.size()) + ".");
+    }
+
     return klass->call(*this, arguments);
 }
 
