@@ -69,6 +69,21 @@ Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Ins
 - ✨✨Object Oriented Programming✨✨
     - Most features working, but the syntax requires 'this' to reference object attributes/methods which is technicaly not SCSA standard
 
+## Integration Tests
+This project uses a small custom Python test harness integrated with CTest for CI/CD. Tests execute `.scsa` files and check that the interpreter output matches what is expected in the comments. To run the test suite:
+
+1. Build the project ([see installation](https://github.com/SaintNong/pseudocode/wiki/Installation-Guide))
+2. Run the tests from the `/tests` directory
+
+```bash
+# Runs the integration tests
+python3 tester.py <path-to-your-binary>
+```
+
+## Environment Variables
+The interpreter supports the following environment variables:
+- `NO_COLOR`: If set, suppresses all ANSI escape sequences for color output. Follows the [NO_COLOR](https://no-color.org) informal standard.
+
 # Other stuff
 ## Currently WIP Features
 - ✨✨Object Oriented Programming✨✨
@@ -79,10 +94,6 @@ Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Ins
 - ELSE IF statements
 - Better string manipulation
 
-## Environment Variables
-The interpreter supports the following environment variables:
-- `NO_COLOR`: If set, suppresses all ANSI escape sequences for color output. Follows the [NO_COLOR](https://no-color.org) informal standard.
-
 ## Future Plans
 - Custom Bytecode VM which requires:
     - Custom stack-based bytecode
@@ -91,16 +102,6 @@ The interpreter supports the following environment variables:
     - Some bytecode optimisation
 - Manual garbage collector (reference based)
 
-## Testing
-This project uses a small custom Python test harness integrated with CTest for CI/CD. Tests execute `.scsa.` files and check that the interpreter output matches what is expected in the comments. To run tests:
-
-1. Build the project ([see installation](https://github.com/SaintNong/pseudocode/wiki/Installation-Guide))
-2. Run the tests from the `/tests` directory
-
-```bash
-# Runs the integration tests
-python3 tester.py <path-to-your-binary>
-```
 
 
 ## Credits
