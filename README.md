@@ -65,6 +65,7 @@ Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Ins
 - While and For-in loops
 - If & If-Else statements
 - Functions
+- Iterable and indexable strings
 - Arrays
     - `array.slice(a, b)` Returns a shallow copy from index a to b (inclusive)
     - `array.append(x)` Appends value to the end of the array
@@ -94,7 +95,6 @@ The interpreter supports the following environment variables:
     - Polymorphism and inheritance are WIP
 - Case statement
 - ELSE IF statements
-- Better string manipulation
 
 ## Future Plans
 - Custom Bytecode VM which requires:
@@ -103,8 +103,6 @@ The interpreter supports the following environment variables:
     - Bytecode virtual machine
     - Some bytecode optimisation
 - Manual garbage collector (reference based)
-
-
 
 ## Credits
 - Crafting Interpreters by Robert Nystrom
