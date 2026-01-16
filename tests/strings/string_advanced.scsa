@@ -1,0 +1,12 @@
+s = "Thinking"
+
+# Expressions as indices
+i = 2
+PRINT(s[i + 1])
+# EXPECT: n
+
+# Immutable test
+char = s[0]
+char = "Z"
+PRINT(s)
+# EXPECT: Thinking
