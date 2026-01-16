@@ -18,4 +18,4 @@ PRINT(list)
 # EXPECT: [19, This thing, 3, 75]
 
 PRINT(TYPE(list))
-# EXPECT: LIST
+# EXPECT: ARRAY

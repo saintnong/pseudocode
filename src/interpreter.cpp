@@ -115,7 +115,7 @@ typedef std::function<RuntimeValue(Interpreter &, std::vector<RuntimeValue>)> Na
 class NativeFunction : public Callable {
     // The C++ implementation of the function
     NativeFn function;
-    // Cached arity (-1 for variadic)
+    // Cached arity
     int _arity;
 
 public:
@@ -992,27 +992,80 @@ RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
     RuntimeValue object = evaluate(expr->object.get());
 
     /**
-     * Special case: Arrays as objects
+     * Special case: Arrays are fake objects
      */
     if (object.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
+        // Anchor token for better error reporting
+        Token anchor     = expr->name;
         auto arr         = object.as<std::shared_ptr<std::vector<RuntimeValue>>>();
         std::string name = expr->name.lexeme;
 
         // ===============================
         // Array Methods
         // ===============================
-        // arr.append('item')
+
+        // Appends an item to the array
+        // arr.append(item)
+        /**
+         * Appends the given item to the end of the array
+         *
+         */
         if (name == "append") {
             // Return a native which simply appends the list
             auto appendMethod = std::make_shared<NativeFunction>(
-                1, [arr](Interpreter&, std::vector<RuntimeValue> args) -> RuntimeValue {
+                1, [arr](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
                     arr->push_back(args[0]);
                     return {arr};
-                }
-            );
+                });
 
             RuntimeValue method;
             method.value = std::static_pointer_cast<Callable>(appendMethod);
+            return method;
+        }
+
+        /**
+         * Slices the array from the start to end index (inclusive)
+         * If start is not given, the array is sliced from 0 to end.
+         * array.slice(start?, end)
+         * @param start?
+         * @param end
+         * @returns shallow copy of array
+         */
+        if (name == "slice") {
+            // Return a native function which returns the slice
+            auto sliceMethod = std::make_shared<NativeFunction>(
+                2, [arr, anchor](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+                    if (!args[0].is<int>() || !args[1].is<int>()) {
+                        throw RuntimeError(anchor, "Slice indices must be integers.");
+                    }
+
+                    int start = args[0].as<int>();
+                    int end   = args[1].as<int>();
+                    int size  = static_cast<int>(arr->size());
+
+                    // Clamp indices
+                    if (start < 0)
+                        start = 0;
+                    if (end >= size)
+                        end = size - 1;
+
+                    // New vector
+                    auto res = std::make_shared<std::vector<RuntimeValue>>();
+
+                    // Shallowly copy the old vector
+                    if (start <= end && start < size) {
+                        for (int i = start; i <= end; ++i) {
+                            res->push_back((*arr)[i]);
+                        }
+                    }
+
+                    RuntimeValue result;
+                    result.value = res;
+                    return result;
+                });
+
+            RuntimeValue method;
+            method.value = std::static_pointer_cast<Callable>(sliceMethod);
             return method;
         }
 
