@@ -1,0 +1,15 @@
+# Test for string length property
+
+string = ""
+
+PRINT(string.length)
+# EXPECT: 0
+
+string = string + "hello"
+
+PRINT(string.length)
+# EXPECT: 5
+
+string = string + " world"
+PRINT(string.length)
+# EXPECT: 11
