@@ -1353,28 +1353,28 @@ void Interpreter::visitClassStmt(ClassStmt *stmt) {
 void Interpreter::visitForInStmt(ForInStmt *stmt) {
     RuntimeValue iterable = evaluate(stmt->iterable.get());
 
-    // Create a single loop environment to store the loop variable and persist other local changes
-    // between iterations.
-    auto loopEnv = std::make_shared<Environment>(environment);
-
     // Arrays
     if (iterable.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
         auto arr = iterable.as<std::shared_ptr<std::vector<RuntimeValue>>>();
 
         for (const auto &elem : *arr) {
-            loopEnv->define(stmt->variable.lexeme, elem);
-            executeBlock(stmt->body, loopEnv);
+            // Make loop variable
+            environment->define(stmt->variable.lexeme, elem);
+            for (const auto &s : stmt->body) {
+                execute(s.get());
+            }
         }
     }
     // Strings
     else if (iterable.is<std::string>()) {
         std::string str = iterable.as<std::string>();
         for (char c : str) {
-            // Convert to single char
+            // Convert to single char RuntimeValue
             RuntimeValue charVal = RuntimeValue{std::string(1, c)};
-
-            loopEnv->define(stmt->variable.lexeme, charVal);
-            executeBlock(stmt->body, loopEnv);
+            environment->define(stmt->variable.lexeme, charVal);
+            for (const auto &s : stmt->body) {
+                execute(s.get());
+            }
         }
     } else {
         // Neither string/array

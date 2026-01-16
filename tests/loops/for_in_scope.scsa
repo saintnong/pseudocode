@@ -1,0 +1,10 @@
+# Test that you can use variables outside the loop
+aggregator = 0
+arr = [1, 2, 3, 4, 5]
+
+FOR x IN arr
+    aggregator = aggregator + x
+END FOR
+
+PRINT(aggregator)
+# EXPECT: 15
