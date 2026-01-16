@@ -50,7 +50,7 @@ private:
         PREC_COMPARISON = 30, // < > <= >= IN
         PREC_TERM       = 40, // + -
         PREC_FACTOR     = 50, // * /
-        PREC_UNARY      = 60, // NOT - (unary)
+        PREC_UNARY      = 60, // NOT -
         PREC_CALL       = 70, // . () []
         PREC_PRIMARY    = 80  // (highest)
     };
