@@ -1123,7 +1123,7 @@ RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
 RuntimeValue Interpreter::visitArrayAccessExpr(ArrayAccessExpr *expr) {
     // Resolve both the and right
     RuntimeValue containerVal = evaluate(expr->array.get());
-    RuntimeValue indexVal = evaluate(expr->index.get());
+    RuntimeValue indexVal     = evaluate(expr->index.get());
 
     // Ensure index is an integer
     if (!indexVal.is<int>()) {
@@ -1312,22 +1312,36 @@ void Interpreter::visitClassStmt(ClassStmt *stmt) {
 
 /**
  * Visit: For-In Loop
- * Iterates over the elements of an array, executing the body for each one.
+ * Iterates over the elements of an iterable, executing the body for each one.
  * Binds the current element to a local loop variable.
  */
 void Interpreter::visitForInStmt(ForInStmt *stmt) {
     RuntimeValue iterable = evaluate(stmt->iterable.get());
 
-    if (!iterable.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
-        throw RuntimeError(stmt->variable, "Can only iterate over arrays.");
+    // Arrays
+    if (iterable.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
+        auto arr = iterable.as<std::shared_ptr<std::vector<RuntimeValue>>>();
+
+        for (const auto &elem : *arr) {
+            // Don't pollute scope with our iterated variable
+            auto loopEnv = std::make_shared<Environment>(environment);
+            loopEnv->define(stmt->variable.lexeme, elem);
+            executeBlock(stmt->body, loopEnv);
+        }
     }
+    // Strings
+    else if (iterable.is<std::string>()) {
+        std::string str = iterable.as<std::string>();
+        for (char c : str) {
+            // Convert to single char
+            RuntimeValue charVal = RuntimeValue{std::string(1, c)};
 
-    auto arr = iterable.as<std::shared_ptr<std::vector<RuntimeValue>>>();
-
-    for (const auto &element : *arr) {
-        // Create a fresh scope for each iteration to avoid leaks between iterations
-        auto loopEnv = std::make_shared<Environment>(environment);
-        loopEnv->define(stmt->variable.lexeme, element);
-        executeBlock(stmt->body, loopEnv);
+            auto loopEnv = std::make_shared<Environment>(environment);
+            loopEnv->define(stmt->variable.lexeme, charVal);
+            executeBlock(stmt->body, loopEnv);
+        }
+    } else {
+        // Neither string/array
+        throw RuntimeError(stmt->variable, "Can only iterate over arrays or strings.");
     }
 }
