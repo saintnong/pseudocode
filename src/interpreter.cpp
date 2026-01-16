@@ -1115,30 +1115,45 @@ RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
 }
 
 /**
- * Visit: Array Access
- * Retrieves an element from an array using a numeric index.
- * @param expr Index node (array[index])
+ * Visit: Array and string index access node
+ * Retrieves an element from an array/string using a numeric index.
+ * @param expr Index node (container[index])
  * @return The value at the specified position
  */
 RuntimeValue Interpreter::visitArrayAccessExpr(ArrayAccessExpr *expr) {
-    RuntimeValue arrayVal = evaluate(expr->array.get());
+    // Resolve both the and right
+    RuntimeValue containerVal = evaluate(expr->array.get());
     RuntimeValue indexVal = evaluate(expr->index.get());
 
-    if (!arrayVal.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
-        throw RuntimeError(expr->anchor, "Can only index arrays.");
-    }
+    // Ensure index is an integer
     if (!indexVal.is<int>()) {
         throw RuntimeError(expr->anchor, "Array index must be an integer.");
     }
+    int idx = indexVal.as<int>();
 
-    auto arr = arrayVal.as<std::shared_ptr<std::vector<RuntimeValue>>>();
-    int idx  = indexVal.as<int>();
+    // Case: Array indexing
+    if (containerVal.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
+        auto arr = containerVal.as<std::shared_ptr<std::vector<RuntimeValue>>>();
 
-    if (idx < 0 || idx >= static_cast<int>(arr->size())) {
-        throw RuntimeError(expr->anchor, "Array index out of bounds.");
+        if (idx < 0 || idx >= static_cast<int>(arr->size())) {
+            throw RuntimeError(expr->anchor, "Array index out of bounds.");
+        }
+        return (*arr)[idx];
     }
 
-    return (*arr)[idx];
+    // Case: String indexing
+    if (containerVal.is<std::string>()) {
+        std::string str = containerVal.as<std::string>();
+
+        if (idx < 0 || idx >= static_cast<int>(str.length())) {
+            throw RuntimeError(expr->anchor, "String index out of bounds.");
+        }
+
+        return RuntimeValue{std::string(1, str[idx])};
+    }
+
+    // Neither array nor string
+    throw RuntimeError(expr->anchor, "Can only index arrays or strings.");
 }
 
 /**
