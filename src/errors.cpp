@@ -159,12 +159,15 @@ std::string ErrorReporter::getSourceLine(size_t lineNum) {
  * @param lineSource The actual source code line containing the error
  * @param length The length of the erroneous token (for underlining)
  */
-/**
- * Format and display a complete error message with context
- * Shows the error stage, location, line content, surrounding lines, and error pointer
- */
 void ErrorReporter::report(ErrorType type, size_t line, size_t column, const std::string &message,
                            size_t length) {
+    hadError = true;
+
+    // In silent mode, record the error but don't output anything
+    if (isSilent) {
+        return;
+    }
+
     // Print which stage the interpreter is in
     std::string stageLabel = getStageLabel();
     std::cerr << C_RED << "[An error has occurred during the stage: '" << stageLabel << "']"
@@ -266,8 +269,6 @@ void ErrorReporter::report(ErrorType type, size_t line, size_t column, const std
 
     // // Lovely message from our overlords SCSA
     // printAtarMessage();
-
-    hadError = true;
 
     throw std::runtime_error("");
 }

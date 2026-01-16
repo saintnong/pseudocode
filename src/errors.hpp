@@ -63,6 +63,9 @@ private:
     // Whether we're in a REPL or not
     bool isRepl = false;
 
+    // When true, errors are recorded but not printed (for continuation checking)
+    bool isSilent = false;
+
 public:
     /**
      * Construct error reporter with reference to current stage, filename, and source code
@@ -95,6 +98,14 @@ public:
      */
     void setReplMode(bool active) {
         isRepl = active;
+    }
+
+    /**
+     * Sets silent mode - errors are recorded but not printed.
+     * Useful for checking input continuation without displaying errors.
+     */
+    void setSilent(bool active) {
+        isSilent = active;
     }
 
     /**
