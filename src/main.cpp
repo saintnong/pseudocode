@@ -14,6 +14,7 @@
 
 #include "ast_printer.hpp"
 #include "errors.hpp"
+#include "input_buffer.hpp"
 #include "interpreter.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
@@ -91,7 +92,7 @@ int Pseudocode::runFile(const std::string &path) {
         if (reporter.hadError)
             return 1;
 
-        // === Execute ===
+        // === Execution ===
         stage = InterpreterStage::Runtime;
         Interpreter interpreter(reporter);
         interpreter.interpret(statements);
@@ -106,6 +107,7 @@ int Pseudocode::runFile(const std::string &path) {
 /**
  * Interactive REPL
  * Provides a persistent environment for executing code line-by-line.
+ * Supports multi-line input for functions, classes, and control structures.
  */
 int Pseudocode::runRepl() {
     InterpreterStage stage = InterpreterStage::Lexing;
@@ -122,33 +124,65 @@ int Pseudocode::runRepl() {
     // Keep AST nodes alive for the duration of the session
     std::vector<StmtPtr> sessionHistory;
 
+    // Multi-line input buffer
+    std::string buffer;
+    bool inMultiline = false;
+
     std::string line;
     while (true) {
-        std::cout << "[SCSA] >> " << std::flush;
+        // Show appropriate prompt based on multi-line state
+        if (inMultiline) {
+            std::cout << "       .. " << std::flush;
+        } else {
+            std::cout << "[SCSA] >> " << std::flush;
+        }
+
         if (!std::getline(std::cin, line))
             break;
-        if (line.empty())
-            continue;
-        if (line == "exit")
+
+        // Only check exit command when not in multi-line mode
+        if (!inMultiline && line == "exit")
             break;
 
-        reporter.replAddLine(line);
+        // Accumulate input
+        if (!buffer.empty()) {
+            buffer += "\n";
+        }
+        buffer += line;
+
+        // Check if we need more input (unclosed blocks)
+        if (InputBuffer::needsContinuation(buffer)) {
+            inMultiline = true;
+            continue;
+        }
+
+        // Complete input received - process it
+        inMultiline = false;
+
+        // Skip empty buffers
+        if (buffer.empty()) {
+            continue;
+        }
+
+        reporter.replAddLine(buffer);
         reporter.hadError = false;
 
         try {
-            // Lexing
+            // === Lexing ===
             stage = InterpreterStage::Lexing;
-            Lexer lexer(line, reporter);
+            Lexer lexer(buffer, reporter);
             std::vector<Token> tokens = lexer.scanTokens();
             if (debugTokens)
                 printTokenTable(tokens);
 
-            if (reporter.hadError)
+            if (reporter.hadError) {
+                buffer.clear();
                 continue;
+            }
 
-            // Parsing
+            // === Parsing ===
             stage = InterpreterStage::Parsing;
-            Parser parser(tokens, line, reporter);
+            Parser parser(tokens, buffer, reporter);
             std::vector<StmtPtr> parsed = parser.parse();
 
             if (debugParse) {
@@ -156,25 +190,32 @@ int Pseudocode::runRepl() {
                 printer.print(parsed);
             }
 
-            if (reporter.hadError)
+            if (reporter.hadError) {
+                buffer.clear();
                 continue;
+            }
 
-            // Execution
+            // === Execution ===
             stage = InterpreterStage::Runtime;
 
             // Special Case: Standalone Expression Evaluation
             if (parsed.size() == 1) {
                 if (auto *exprStmt = dynamic_cast<ExpressionStmt *>(parsed[0].get())) {
                     try {
+                        // Print the evaluated value of the expression
                         RuntimeValue value = interpreter.evaluate(exprStmt->expression.get());
                         std::cout << C_GREEN << "=> " << C_RESET << stringify(value) << std::endl;
                         sessionHistory.push_back(std::move(parsed[0]));
                     } catch (const RuntimeError &error) {
+                        // We need to manually report the runtime error
+                        // The interpreter usually reports runtime errors in the interpret function
+                        // But here we're evaluating an expression directly
                         Token token     = error.token;
                         std::string msg = error.what();
                         reporter.report(ErrorType::Runtime, token.line, token.column, msg,
                                         token.lexeme.length());
                     }
+                    buffer.clear();
                     continue;
                 }
             }
@@ -182,14 +223,17 @@ int Pseudocode::runRepl() {
             // Standard Statement Execution
             interpreter.interpret(parsed);
 
-            // Persist AST nodes (for multi-line block/function definitions)
+            // Persist AST nodes
             sessionHistory.insert(sessionHistory.end(), std::make_move_iterator(parsed.begin()),
                                   std::make_move_iterator(parsed.end()));
         } catch (const std::runtime_error &) {
-            // Caught elsewhere
+            // This error is reported elsewhere
         } catch (const std::exception &e) {
             std::cerr << "Unexpected Error: " << e.what() << std::endl;
         }
+
+        // Clear buffer after processing
+        buffer.clear();
     }
 
     return 0;
