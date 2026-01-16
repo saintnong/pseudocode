@@ -1,8 +1,0 @@
-FUNCTION square(k)
-    RETURN k * k
-END square
-
-x = 3.14
-y = (x * 5) + 4
-PRINT(y)
-PRINT(square(x))

@@ -1,5 +1,0 @@
-FUNCTION this(y)
-    PRINT(y * 2)
-END that
-
-this(5)

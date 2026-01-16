@@ -1,0 +1,51 @@
+# Quicksort in scsa pseudocode
+
+FUNCTION Swap(arr, i, j)
+    temp = arr[i]
+    arr[i] = arr[j]
+    arr[j] = temp
+END Swap
+
+FUNCTION Partition(arr, low, high)
+    pivot = arr[high]
+    i = low - 1
+    
+    j = low
+    WHILE j < high
+        IF arr[j] < pivot THEN
+            i = i + 1
+            Swap(arr, i, j)
+        END IF
+        j = j + 1
+    END WHILE
+    
+    Swap(arr, i + 1, high)
+    RETURN i + 1
+END Partition
+
+# Recursive quicksort
+FUNCTION QuickSort(arr, low, high)
+    IF low < high THEN
+        pi = Partition(arr, low, high)
+        
+        QuickSort(arr, low, pi - 1)
+        QuickSort(arr, pi + 1, high)
+    END IF
+    RETURN arr
+END QuickSort
+
+# Get user input and sort the array
+
+PRINT("=== Quick Sort In SCSA Pseudocode ===")
+input_length = INT(INPUT("Length of array: "))
+my_list = []
+i = 0
+WHILE i < input_length
+    val = INT(INPUT("Enter element " + STRING(i + 1) + ": "))
+    my_list.append(val)
+    i = i + 1
+END WHILE
+
+PRINT("Unsorted array: " + STRING(my_list))
+PRINT("Quicksorted array: ")
+PRINT(QuickSort(my_list, 0, my_list.length - 1))

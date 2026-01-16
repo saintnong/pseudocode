@@ -1,9 +1,0 @@
-x = 15
-IF x == 10 THEN
-    PRINT("x is 10")
-ELSE
-    IF x == 15 THEN
-        PRINT("x is 15")
-    END IF
-END IF
-PRINT("End")

@@ -1,0 +1,44 @@
+# Benchmark: Prime Number Finder
+# This benchmark lets us compare against other languages
+
+FUNCTION check_primes(limit)
+    count = 0
+    num = 2
+    
+    WHILE num <= limit
+        is_prime = TRUE
+        divisor = 2
+        
+        check_limit = num / 2
+        
+        WHILE divisor <= check_limit
+            test_val = num
+            WHILE test_val >= divisor
+                test_val = test_val - divisor
+            END WHILE
+            
+            IF test_val == 0 THEN
+                is_prime = FALSE
+                divisor = check_limit
+            END IF
+            divisor = divisor + 1
+        END WHILE
+        
+        IF is_prime == TRUE THEN
+            count = count + 1
+        END IF
+        
+        num = num + 1
+    END WHILE
+    
+    RETURN count
+END check_primes
+
+PRINT("Target: Find all primes up to 2000")
+start = TIME()
+total_found = check_primes(2000)
+end = TIME()
+
+total_time = end - start
+PRINT("Primes found: " + STRING(total_found))
+PRINT("Execution Time: " + STRING(total_time) + "s")

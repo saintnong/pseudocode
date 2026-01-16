@@ -1,7 +1,0 @@
-FUNCTION isPositive(n)
-    RETURN n > 0
-END isPositive
-
-val = 15
-check = isPositive(val)
-PRINT(check)
