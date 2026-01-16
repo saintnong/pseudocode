@@ -1,0 +1,28 @@
+# Tests that objects are passed by reference and
+# two variables can hence point to the same object
+
+CLASS Box
+    ATTRIBUTES
+        item = "Empty"
+    METHODS
+        FUNCTION Box()
+        END Box
+END Box
+
+FUNCTION fill_box(box_ref, new_item)
+    box_ref.item = new_item
+END fill_box
+
+my_box = NEW Box()
+
+# Function modification
+fill_box(my_box, "Gold")
+PRINT(my_box.item)
+# EXPECT: Gold
+
+# alias_box is pointing to the same box!
+alias_box = my_box
+alias_box.item = "Diamond"
+
+PRINT(my_box.item)
+# EXPECT: Diamond

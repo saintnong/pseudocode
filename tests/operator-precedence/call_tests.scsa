@@ -1,0 +1,12 @@
+# Checks PREC_CALL and PREC_UNARY work
+
+CLASS Data
+    ATTRIBUTES
+        list = [FALSE, TRUE]
+END Data
+
+d = NEW Data()
+
+result = NOT d.list[1]
+PRINT(result)
+# EXPECT: false

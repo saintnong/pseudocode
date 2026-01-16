@@ -1,0 +1,36 @@
+# Tests that each instance maintains its own state
+# without colliding with each other
+
+CLASS Counter
+    ATTRIBUTES
+        count = 0
+        id = 0
+    METHODS
+        FUNCTION Counter(start_val, new_id)
+            this.count = start_val
+            this.id = new_id
+        END Counter
+        FUNCTION increment()
+            this.count = this.count + 1
+        END increment
+END Counter
+
+c1 = NEW Counter(10, 1)
+c2 = NEW Counter(50, 2)
+PRINT(c1, c2)
+# EXPECT: <CLASS Counter> <CLASS Counter>
+
+c1.increment()
+c1.increment()
+# c1.count = 10 + 1 + 1 = 12
+PRINT(c1.count)
+# EXPECT: 12
+
+c2.increment()
+# c2.count = 50 + 1 = 51
+PRINT(c2.count)
+# EXPECT: 51
+
+# ensure ids don't overwrite
+PRINT(c1.id, c2.id)
+# EXPECT: 1 2

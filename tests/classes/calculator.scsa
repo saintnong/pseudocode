@@ -1,0 +1,39 @@
+# Checks that 'this' works correctly
+
+CLASS Calculator
+    ATTRIBUTES
+        val = 100
+    METHODS
+        FUNCTION Calculator()
+        END Calculator
+
+        FUNCTION set_val(val)
+            this.val = val
+        END set_val
+
+        FUNCTION add(amount)
+            this.val = this.val + amount
+        END add
+
+        FUNCTION is_greater(comp)
+            RETURN this.val > comp
+        END is_greater
+END Calculator
+
+calc = NEW Calculator()
+
+# Check that val doesn't shadow this.val
+calc.set_val(50)
+PRINT(calc.val)
+# EXPECT: 50
+
+# Modify state
+calc.add(25)
+PRINT(calc.val)
+# EXPECT: 75
+
+PRINT(calc.is_greater(70))
+# EXPECT: true
+
+PRINT(calc.is_greater(80))
+# EXPECT: false

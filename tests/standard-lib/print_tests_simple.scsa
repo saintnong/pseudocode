@@ -1,0 +1,39 @@
+# Tests for the PRINT native function
+
+# =====================================
+#     Return type and conversion
+# =====================================
+PRINT(PRINT("wow"))
+# EXPECT: wow
+# EXPECT: Null
+
+
+# =====================================
+#    Prints strings space delimited
+# =====================================
+PRINT("scsa", "is", "the", "best")
+# EXPECT: scsa is the best
+
+# =====================================
+#    Single print works
+# =====================================
+PRINT("testing123")
+# EXPECT: testing123
+
+# =====================================
+#    Float and integer conversion
+# =====================================
+PRINT(3.1415, 69)
+# EXPECT: 3.1415 69
+
+# =====================================
+#    Bool and array conversion
+# =====================================
+PRINT(TRUE)
+# EXPECT: true
+
+PRINT(FALSE)
+# EXPECT: false
+
+PRINT(TRUE, FALSE)
+# EXPECT: true false

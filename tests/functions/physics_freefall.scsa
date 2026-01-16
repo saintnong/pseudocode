@@ -8,5 +8,5 @@ END freefall
 time_fallen = 4.5
 dist = freefall(time_fallen)
 
-PRINT(time_fallen)
 PRINT(dist)
+# EXPECT: 99.32625

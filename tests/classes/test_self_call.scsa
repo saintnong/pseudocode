@@ -1,0 +1,22 @@
+# Tests classes can call their own functions
+
+CLASS Math
+    METHODS
+        FUNCTION Math()
+        END Math
+
+        FUNCTION square(n)
+            RETURN n * n
+        END square
+
+        # Stupidest way of calculating the cube ever XD
+        FUNCTION cube(n)
+            RETURN this.square(n) * n
+        END cube
+END Math
+
+m = NEW Math()
+PRINT(m)
+# EXPECT: <CLASS Math>
+PRINT(m.cube(3))
+# EXPECT: 27

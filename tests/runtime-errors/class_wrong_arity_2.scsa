@@ -1,0 +1,10 @@
+CLASS Math
+    METHODS
+        FUNCTION add(a, b)
+            RETURN a + b
+        END add
+END Math
+
+m = NEW Math()
+m.add(1, 2, 3)
+# EXPECT ERROR: Expected 2 arguments but got 3.

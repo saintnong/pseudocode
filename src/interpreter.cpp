@@ -336,6 +336,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
      * >> OUTPUT(... vars: Any)
      * => Null
      * Outputs values to the console WITHOUT a trailing newline.
+     * Multiple arguments are separated by spaces.
      */
     auto outputNative = std::make_shared<NativeFunction>(
         VARIADIC_ARITY, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
@@ -495,11 +496,10 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
             int min = args[0].as<int>();
             int max = args[1].as<int>();
 
-            // Handle inverted ranges
+            // Inverted ranges when the user is a dumbass
             if (min > max)
                 std::swap(min, max);
 
-            // Use static generator to maintain state across calls
             static std::mt19937 gen(std::random_device{}());
             std::uniform_int_distribution<> dis(min, max);
 
@@ -930,7 +930,7 @@ RuntimeValue Interpreter::visitBinaryExpr(BinaryExpr *expr) {
     case TOK_IN: {
         // Collection Membership
         if (!right.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
-            throw RuntimeError(expr->op, "'IN' operator requires right hand side to be a list.");
+            throw RuntimeError(expr->op, "'IN' operator requires right hand side to be an array.");
         }
 
         auto arr     = right.as<std::shared_ptr<std::vector<RuntimeValue>>>();
@@ -1085,6 +1085,13 @@ RuntimeValue Interpreter::visitNewExpr(NewExpr *expr) {
     }
 
     auto klass = classVal.as<std::shared_ptr<Callable>>();
+
+    if (klass->arity() != VARIADIC_ARITY && arguments.size() != (size_t) klass->arity()) {
+        throw RuntimeError(expr->className, "Expected " + std::to_string(klass->arity()) +
+                                                " arguments but got " +
+                                                std::to_string(arguments.size()) + ".");
+    }
+
     return klass->call(*this, arguments);
 }
 

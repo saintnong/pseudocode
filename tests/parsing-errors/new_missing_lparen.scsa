@@ -1,0 +1,4 @@
+# Instantiate object without calling constructor
+obj = NEW DogeCoin
+
+# EXPECT ERROR: Expected '(' after class name.

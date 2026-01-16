@@ -1,0 +1,2 @@
+8var = "this"
+# EXPECT ERROR: Identifier starts with number

@@ -1,0 +1,16 @@
+# Early return test
+
+FUNCTION check_limit(n)
+    IF n > 10 THEN
+        RETURN "High"
+    END IF
+    
+    RETURN "Low"
+    PRINT("This should never print")
+END check_limit
+
+PRINT(check_limit(15))
+PRINT(check_limit(5))
+
+# EXPECT: High
+# EXPECT: Low

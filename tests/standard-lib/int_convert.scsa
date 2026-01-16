@@ -1,0 +1,8 @@
+PRINT(INT(3.99))      # EXPECT: 3
+PRINT(INT("100"))     # EXPECT: 100
+PRINT(INT(TRUE))      # EXPECT: 1
+PRINT(INT("-5"))      # EXPECT: -5
+PRINT(INT(FALSE))     # EXPECT: 0
+
+# Return -1 on failure
+PRINT(INT("abc"))     # EXPECT: -1

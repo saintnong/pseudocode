@@ -1,0 +1,10 @@
+# AND has higher precedence than OR
+
+result = TRUE OR FALSE AND FALSE
+PRINT(result)
+# EXPECT: true
+
+# Weird comparison stuff
+result = 5 + 5 == 10 AND 2 > 1
+PRINT(result)
+# EXPECT: true

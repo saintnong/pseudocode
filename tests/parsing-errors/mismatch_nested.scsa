@@ -1,0 +1,9 @@
+# Mismatch weirdly
+
+CLASS Player
+    METHODS:
+        FUNCTION update()
+            PRINT("Updating...")
+        END Player
+END Player
+# EXPECT ERROR: Function name after 'END' does not match function declaration.

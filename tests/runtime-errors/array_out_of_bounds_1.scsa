@@ -1,0 +1,4 @@
+my_array = [234,623,180]
+
+PRINT(my_array[3])
+# EXPECT ERROR: Array index out of bounds.

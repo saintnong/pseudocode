@@ -1,0 +1,14 @@
+
+FOR colour IN ["blue", "red", "green", "white", "purple"]
+    IF colour != "purple" THEN
+        PRINT("I don't like the colour:", colour)
+    ELSE
+        PRINT("I like the colour:", colour)
+    END IF
+END FOR
+
+# EXPECT: I don't like the colour: blue
+# EXPECT: I don't like the colour: red
+# EXPECT: I don't like the colour: green
+# EXPECT: I don't like the colour: white
+# EXPECT: I like the colour: purple

@@ -1,0 +1,21 @@
+# Parentheses come before everything
+
+CLASS Container
+    ATTRIBUTES
+        val = 100
+END Container
+
+result = (NEW Container()).val
+PRINT(result)
+# EXPECT: 100
+
+result = (((5 + 5) * 2) + 10) / 2
+# (((10) * 2) + 10) / 2
+# ((20) + 10) / 2
+# (30) / 2 = 15
+PRINT(result)
+# EXPECT: 15
+
+result = (TRUE OR FALSE) AND FALSE
+PRINT(result)
+# EXPECT: false

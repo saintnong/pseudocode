@@ -1,0 +1,4 @@
+IF TRUE THEN
+    PRINT("Hi")
+END WHILE
+# EXPECT ERROR: Expected 'IF' after 'END'.

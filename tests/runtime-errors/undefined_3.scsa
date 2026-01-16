@@ -1,0 +1,3 @@
+x = 15
+x = my_func(32)
+# EXPECT ERROR: Undefined variable 'my_func'

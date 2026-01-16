@@ -1,0 +1,5 @@
+FUNCTION abcd(a, b, c, d)
+    RETURN a * b + c * d
+END abcd
+abcd(1, 2, 3)
+# EXPECT ERROR: Expected 4 arguments but got 3

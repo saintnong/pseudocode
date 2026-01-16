@@ -1,0 +1,3 @@
+my_var = 123.456
+PRINT(my_var[3])
+# EXPECT ERROR: Can only index

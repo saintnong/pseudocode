@@ -1,0 +1,3 @@
+# NEW expects an identifier next
+obj = NEW "Cat"()
+# EXPECT ERROR: Expected class name after 'new'.

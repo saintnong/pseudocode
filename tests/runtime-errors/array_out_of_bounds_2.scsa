@@ -1,0 +1,4 @@
+my_array = ["", "scsa", "wow", "i like trains"]
+
+PRINT(my_array[-1])
+# EXPECT ERROR: Array index out of bounds.

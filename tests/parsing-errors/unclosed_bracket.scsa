@@ -1,0 +1,3 @@
+x = (5 + 5 * 10
+PRINT(x)
+# EXPECT ERROR: Expected ')' after expression.

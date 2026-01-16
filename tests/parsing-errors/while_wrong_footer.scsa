@@ -1,0 +1,4 @@
+WHILE FALSE
+    PRINT("Nope")
+END FOR
+# EXPECT ERROR: Expected 'WHILE' after 'END'.

@@ -1,0 +1,21 @@
+# Recursion between separate functions
+
+FUNCTION is_even(n)
+    IF n == 0 THEN
+        RETURN TRUE
+    END IF
+    RETURN is_odd(n - 1)
+END is_even
+
+FUNCTION is_odd(n)
+    IF n == 0 THEN
+        RETURN FALSE
+    END IF
+    RETURN is_even(n - 1)
+END is_odd
+
+PRINT(is_even(4))
+PRINT(is_even(3))
+
+# EXPECT: true
+# EXPECT: false

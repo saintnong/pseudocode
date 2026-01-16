@@ -66,7 +66,7 @@ int Pseudocode::runFile(const std::string &path) {
     try {
         std::string source = readFile(path);
 
-        // Stage 1: Lexical Analysis
+        // === Lexing ===
         InterpreterStage stage = InterpreterStage::Lexing;
         ErrorReporter reporter(stage, path, source);
         Lexer lexer(source, reporter);
@@ -78,7 +78,7 @@ int Pseudocode::runFile(const std::string &path) {
         if (reporter.hadError)
             return 1;
 
-        // Stage 2: Parsing
+        // === Parsing ===
         stage = InterpreterStage::Parsing;
         Parser parser(tokens, source, reporter);
         std::vector<StmtPtr> statements = parser.parse();
@@ -91,13 +91,12 @@ int Pseudocode::runFile(const std::string &path) {
         if (reporter.hadError)
             return 1;
 
-        // Stage 3: Execution
+        // === Execute ===
         stage = InterpreterStage::Runtime;
         Interpreter interpreter(reporter);
         interpreter.interpret(statements);
-    } catch (const std::exception &e) {
-        // Catch fatal system or logic errors
-        std::cerr << "Fatal Error: " << e.what() << std::endl;
+    } catch (const std::runtime_error &) {
+        // Runtime errors which were raised by ourselves can be caught
         return 1;
     }
 

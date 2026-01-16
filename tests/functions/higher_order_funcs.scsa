@@ -1,0 +1,16 @@
+# Higher Order Functions
+# -> Functions being passed as variables
+
+FUNCTION apply_twice(func, val)
+    first = func(val)
+    second = func(first)
+    RETURN second
+END apply_twice
+
+FUNCTION increment(n)
+    RETURN n + 1
+END increment
+
+result = apply_twice(increment, 10)
+PRINT(result)
+# EXPECT: 12

@@ -1,0 +1,19 @@
+# Triangular numbers
+
+n = 1
+limit = 5
+
+WHILE n <= limit
+    sum = 0
+    i = 1
+
+    WHILE i <= n
+        sum = sum + i
+        i = i + 1
+    END WHILE
+
+    OUTPUT(STRING(sum) + " ")
+    n = n + 1
+END WHILE
+
+# EXPECT: 1 3 6 10 15

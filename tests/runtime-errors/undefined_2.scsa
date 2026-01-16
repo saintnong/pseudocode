@@ -1,0 +1,2 @@
+variable
+# EXPECT ERROR: Undefined variable 'variable'
