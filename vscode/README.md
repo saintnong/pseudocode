@@ -1,6 +1,6 @@
 # SCSA Pseudocode
 
-This extension provides syntax highlighting and snippets for **SCSA Pseudocode** (Western Australian ATAR Computer Science's flavour of Pseudocode) in Visual Studio Code. An interpreter is also linked to this extension, which can be used to execute your code.
+This extension provides syntax highlighting and snippets for **SCSA Pseudocode** (Western Australian ATAR Computer Science's flavour of Pseudocode) in Visual Studio Code. An interpreter is also intended to be used with this extension, to execute and debug your pseudocode.
 
 ## Features
 

@@ -54,7 +54,7 @@
   ],
   "wordPattern": "(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\#\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\'\\\"\\,\\.\\<\\>\\/\\?\\s]+)",
   "indentationRules": {
-    "increaseIndentPattern": "^\\s*(IF|WHILE|FOR|ELSE|FUNCTION|CASE).*",
+    "increaseIndentPattern": "^\\s*(IF|WHILE|FOR|ELSE|FUNCTION|CLASS|CASE).*",
     "decreaseIndentPattern": "^\\s*(END|ELSE|UNTIL).*"
   },
 }

@@ -64,8 +64,8 @@
       }
     },
     {
-      "comment": "Matches structural END statements (END IF, END WHILE)",
-      "match": "\\b(END)\\s+(IF|WHILE|FOR)\\b",
+      "comment": "Matches structural END statements",
+      "match": "\\b(END)\\s+(IF|WHILE|FOR|CASE)\\b",
       "captures": {
         "1": {
           "name": "keyword.control.scsa"
@@ -90,7 +90,7 @@
     {
       "comment": "General Control Keywords",
       "name": "keyword.control.scsa",
-      "match": "\\b(IF|THEN|ELSE|FOR|WHILE|RETURN|IN|AND|OR|NOT)\\b"
+      "match": "\\b(IF|THEN|ELSE|FOR|WHILE|UNTIL|RETURN|IN|AND|OR|NOT|CASE|OF)\\b"
     },
     {
       "comment": "Object Oriented / Storage Keywords",

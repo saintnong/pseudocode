@@ -1,14 +1,20 @@
 {
   "name": "scsa-pseudocode",
+  "displayName": "SCSA Pseudocode",
   "publisher": "SaintNong",
   "version": "0.2.9",
   "engines": {
     "vscode": "^1.6.0"
   },
+  "description": "SCSA Pseudocode Syntax Highlighting and Snippets",
   "repository": {
     "type": "git",
     "url": "https://github.com/SaintNong/pseudocode.git"
   },
+  "categories": [
+    "Programming Languages",
+    "Snippets"
+  ],
   "contributes": {
     "languages": [
       {
@@ -18,7 +24,8 @@
         ],
         "aliases": [
           "SCSA Pseudocode",
-          "scsa"
+          "SCSA",
+          "ATAR Pseudocode"
         ],
         "configuration": "./language-configuration.json"
       }
