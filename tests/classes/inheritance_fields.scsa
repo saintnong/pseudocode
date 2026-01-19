@@ -1,0 +1,42 @@
+# Field inheritance and shadowing
+
+CLASS Parent
+    ATTRIBUTES:
+        x = 10
+        y = 20
+    METHODS:
+        FUNCTION Parent()
+        END Parent
+
+        FUNCTION getSum()
+            RETURN this.x + this.y
+        END getSum
+END Parent
+
+CLASS Child : Parent
+    ATTRIBUTES:
+        x = 100
+        z = 300
+    METHODS:
+        FUNCTION Child()
+        END Child
+
+        FUNCTION getX()
+            RETURN this.x
+        END getX
+END Child
+
+c = NEW Child()
+PRINT(c.x)
+# EXPECT: 100
+
+PRINT(c.y)
+# EXPECT: 20
+
+PRINT(c.z)
+# EXPECT: 300
+
+# Parent.getSum uses this.x + this.y.
+# In 'c', x is 100 and y is 20.
+PRINT(c.getSum())
+# EXPECT: 120

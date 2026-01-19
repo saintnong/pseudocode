@@ -1,0 +1,46 @@
+# Multi-level inheritance and super()
+
+CLASS A
+    METHODS:
+        FUNCTION A()
+        END A
+        FUNCTION m()
+            PRINT("A.m")
+        END m
+END A
+
+CLASS B : A
+    METHODS:
+        FUNCTION B()
+        END B
+        FUNCTION m()
+            PRINT("B.m")
+            this.super().m()
+        END m
+END B
+
+CLASS C : B
+    METHODS:
+        FUNCTION C()
+        END C
+        FUNCTION m()
+            PRINT("C.m")
+            this.super().m()
+        END m
+
+        FUNCTION mDirectA()
+            PRINT("C.mDirectA")
+            # this.super() is B context. this.super().super() should be A context.
+            this.super().super().m()
+        END mDirectA
+END C
+
+c = NEW C()
+c.m()
+# EXPECT: C.m
+# EXPECT: B.m
+# EXPECT: A.m
+
+c.mDirectA()
+# EXPECT: C.mDirectA
+# EXPECT: A.m

@@ -1,0 +1,40 @@
+# Basic method inheritance and overriding
+
+CLASS Parent
+    METHODS:
+        FUNCTION Parent()
+        END Parent
+
+        FUNCTION sayHello()
+            PRINT("Hello from Parent")
+        END sayHello
+
+        FUNCTION sayGoodbye()
+            PRINT("Goodbye from Parent")
+        END sayGoodbye
+END Parent
+
+CLASS Child : Parent
+    METHODS:
+        FUNCTION Child()
+        END Child
+
+        # Overriding sayHello
+        FUNCTION sayHello()
+            PRINT("Hello from Child")
+        END sayHello
+
+        # sayGoodbye is inherited
+END Child
+
+c = NEW Child()
+c.sayHello()
+# EXPECT: Hello from Child
+
+c.sayGoodbye()
+# EXPECT: Goodbye from Parent
+
+# Make sure Parent still works correctly
+p = NEW Parent()
+p.sayHello()
+# EXPECT: Hello from Parent

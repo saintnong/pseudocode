@@ -1,0 +1,48 @@
+# Constructor inheritance and chaining
+
+CLASS Parent
+    ATTRIBUTES:
+        val = 0
+    METHODS:
+        FUNCTION Parent(v)
+            this.val = v
+            PRINT("Parent initialized with " + STRING(v))
+        END Parent
+END Parent
+
+CLASS ChildOverride : Parent
+    METHODS:
+        FUNCTION ChildOverride(v)
+            this.val = v * 2
+            PRINT("ChildOverride initialized with " + STRING(v * 2))
+        END ChildOverride
+END ChildOverride
+
+CLASS ChildInherit : Parent
+    # No constructor, should inherit Parent(v)
+END ChildInherit
+
+CLASS ChildChain : Parent
+    METHODS:
+        FUNCTION ChildChain(v)
+            # Chain to parent constructor
+            this.super().Parent(v)
+            PRINT("ChildChain post-init")
+        END ChildChain
+END ChildChain
+
+o = NEW ChildOverride(10)
+# EXPECT: ChildOverride initialized with 20
+PRINT(o.val)
+# EXPECT: 20
+
+i = NEW ChildInherit(30)
+# EXPECT: Parent initialized with 30
+PRINT(i.val)
+# EXPECT: 30
+
+c = NEW ChildChain(50)
+# EXPECT: Parent initialized with 50
+# EXPECT: ChildChain post-init
+PRINT(c.val)
+# EXPECT: 50

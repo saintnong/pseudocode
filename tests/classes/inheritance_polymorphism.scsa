@@ -1,0 +1,41 @@
+# Polymorphism and dynamic dispatch
+
+CLASS Shape
+    METHODS:
+        FUNCTION Shape()
+        END Shape
+        FUNCTION draw()
+            PRINT("Drawing a generic shape")
+        END draw
+END Shape
+
+CLASS Circle : Shape
+    METHODS:
+        FUNCTION Circle()
+        END Circle
+        FUNCTION draw()
+            PRINT("Drawing a Circle")
+        END draw
+END Circle
+
+CLASS Square : Shape
+    METHODS:
+        FUNCTION Square()
+        END Square
+        FUNCTION draw()
+            PRINT("Drawing a Square")
+        END draw
+END Square
+
+FUNCTION render(s)
+    s.draw()
+END render
+
+shapes = [NEW Circle(), NEW Square(), NEW Shape()]
+
+FOR s IN shapes
+    render(s)
+END FOR
+# EXPECT: Drawing a Circle
+# EXPECT: Drawing a Square
+# EXPECT: Drawing a generic shape
