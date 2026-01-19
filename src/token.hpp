@@ -32,6 +32,9 @@ enum TokenKind {
     TOK_WHILE,
     TOK_FOR,
     TOK_IN,
+    TOK_CASE,
+    TOK_OF,
+    TOK_OTHERWISE,
     TOK_TO,
 
     // === Operators ===
@@ -132,6 +135,12 @@ struct Token {
             return "KEYWORD(FOR)";
         case TOK_TO:
             return "KEYWORD(TO)";
+        case TOK_CASE:
+            return "KEYWORD(CASE)";
+        case TOK_OF:
+            return "KEYWORD(OF)";
+        case TOK_OTHERWISE:
+            return "KEYWORD(OTHERWISE)";
 
         case TOK_AND:
             return "OPERATOR(AND)";

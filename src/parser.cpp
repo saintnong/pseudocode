@@ -472,6 +472,9 @@ StmtPtr Parser::statement() {
     if (match(TOK_IF)) {
         return ifStatement();
     }
+    if (match(TOK_CASE)) {
+        return caseStatement();
+    }
 
     ExprPtr expr = parseExpression(PREC_NONE);
     return std::make_unique<ExpressionStmt>(std::move(expr));
@@ -571,6 +574,80 @@ StmtPtr Parser::forStatement(Token variable) {
 
     return std::make_unique<ForStmt>(keyword, variable, std::move(start), std::move(end),
                                      std::move(body));
+}
+
+/**
+ * Checks if the next token is a case arm token
+ * @returns true if the next token is an arm token, false otherwise
+ */
+bool Parser::nextTokenIsCaseArm() {
+    if (peek().type == TOK_OTHERWISE || peek().type == TOK_END) {
+        return true;
+    }
+
+    // Look ahead on the same line for a colon
+    size_t lookahead = current;
+    size_t startLine = tokens[lookahead].line;
+
+    while (lookahead < tokens.size() && tokens[lookahead].line == startLine) {
+        if (tokens[lookahead].type == TOK_COLON)
+            return true;
+        lookahead++;
+    }
+
+    return false;
+}
+
+/**
+ * Case Statement
+ * Parses: CASE expression OF
+ *             (value | OTHERWISE): statements
+ *         END CASE
+ */
+StmtPtr Parser::caseStatement() {
+    Token keyword     = previous();
+    ExprPtr condition = parseExpression(PREC_NONE);
+    consume(TOK_OF, "Expected 'OF' after CASE condition.");
+
+    std::vector<CaseArm> arms;
+    std::vector<StmtPtr> defaultBranch;
+
+    while (!check(TOK_END) && !isAtEnd()) {
+        if (match(TOK_OTHERWISE)) {
+            consume(TOK_COLON, "Expected ':' after OTHERWISE.");
+            while (!check(TOK_END) && !check(TOK_CASE) && !isAtEnd()) {
+                // OTHERWISE branch: parse statements until END CASE
+                defaultBranch.push_back(statement());
+            }
+            break; // OTHERWISE must be the last arm
+        } else {
+            CaseArm arm;
+            // Pass possible match values
+            do {
+                arm.values.push_back(parseExpression(PREC_NONE));
+            } while (match(TOK_COMMA));
+
+            Token colon = consume(TOK_COLON, "Expected ':' after case values.");
+            arm.colon   = colon;
+
+            // Parse statements for this arm until next arm, OTHERWISE or END CASE
+            while (!check(TOK_END) && !check(TOK_OTHERWISE) && !isAtEnd()) {
+                arm.body.push_back(statement());
+
+                // if next token starts a new arm, stop parsing this arm
+                if (nextTokenIsCaseArm()) {
+                    break;
+                }
+            }
+            arms.push_back(std::move(arm));
+        }
+    }
+
+    consume(TOK_END, "Expected 'END' after CASE statement.");
+    consume(TOK_CASE, "Expected 'CASE' after 'END'.");
+
+    return std::make_unique<CaseStmt>(keyword, std::move(condition), std::move(arms),
+                                      std::move(defaultBranch));
 }
 
 /**

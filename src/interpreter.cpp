@@ -1449,3 +1449,29 @@ void Interpreter::visitForStmt(ForStmt *stmt) {
         i += step;
     }
 }
+
+/**
+ * Visit: Case Statement
+ * Executes the matching arm of a CASE statement.
+ */
+void Interpreter::visitCaseStmt(CaseStmt *stmt) {
+    RuntimeValue conditionValue = evaluate(stmt->condition.get());
+
+    for (const auto &arm : stmt->arms) {
+        for (const auto &valueExpr : arm.values) {
+            RuntimeValue caseValue = evaluate(valueExpr.get());
+            if (isEqual(conditionValue, caseValue)) {
+                for (const auto &bodyStmt : arm.body) {
+                    execute(bodyStmt.get());
+                }
+                return;
+            }
+        }
+    }
+
+    if (!stmt->defaultBranch.empty()) {
+        for (const auto &bodyStmt : stmt->defaultBranch) {
+            execute(bodyStmt.get());
+        }
+    }
+}

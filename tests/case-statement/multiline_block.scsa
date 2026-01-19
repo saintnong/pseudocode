@@ -1,0 +1,15 @@
+value = "hello"
+CASE value OF
+    "hello": PRINT("this")
+             PRINT("is")
+             PRINT("a")
+             PRINT("multiline")
+             PRINT("block")
+    "world": PRINT("two")
+    OTHERWISE: PRINT("otherwise")
+END CASE
+# EXPECT: this
+# EXPECT: is
+# EXPECT: a
+# EXPECT: multiline
+# EXPECT: block

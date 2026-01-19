@@ -21,16 +21,20 @@ Lexer::Lexer(const std::string &src, ErrorReporter &errReporter, size_t startLin
     keywords["END"]        = TOK_END;
     keywords["NEW"]        = TOK_NEW;
 
-    keywords["WHILE"] = TOK_WHILE;
-    keywords["IF"]    = TOK_IF;
-    keywords["THEN"]  = TOK_THEN;
-    keywords["ELSE"]  = TOK_ELSE;
-    keywords["IN"]    = TOK_IN;
-    keywords["FOR"]   = TOK_FOR;
-    keywords["TO"]    = TOK_TO;
-    keywords["AND"]   = TOK_AND;
-    keywords["OR"]    = TOK_OR;
-    keywords["NOT"]   = TOK_NOT;
+    keywords["WHILE"]     = TOK_WHILE;
+    keywords["IF"]        = TOK_IF;
+    keywords["THEN"]      = TOK_THEN;
+    keywords["ELSE"]      = TOK_ELSE;
+    keywords["IN"]        = TOK_IN;
+    keywords["FOR"]       = TOK_FOR;
+    keywords["TO"]        = TOK_TO;
+    keywords["CASE"]      = TOK_CASE;
+    keywords["OF"]        = TOK_OF;
+    keywords["OTHERWISE"] = TOK_OTHERWISE;
+    keywords["OTHER"]     = TOK_OTHERWISE; // Damn you SCSA ambiguity
+    keywords["AND"]       = TOK_AND;
+    keywords["OR"]        = TOK_OR;
+    keywords["NOT"]       = TOK_NOT;
 
     keywords["TRUE"]  = TOK_TRUE;
     keywords["FALSE"] = TOK_FALSE;

@@ -1,0 +1,17 @@
+value = 7
+CASE value + 1 OF
+    1: PRINT("a")
+    6 + 2: PRINT("b")
+    OTHERWISE: PRINT("otherwise")
+END CASE
+# EXPECT: b
+
+value2 = 8
+CASE value2 OF
+    1: PRINT("a")
+    2 * (value - 3): PRINT("b")
+    9: PRINT("c")
+    OTHERWISE: PRINT("otherwise")
+END CASE
+# EXPECT: b
+

@@ -392,3 +392,44 @@ RuntimeValue ASTPrinter::visitNewExpr(NewExpr *expr) {
 
     return {Null{}};
 }
+
+/**
+ * Visit a Case Statement
+ * Prints the case condition, arms, and optional default branch.
+ * @param stmt Pointer to the case statement node
+ */
+void ASTPrinter::visitCaseStmt(CaseStmt *stmt) {
+    std::cout << indent << "[Case]" << std::endl;
+
+    IndentScope scope(*this);
+    std::cout << indent << "Condition:" << std::endl;
+    {
+        IndentScope condScope(*this);
+        accept(stmt->condition.get());
+    }
+
+    for (size_t i = 0; i < stmt->arms.size(); ++i) {
+        std::cout << indent << "Arm " << i << " (colon at " << stmt->arms[i].colon.line << ":"
+                  << stmt->arms[i].colon.column << "):" << std::endl;
+        IndentScope armScope(*this);
+        std::cout << indent << "Values:" << std::endl;
+        {
+            IndentScope valScope(*this);
+            for (const auto &val : stmt->arms[i].values)
+                accept(val.get());
+        }
+        std::cout << indent << "Body:" << std::endl;
+        {
+            IndentScope bodyScope(*this);
+            for (const auto &st : stmt->arms[i].body)
+                accept(st.get());
+        }
+    }
+
+    if (!stmt->defaultBranch.empty()) {
+        std::cout << indent << "Otherwise:" << std::endl;
+        IndentScope elseScope(*this);
+        for (const auto &st : stmt->defaultBranch)
+            accept(st.get());
+    }
+}

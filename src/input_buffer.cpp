@@ -38,6 +38,7 @@ bool InputBuffer::needsContinuation(const std::string &input) {
         case TOK_CLASS:
         case TOK_IF:
         case TOK_WHILE:
+        case TOK_CASE:
         case TOK_FOR:
             // If previous token was END, this is part of "END IF/WHILE/FOR"
             // compound terminator, not a new block opener

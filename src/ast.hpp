@@ -30,6 +30,7 @@ struct ClassStmt;
 struct WhileStmt;
 struct ForInStmt;
 struct ForStmt;
+struct CaseStmt;
 
 // --- Visitor Interfaces ---
 
@@ -67,6 +68,7 @@ struct StmtVisitor {
     virtual void visitWhileStmt(WhileStmt *stmt)           = 0;
     virtual void visitForInStmt(ForInStmt *stmt)           = 0;
     virtual void visitForStmt(ForStmt *stmt)               = 0;
+    virtual void visitCaseStmt(CaseStmt *stmt)             = 0;
 };
 
 // --- Base Classes ---
@@ -399,5 +401,39 @@ struct ForStmt : Stmt {
 
     void accept(StmtVisitor &visitor) override {
         visitor.visitForStmt(this);
+    }
+};
+
+/**
+ * Case Arm
+ * Represents a single branch in a CASE statement.
+ */
+struct CaseArm {
+    Token colon;
+    std::vector<ExprPtr> values;
+    std::vector<StmtPtr> body;
+};
+
+/**
+ * Case Statement
+ * CASE condition OF
+ *     value1: body1
+ *     value2: body2
+ *     OTHERWISE: defaultBody
+ * END CASE
+ */
+struct CaseStmt : Stmt {
+    Token keyword;
+    ExprPtr condition;
+    std::vector<CaseArm> arms;
+    std::vector<StmtPtr> defaultBranch;
+
+    CaseStmt(Token kw, ExprPtr cond, std::vector<CaseArm> cases, std::vector<StmtPtr> def)
+        : keyword(kw), condition(std::move(cond)), arms(std::move(cases)),
+          defaultBranch(std::move(def)) {
+    }
+
+    void accept(StmtVisitor &visitor) override {
+        visitor.visitCaseStmt(this);
     }
 };

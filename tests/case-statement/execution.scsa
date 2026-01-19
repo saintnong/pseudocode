@@ -1,0 +1,14 @@
+# Basic CASE statement test
+value = 1
+CASE value OF
+    1: PRINT("one")
+    2: PRINT("two")
+END CASE
+# EXPECT: one
+
+value = 2
+CASE value OF
+    1: PRINT("one")
+    2: PRINT("two")
+END CASE
+# EXPECT: two
