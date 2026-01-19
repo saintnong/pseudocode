@@ -107,6 +107,7 @@ The interpreter supports the following environment variables:
 # Other stuff
 ## Currently WIP Features
 - Dictionary datatype
+- String and list multiplication
 
 ## Future Plans
 - Integrated file IO in standard library
