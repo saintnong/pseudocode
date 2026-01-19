@@ -356,7 +356,7 @@ StmtPtr Parser::classDeclaration() {
     Token superclass{TOK_EOF, "", 0, 0, 0};
 
     // Inheritance
-    if (match(TOK_INHERITS)) {
+    if (match(TOK_COLON)) {
         superclass = consume(TOK_IDENTIFIER, "Expected superclass name.");
     }
 
