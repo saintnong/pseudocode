@@ -1,0 +1,4 @@
+#pragma once
+
+// These are generated on compile time by CMake
+#define VERSION_NUMBER "@GIT_TAG@"

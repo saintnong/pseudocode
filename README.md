@@ -8,29 +8,32 @@
 </p>
 
 <p align="center">
-    Pseudocode is a high-level interpreted language with support for procedural and object oriented programming.
-    Based on the WA School Curriculum and Standards Authority's (SCSA) ATAR Computer Science <a href="https://senior-secondary.scsa.wa.edu.au/__data/assets/pdf_file/0003/1090875/Year-11_12_Computer-Science_ATAR_Additional-syllabus-support-booklet-.PDF">"Pseudocode" (2024)</a>.
+    SCSA Pseudocode is a high-level interpreted language with for object oriented programming. <br>
+    It is based on the WA School Curriculum and Standards Authority's ATAR Computer Science <a href="https://senior-secondary.scsa.wa.edu.au/__data/assets/pdf_file/0003/1090875/Year-11_12_Computer-Science_ATAR_Additional-syllabus-support-booklet-.PDF">"Pseudocode" (2024)</a>.
 </p>
 
 ---
 
 > "<em>This spec is so specific that it might as well be a real language...</em>"
 
-This repository contains a full toolchain for Pseudocode development, including an interpreter written in C++, and a VSCode extension with highlighting and snippets.
+This repository contains a full toolchain for Pseudocode development, including an interpreter written in C++, and a [VSCode extension](https://marketplace.visualstudio.com/items?itemName=SaintNong.scsa-pseudocode) with highlighting and snippets.
 
 ## Examples
 
-#### Working Bubble Sort in SCSA Pseudocode (and syntax highlights)!
-![Bubble Sort in Pseudocode](images/bubblesort.png)
-#### Integrated REPL
+#### Selection Sort in pseudocode (and syntax highlighting)!
+![Selection sort in pseudocode](images/selection_sort.png)
+![Selection sort output](images/selection_sort_result.png)
+#### Integrated command line REPL
 ![Pseudocode REPL](images/REPL.png)
 
-#### Good error messages!
+#### User friendly error messages!
 ![Error message](images/error.png)
 
 ## Installation
 
-Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Installation-Guide) to get started!
+- Follow the [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Installation-Guide) to get started with the interpreter!
+
+- If you only want Syntax Highlighting/Snippets then check out the [VSCode Extension](https://marketplace.visualstudio.com/items?itemName=SaintNong.scsa-pseudocode) on the marketplace.
 
 ## Features
 - Handwritten Lexer with locatable tokens
@@ -74,8 +77,11 @@ Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Ins
     - `array.slice(a, b)` Returns a shallow copy from index a to b (inclusive)
     - `array.append(x)` Appends value to the end of the array
     - `array.length` Returns length of the array as an integer
-- ✨✨Object Oriented Programming✨✨
+- Object Oriented Programming✨✨
     - Most features working, but the syntax requires 'this' to reference object attributes/methods which is technicaly not SCSA standard
+    - Encapsulation works
+    - Object methods work
+    - **Inheritance is WIP**
 
 ## Integration Tests
 This project uses a small custom Python test harness integrated with CTest for CI/CD. Tests execute `.scsa` files and check that the interpreter output matches what is expected in the comments. To run the test suite:
@@ -94,9 +100,9 @@ The interpreter supports the following environment variables:
 
 # Other stuff
 ## Currently WIP Features
-- ✨✨Object Oriented Programming✨✨
-    - This was a new, painful recent addition to the SCSA pseudocode "standard", when they decided that their ancient Pascal based pseudocode had to be more **"modern"**
-    - Polymorphism and inheritance are WIP
+- Object Oriented Programming✨✨
+    - Inheritance and polymorphism are currently WIP
+    - SCSA why did you do this to us?
 - REPEAT-UNTIL loop support
 - Case statement
 - ELSE IF statements

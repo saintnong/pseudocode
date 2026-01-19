@@ -13,9 +13,10 @@ enum class ErrorType {
     Runtime, // Runtime errors (errors during execution)
 };
 
-// ANSI color codes for terminal output
+// ANSI color codes
 extern const char *C_RED;
 extern const char *C_RESET;
+extern const char *C_CYAN;
 extern const char *C_BLUE;
 extern const char *C_GRAY;
 extern const char *C_GREEN;

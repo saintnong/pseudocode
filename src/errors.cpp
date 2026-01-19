@@ -13,25 +13,40 @@
 #include <sstream>
 #include <stdexcept>
 
-// Define global color pointers
+// ==============================================================
+// ANSI Colours
+//
+// - ANSI colour with support for NO_COLOR
+// ==============================================================
+
+// Global color pointers
 const char *C_RED   = "\033[31m";
 const char *C_RESET = "\033[0m";
+const char *C_CYAN  = "\033[36m";
 const char *C_BLUE  = "\033[34m";
 const char *C_GRAY  = "\033[2m";
 const char *C_GREEN = "\033[32m";
 
 void initColors() {
     if (const char *noColor = std::getenv("NO_COLOR")) {
-        // If NO_COLOR is set (regardless of value), disable colors
+        // If NO_COLOR is set, disable the colors
         if (noColor[0] != '\0') {
             C_RED   = "";
             C_RESET = "";
+            C_CYAN  = "";
             C_BLUE  = "";
             C_GRAY  = "";
             C_GREEN = "";
         }
     }
 }
+
+// ==============================================================
+// ErrorReporter Class implementation
+//
+// Handles all error reports and formatting across all the
+// stages of interpreting the program.
+// ==============================================================
 
 /**
  * Berate the user because they had an error
