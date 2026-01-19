@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-    SCSA Pseudocode is a high-level interpreted language with for object oriented programming.
+    SCSA Pseudocode is a high-level interpreted language with for object oriented programming. <br>
     It is based on the WA School Curriculum and Standards Authority's ATAR Computer Science <a href="https://senior-secondary.scsa.wa.edu.au/__data/assets/pdf_file/0003/1090875/Year-11_12_Computer-Science_ATAR_Additional-syllabus-support-booklet-.PDF">"Pseudocode" (2024)</a>.
 </p>
 

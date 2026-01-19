@@ -19,6 +19,7 @@
 #include "lexer.hpp"
 #include "parser.hpp"
 #include "runtime.hpp"
+#include "version.hpp"
 
 /**
  * Read the entire contents of a file into a string
@@ -111,10 +112,15 @@ int Pseudocode::runFile(const std::string &path) {
  */
 int Pseudocode::runRepl() {
     InterpreterStage stage = InterpreterStage::Lexing;
-
-    std::cout << "Interactive SCSA Pseudocode Interpreter" << std::endl;
-    std::cout << "For help, run this program with '--help' or '-h'" << std::endl;
-    std::cout << "Type 'exit' or use Ctrl+D to quit" << std::endl;
+    std::cout << C_CYAN << "  +-----------------------------------------------+" << C_RESET
+              << std::endl;
+    std::cout << C_CYAN << "  | " << C_RESET << "SCSA Pseudocode Interpreter [" << C_BLUE
+              << VERSION_NUMBER << C_RESET << "]" << C_CYAN << " |" << C_RESET << std::endl;
+    std::cout << C_CYAN << "  +-----------------------------------------------+" << C_RESET
+              << std::endl
+              << std::endl;
+    std::cout << "  ~ For help, run this program with '--help' or '-h'" << std::endl;
+    std::cout << "  ~ Type 'exit' or use Ctrl+D to quit" << std::endl << std::endl;
 
     // Persist interpreter and reporter to maintain state between lines
     ErrorReporter reporter(stage, "", "");
@@ -132,9 +138,9 @@ int Pseudocode::runRepl() {
     while (true) {
         // Show appropriate prompt based on multi-line state
         if (inMultiline) {
-            std::cout << "       .. " << std::flush;
+            std::cout << " ..  " << std::flush;
         } else {
-            std::cout << "[SCSA] >> " << std::flush;
+            std::cout << " ->  " << std::flush;
         }
 
         if (!std::getline(std::cin, line))
@@ -205,7 +211,8 @@ int Pseudocode::runRepl() {
                     try {
                         // Print the evaluated value of the expression
                         RuntimeValue value = interpreter.evaluate(exprStmt->expression.get());
-                        std::cout << C_GREEN << "=> " << C_RESET << stringify(value) << std::endl;
+                        std::cout << C_GREEN << " ==  " << C_CYAN << stringify(value) << C_RESET
+                                  << std::endl;
                         sessionHistory.push_back(std::move(parsed[0]));
                     } catch (const RuntimeError &error) {
                         // We need to manually report the runtime error

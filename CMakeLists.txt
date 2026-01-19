@@ -1,3 +1,6 @@
+# =========================================================
+# CMake configuration
+# =========================================================
 cmake_minimum_required(VERSION 3.15)
 project(scsa LANGUAGES CXX)
 
@@ -6,26 +9,58 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 enable_testing()
 
+# =========================================================
+# Find Sources
+# =========================================================
 file(GLOB_RECURSE SOURCES
     "src/*.cpp"
     "src/*.hpp"
 )
 
+# =========================================================
+# Embed version info into binary
+# =========================================================
+set(VERSION_HEADER "${CMAKE_CURRENT_BINARY_DIR}/generated/version.hpp")
+
+add_custom_target(generate_version
+    COMMAND ${CMAKE_COMMAND} 
+        -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR} 
+        -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR} 
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/GetGitVersion.cmake"
+    BYPRODUCTS "${VERSION_HEADER}"
+    COMMENT "Updated Git version info"
+)
+
+# =========================================================
+# Add Executable
+# =========================================================
 add_executable(scsa ${SOURCES})
 
+# Make sure we wait until after version-info is generated
+add_dependencies(scsa generate_version)
+target_include_directories(scsa PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
+
+# =========================================================
+# Configure compiler and flags
+# =========================================================
 if(MSVC)
     target_compile_options(scsa PRIVATE /W4)
 else()
     target_compile_options(scsa PRIVATE -Wall -Wextra -Werror)
 endif()
 
+# =========================================================
+# Integration tests
+# =========================================================
 add_test(
     NAME integration_tests
     COMMAND python tester.py $<TARGET_FILE:scsa>
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests
 )
 
-# clang-format
+# =========================================================
+# clang-format targets
+# =========================================================
 find_program(CLANG_FORMAT_EXE clang-format)
 if(CLANG_FORMAT_EXE)
     # Target: cmake --build build --target format
