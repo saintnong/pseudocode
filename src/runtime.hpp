@@ -183,14 +183,27 @@ struct Callable {
 struct Instance {
     // Reference to the class that created this instance
     std::shared_ptr<Callable> klass;
-    // Instance-specific field storage
-    std::map<std::string, RuntimeValue> fields;
+    // Instance-specific field storage (shared between views)
+    std::shared_ptr<std::map<std::string, RuntimeValue>> fields;
+    // Optional superclass override for 'super' lookups
+    std::shared_ptr<Callable> superclassContext;
 
     /**
      * Create a new instance of a class
      * @param k Shared pointer to the class definition
      */
-    Instance(std::shared_ptr<Callable> k) : klass(k) {
+    Instance(std::shared_ptr<Callable> k)
+        : klass(k), fields(std::make_shared<std::map<std::string, RuntimeValue>>()),
+          superclassContext(nullptr) {
+    }
+
+    /**
+     * Create a new view of an instance with a different class context (for super)
+     * @param other The instance to copy from
+     * @param context The superclass context to use
+     */
+    Instance(const Instance &other, std::shared_ptr<Callable> context)
+        : klass(other.klass), fields(other.fields), superclassContext(context) {
     }
 
     /**
@@ -200,8 +213,8 @@ struct Instance {
      * @throws RuntimeError if the property does not exist
      */
     RuntimeValue get(const Token &name) {
-        if (fields.count(name.lexeme)) {
-            return fields.at(name.lexeme);
+        if (fields->count(name.lexeme)) {
+            return fields->at(name.lexeme);
         }
         throw RuntimeError(name, "Undefined property '" + name.lexeme + "'.");
     }
@@ -212,7 +225,7 @@ struct Instance {
      * @param value The new value to assign
      */
     void set(const Token &name, RuntimeValue value) {
-        fields[name.lexeme] = value;
+        (*fields)[name.lexeme] = value;
     }
 };
 

@@ -1,0 +1,142 @@
+# stuff needed
+# - Classes
+#   - Inheritance
+#   - super()
+#   - Polymorphism
+#   - Attributes
+#   - Methods
+# - Functions
+# - Lists
+# - For loops
+# - String concatenation
+# - type casting
+
+CLASS Character
+    ATTRIBUTES:
+        name = ""
+        hp = 100
+        str = 10
+    
+    METHODS:
+        FUNCTION Character(name, hp, str)
+            this.name = name
+            this.hp = hp
+            this.str = str
+        END Character
+
+        FUNCTION takeDamage(amount)
+            this.hp = this.hp - amount
+            IF this.hp < 0 THEN
+                this.hp = 0
+            END IF
+            PRINT(this.name + " takes " + STRING(amount) + " damage! HP: " + STRING(this.hp))
+        END takeDamage
+
+        FUNCTION attack(target)
+            PRINT(this.name + " attacks " + target.name)
+            target.takeDamage(this.str)
+        END attack
+
+        FUNCTION describe()
+            RETURN this.name + " (HP: " + STRING(this.hp) + ")"
+        END describe
+END Character
+
+CLASS Warrior : Character
+    ATTRIBUTES:
+        armor = 5
+
+    METHODS:
+        FUNCTION Warrior(name, hp, str, armor)
+            this.super().Character(name, hp, str)
+            this.armor = armor
+        END Warrior
+
+        # Overriding takeDamage to include armor reduction
+        FUNCTION takeDamage(amount)
+            reducedAmount = amount - this.armor
+            IF reducedAmount < 1 THEN
+                reducedAmount = 1
+            END IF
+            this.super().takeDamage(reducedAmount)
+        END takeDamage
+
+        FUNCTION describe()
+            RETURN this.super().describe() + " [Warrior - Armor: " + STRING(this.armor) + "]"
+        END describe
+END Warrior
+
+CLASS Mage : Character
+    ATTRIBUTES:
+        mana = 50
+
+    METHODS:
+        FUNCTION Mage(name, hp, str, mana)
+            this.super().Character(name, hp, str)
+            this.mana = mana
+        END Mage
+
+        # Overriding attack to use magic if mana is available
+        FUNCTION attack(target)
+            IF this.mana >= 10 THEN
+                PRINT(this.name + " casts FIREBALL on " + target.name)
+                this.mana = this.mana - 10
+                target.takeDamage(this.str * 2)
+            ELSE
+                PRINT(this.name + " is out of mana!")
+                this.super().attack(target)
+            END IF
+        END attack
+
+        FUNCTION describe()
+            RETURN this.super().describe() + " [Mage - Mana: " + STRING(this.mana) + "]"
+        END describe
+END Mage
+
+CLASS CombatArena
+    ATTRIBUTES:
+        fighters = []
+
+    METHODS:
+        FUNCTION CombatArena()
+        END CombatArena
+
+        FUNCTION addFighter(f)
+            this.fighters.append(f)
+        END addFighter
+
+        FUNCTION startBrawl()
+            PRINT("--- The Brawl Begins! ---")
+            FOR f IN this.fighters
+                PRINT(f.describe())
+            END FOR
+
+            # Round 1: Everyone attacks the first person
+            target = this.fighters[0]
+            PRINT("--- Round 1: Target is " + target.name + " ---")
+            
+            # Use index to skip the target attacking itself
+            FOR i = 1 TO this.fighters.length - 1
+                attacker = this.fighters[i]
+                attacker.attack(target)
+            END FOR
+        END startBrawl
+END CombatArena
+
+# Setup
+arena = NEW CombatArena()
+arena.addFighter(NEW Warrior("Thorin", 120, 15, 8))
+arena.addFighter(NEW Mage("Gandalf", 80, 8, 100))
+arena.addFighter(NEW Character("Peasant", 30, 2))
+
+arena.startBrawl()
+
+# EXPECT: --- The Brawl Begins! ---
+# EXPECT: Thorin (HP: 120) [Warrior - Armor: 8]
+# EXPECT: Gandalf (HP: 80) [Mage - Mana: 100]
+# EXPECT: Peasant (HP: 30)
+# EXPECT: --- Round 1: Target is Thorin ---
+# EXPECT: Gandalf casts FIREBALL on Thorin
+# EXPECT: Thorin takes 8 damage! HP: 112
+# EXPECT: Peasant attacks Thorin
+# EXPECT: Thorin takes 1 damage! HP: 111

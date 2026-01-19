@@ -1,0 +1,9 @@
+FUNCTION MyFunc()
+END MyFunc
+
+CLASS A : MyFunc
+    METHODS:
+        FUNCTION A()
+        END A
+END A
+# EXPECT ERROR: Superclass must be a user-defined class.

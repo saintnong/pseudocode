@@ -22,8 +22,9 @@ struct ReturnSignal {
 };
 
 // =================================================================================================
-//           Definition and Implementation of Pseudocode Functions and Classes
+//           Forward Declarations
 // =================================================================================================
+class UserClass;
 
 /**
  * User-Defined Function
@@ -35,15 +36,19 @@ class UserFunction : public Callable {
     FunctionStmt *declaration;
     // The lexicographical environment where the function was created (for closures)
     std::shared_ptr<Environment> closure;
+    // The class where the function was defined (if it's a method)
+    std::shared_ptr<UserClass> definingClass;
 
 public:
     /**
      * Create a user function
      * @param decl The function declaration statement
      * @param closure The surrounding environment scope
+     * @param definingClass The class where this function is defined (null for top-level)
      */
-    UserFunction(FunctionStmt *decl, std::shared_ptr<Environment> closure)
-        : declaration(decl), closure(closure) {
+    UserFunction(FunctionStmt *decl, std::shared_ptr<Environment> closure,
+                 std::shared_ptr<UserClass> definingClass = nullptr)
+        : declaration(decl), closure(closure), definingClass(definingClass) {
     }
 
     /**
@@ -56,11 +61,17 @@ public:
         auto environment = std::make_shared<Environment>(closure);
 
         RuntimeValue instanceValue;
-        instanceValue.value = instance;
+        // If the instance doesn't have a class context, use the defining class
+        if (instance->superclassContext == nullptr) {
+            auto boundInstance  = std::make_shared<Instance>(*instance, definingClass);
+            instanceValue.value = boundInstance;
+        } else {
+            instanceValue.value = instance;
+        }
 
         environment->define("this", instanceValue);
 
-        return std::make_shared<UserFunction>(declaration, environment);
+        return std::make_shared<UserFunction>(declaration, environment, definingClass);
     }
 
     /**
@@ -160,6 +171,8 @@ public:
 class UserClass : public Callable, public std::enable_shared_from_this<UserClass> {
     // Name of the class
     std::string name;
+    // The superclass of this class (can be nullptr)
+    std::shared_ptr<UserClass> superclass;
     // Map of method names to their implementations
     std::map<std::string, std::shared_ptr<Callable>> methods;
     // Initial field value expressions for new instances
@@ -169,8 +182,18 @@ public:
     /**
      * Create a new class definition
      * @param n The class name
+     * @param s The superclass (if any)
      */
-    UserClass(const std::string &n) : name(n) {
+    UserClass(const std::string &n, std::shared_ptr<UserClass> s = nullptr)
+        : name(n), superclass(s) {
+    }
+
+    std::shared_ptr<UserClass> getSuperclass() const {
+        return superclass;
+    }
+
+    std::string getName() const {
+        return name;
     }
 
     /**
@@ -201,16 +224,34 @@ public:
             return std::dynamic_pointer_cast<UserFunction>(methods.at(methodName));
         }
 
-        // TODO: Support inheritance method lookups
+        if (superclass != nullptr) {
+            return superclass->findMethod(methodName);
+        }
 
         return nullptr;
     }
 
     /**
-     * @return Arity of the constructor (same as the class-named method)
+     * Lookup a constructor in the inheritance chain
+     * @return Shared pointer to the constructor, or nullptr if none exists
+     */
+    std::shared_ptr<UserFunction> findConstructor() {
+        std::shared_ptr<UserFunction> constructor = findMethod(name);
+        if (constructor != nullptr)
+            return constructor;
+
+        if (superclass != nullptr) {
+            return superclass->findConstructor();
+        }
+
+        return nullptr;
+    }
+
+    /**
+     * @return Arity of the constructor (same as the class-named method or inherited)
      */
     int arity() override {
-        std::shared_ptr<UserFunction> constructor = findMethod(name);
+        std::shared_ptr<UserFunction> constructor = findConstructor();
         if (constructor != nullptr) {
             return constructor->arity();
         }
@@ -225,18 +266,15 @@ public:
      * @return The newly created Instance
      */
     RuntimeValue call(Interpreter &interpreter, std::vector<RuntimeValue> arguments) override {
-        (void) interpreter;
-        (void) arguments;
         auto instance =
             std::make_shared<Instance>(std::static_pointer_cast<Callable>(shared_from_this()));
 
-        // Populate new instance with default field values
-        for (const auto &[key, expr] : defaultFields) {
-            instance->fields[key] = interpreter.evaluate(expr);
-        }
+        // Populate new instance with field values (from inheritance chain)
+        initializeFields(interpreter, instance);
 
         // Find and execute the class constructor method if it exists
-        std::shared_ptr<UserFunction> constructor = findMethod(name);
+        // Searching up the inheritance chain happens inside findConstructor
+        std::shared_ptr<UserFunction> constructor = findConstructor();
         if (constructor != nullptr) {
             constructor->bind(instance)->call(interpreter, arguments);
         }
@@ -247,6 +285,22 @@ public:
         return result;
     }
 
+private:
+    /**
+     * Initialize fields recursively from top of inheritance chain down to this class.
+     * This ensures that subclass fields can overwrite superclass defaults.
+     */
+    void initializeFields(Interpreter &interpreter, std::shared_ptr<Instance> instance) {
+        if (superclass != nullptr) {
+            superclass->initializeFields(interpreter, instance);
+        }
+
+        for (const auto &[key, expr] : defaultFields) {
+            (*instance->fields)[key] = interpreter.evaluate(expr);
+        }
+    }
+
+public:
     /**
      * @return Debug string for the class
      */
@@ -1157,15 +1211,38 @@ RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
     std::string name = expr->name.lexeme;
 
     // First check for fields on the instance
-    if (instance->fields.count(name)) {
-        return instance->fields.at(name);
+    if (instance->fields->count(name)) {
+        return instance->fields->at(name);
     }
 
     // Then look for methods in the instance's class
-    auto klass = std::dynamic_pointer_cast<UserClass>(instance->klass);
+    std::shared_ptr<UserClass> lookupClass;
+    if (instance->superclassContext) {
+        lookupClass = std::dynamic_pointer_cast<UserClass>(instance->superclassContext);
+    } else {
+        lookupClass = std::dynamic_pointer_cast<UserClass>(instance->klass);
+    }
 
-    if (klass) {
-        auto method = klass->findMethod(name);
+    if (lookupClass) {
+        // Special property: super
+        if (name == "super") {
+            if (!lookupClass->getSuperclass()) {
+                throw RuntimeError(expr->name,
+                                   "Class '" + lookupClass->toString() + "' has no superclass.");
+            }
+            auto superMethod = std::make_shared<NativeFunction>(
+                0,
+                [instance, lookupClass](Interpreter &,
+                                        std::vector<RuntimeValue> args) -> RuntimeValue {
+                    (void) args;
+                    auto superInstance =
+                        std::make_shared<Instance>(*instance, lookupClass->getSuperclass());
+                    return {superInstance};
+                });
+            return {superMethod};
+        }
+
+        auto method = lookupClass->findMethod(name);
         if (method) {
             // If the method is found, we MUST bind it to the instance.
             // This ensures that when the function is eventually called,
@@ -1364,7 +1441,28 @@ void Interpreter::visitFunctionStmt(FunctionStmt *stmt) {
  * and defines it in the current scope.
  */
 void Interpreter::visitClassStmt(ClassStmt *stmt) {
-    auto klass = std::make_shared<UserClass>(stmt->name.lexeme);
+    std::shared_ptr<UserClass> superclass = nullptr;
+    if (stmt->superclass.type != TOK_EOF) {
+        RuntimeValue superVal = environment->get(stmt->superclass);
+        if (!superVal.is<std::shared_ptr<Callable>>()) {
+            throw RuntimeError(stmt->superclass, "Superclass must be a class.");
+        }
+        superclass = std::dynamic_pointer_cast<UserClass>(superVal.as<std::shared_ptr<Callable>>());
+        if (!superclass) {
+            throw RuntimeError(stmt->superclass, "Superclass must be a user-defined class.");
+        }
+
+        // Cyclic inheritance check
+        std::shared_ptr<UserClass> tracer = superclass;
+        while (tracer != nullptr) {
+            if (tracer->getName() == stmt->name.lexeme) {
+                throw RuntimeError(stmt->superclass, "Cycle detected in inheritance chain.");
+            }
+            tracer = tracer->getSuperclass();
+        }
+    }
+
+    auto klass = std::make_shared<UserClass>(stmt->name.lexeme, superclass);
 
     // Add the class's default attributes (fields)
     for (const auto &attr : stmt->attributes) {
@@ -1381,7 +1479,7 @@ void Interpreter::visitClassStmt(ClassStmt *stmt) {
     // Add methods to the class definition
     for (const auto &method : stmt->methods) {
         if (auto *funcStmt = dynamic_cast<FunctionStmt *>(method.get())) {
-            auto methodFunc = std::make_shared<UserFunction>(funcStmt, environment);
+            auto methodFunc = std::make_shared<UserFunction>(funcStmt, environment, klass);
             klass->addMethod(funcStmt->name.lexeme, methodFunc);
         }
     }

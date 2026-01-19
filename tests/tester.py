@@ -70,10 +70,12 @@ def run_test(interpreter_path, file_path):
 def main():
     if len(sys.argv) < 2:
         print(f"Usage: python {sys.argv[0]} <path_to_interpreter>")
-        print("Please run in the same folder as tests")
         sys.exit(1)
 
-    interpreter = sys.argv[1]
+    interpreter = os.path.abspath(sys.argv[1])
+    
+    # Set working directory to the script's directory
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
     root_dir = pathlib.Path('.')
     
     counts = {"PASS": 0, "FAIL": 0, "SKIP": 0}

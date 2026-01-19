@@ -1,0 +1,20 @@
+CLASS A
+    METHODS:
+        FUNCTION A()
+        END A
+        FUNCTION foo()
+        END foo
+END A
+
+CLASS B : A
+    METHODS:
+        FUNCTION B()
+        END B
+        FUNCTION bar()
+            this.super.foo()
+        END bar
+END B
+
+b = NEW B()
+b.bar()
+# EXPECT ERROR: Only instances have properties.

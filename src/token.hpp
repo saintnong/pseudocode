@@ -19,7 +19,6 @@ enum TokenKind {
 
     // === Keywords ===
     TOK_CLASS,
-    TOK_INHERITS,
     TOK_ATTRIBUTES,
     TOK_METHODS,
     TOK_FUNCTION,

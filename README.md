@@ -84,7 +84,10 @@ This repository contains a full toolchain for Pseudocode development, including 
     - Most features working, but the syntax requires 'this' to reference object attributes/methods which is technicaly not SCSA standard
     - Encapsulation works
     - Object methods work
-    - **Inheritance is WIP**
+    - Inheritance works
+        - Use SUPER() to call parent constructor
+        - Use SUPER.method() to call parent method
+        - Use SUPER.field to access parent field
 
 ## Integration Tests
 This project uses a small custom Python test harness integrated with CTest for CI/CD. Tests execute `.scsa` files and check that the interpreter output matches what is expected in the comments. To run the test suite:
@@ -103,9 +106,8 @@ The interpreter supports the following environment variables:
 
 # Other stuff
 ## Currently WIP Features
-- Object Oriented Programming✨✨
-    - Inheritance and polymorphism are currently WIP
-    - SCSA why did you do this to us?
+- Dictionary datatype
+- String and list multiplication
 
 ## Future Plans
 - Integrated file IO in standard library
