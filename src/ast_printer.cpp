@@ -433,3 +433,26 @@ void ASTPrinter::visitCaseStmt(CaseStmt *stmt) {
             accept(st.get());
     }
 }
+
+/**
+ * Visit a Repeat-Until Loop
+ * Prints the loop structure: body and the terminating condition.
+ * @param stmt Pointer to the repeat-until statement node
+ */
+void ASTPrinter::visitRepeatUntilStmt(RepeatUntilStmt *stmt) {
+    std::cout << indent << "[RepeatUntil]" << std::endl;
+
+    IndentScope scope(*this);
+    std::cout << indent << "Body:" << std::endl;
+    {
+        IndentScope bodyScope(*this);
+        for (const auto &st : stmt->body)
+            accept(st.get());
+    }
+
+    std::cout << indent << "Until Condition:" << std::endl;
+    {
+        IndentScope condScope(*this);
+        accept(stmt->condition.get());
+    }
+}

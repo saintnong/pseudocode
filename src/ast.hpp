@@ -31,6 +31,7 @@ struct WhileStmt;
 struct ForInStmt;
 struct ForStmt;
 struct CaseStmt;
+struct RepeatUntilStmt;
 
 // --- Visitor Interfaces ---
 
@@ -58,17 +59,18 @@ struct ExprVisitor {
  * Defines the contract for operations that traverse Statement nodes.
  */
 struct StmtVisitor {
-    virtual ~StmtVisitor()                                 = default;
-    virtual void visitExpressionStmt(ExpressionStmt *stmt) = 0;
-    virtual void visitReturnStmt(ReturnStmt *stmt)         = 0;
-    virtual void visitBlockStmt(BlockStmt *stmt)           = 0;
-    virtual void visitIfStmt(IfStmt *stmt)                 = 0;
-    virtual void visitFunctionStmt(FunctionStmt *stmt)     = 0;
-    virtual void visitClassStmt(ClassStmt *stmt)           = 0;
-    virtual void visitWhileStmt(WhileStmt *stmt)           = 0;
-    virtual void visitForInStmt(ForInStmt *stmt)           = 0;
-    virtual void visitForStmt(ForStmt *stmt)               = 0;
-    virtual void visitCaseStmt(CaseStmt *stmt)             = 0;
+    virtual ~StmtVisitor()                                   = default;
+    virtual void visitExpressionStmt(ExpressionStmt *stmt)   = 0;
+    virtual void visitReturnStmt(ReturnStmt *stmt)           = 0;
+    virtual void visitBlockStmt(BlockStmt *stmt)             = 0;
+    virtual void visitIfStmt(IfStmt *stmt)                   = 0;
+    virtual void visitFunctionStmt(FunctionStmt *stmt)       = 0;
+    virtual void visitClassStmt(ClassStmt *stmt)             = 0;
+    virtual void visitWhileStmt(WhileStmt *stmt)             = 0;
+    virtual void visitForInStmt(ForInStmt *stmt)             = 0;
+    virtual void visitForStmt(ForStmt *stmt)                 = 0;
+    virtual void visitCaseStmt(CaseStmt *stmt)               = 0;
+    virtual void visitRepeatUntilStmt(RepeatUntilStmt *stmt) = 0;
 };
 
 // --- Base Classes ---
@@ -435,5 +437,25 @@ struct CaseStmt : Stmt {
 
     void accept(StmtVisitor &visitor) override {
         visitor.visitCaseStmt(this);
+    }
+};
+
+/**
+ * Repeat-Until Statement
+ * REPEAT
+ *     body
+ * UNTIL condition
+ */
+struct RepeatUntilStmt : Stmt {
+    Token keyword;
+    std::vector<StmtPtr> body;
+    ExprPtr condition;
+
+    RepeatUntilStmt(Token kw, std::vector<StmtPtr> b, ExprPtr cond)
+        : keyword(kw), body(std::move(b)), condition(std::move(cond)) {
+    }
+
+    void accept(StmtVisitor &visitor) override {
+        visitor.visitRepeatUntilStmt(this);
     }
 };

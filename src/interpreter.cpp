@@ -1475,3 +1475,12 @@ void Interpreter::visitCaseStmt(CaseStmt *stmt) {
         }
     }
 }
+
+/**
+ * Visit: Repeat-Until Statement
+ * Executes the body until the condition becomes truthy.
+ * Note: This is an initial stub that throws an error until full execution logic is needed.
+ */
+void Interpreter::visitRepeatUntilStmt(RepeatUntilStmt *stmt) {
+    throw RuntimeError(stmt->keyword, "REPEAT UNTIL execution is not implemented yet.");
+}

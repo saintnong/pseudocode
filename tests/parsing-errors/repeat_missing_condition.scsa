@@ -1,0 +1,4 @@
+REPEAT
+    x = x + 1
+UNTIL 
+# EXPECT ERROR: Expected expression.

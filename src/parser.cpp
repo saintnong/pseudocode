@@ -475,6 +475,9 @@ StmtPtr Parser::statement() {
     if (match(TOK_CASE)) {
         return caseStatement();
     }
+    if (match(TOK_REPEAT)) {
+        return repeatUntilStatement();
+    }
 
     ExprPtr expr = parseExpression(PREC_NONE);
     return std::make_unique<ExpressionStmt>(std::move(expr));
@@ -662,6 +665,26 @@ StmtPtr Parser::returnStatement() {
         value = parseExpression(PREC_NONE);
     }
     return std::make_unique<ReturnStmt>(std::move(value));
+}
+
+/**
+ * Repeat-Until Statement
+ * Parses: REPEAT statements UNTIL condition
+ */
+StmtPtr Parser::repeatUntilStatement() {
+    traceEnter("repeatUntilStatement");
+    Token keyword = previous();
+
+    std::vector<StmtPtr> body;
+    while (!check(TOK_UNTIL) && !isAtEnd()) {
+        body.push_back(statement());
+    }
+
+    consume(TOK_UNTIL, "Expected 'UNTIL' after REPEAT body.");
+    ExprPtr condition = parseExpression(PREC_NONE);
+
+    traceExit("repeatUntilStatement");
+    return std::make_unique<RepeatUntilStmt>(keyword, std::move(body), std::move(condition));
 }
 
 /**
