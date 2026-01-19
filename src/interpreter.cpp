@@ -1113,8 +1113,9 @@ RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
             return len;
         }
 
-        // You could also add string methods here later (e.g., str.to_upper())
+        // str.slice(a, b)
         if (name == "slice") {
+            // Returns string from indices a to b inclusive
             Token anchor     = expr->name;
             auto sliceMethod = std::make_shared<NativeFunction>(
                 2, [str, anchor](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
@@ -1411,10 +1412,40 @@ void Interpreter::visitForInStmt(ForInStmt *stmt) {
 }
 
 /**
- * Visit: For-In Loop
- * Iterates over the elements of an iterable, executing the body for each one.
- * Binds the current element to a local loop variable.
+ * Visit: For-To Loop
+ * Iterates through the blocks while changing the loop variable from start to end
  */
 void Interpreter::visitForStmt(ForStmt *stmt) {
-    throw RuntimeError(stmt->variable, "not implemented yet");
+    // Resolve start and end
+    RuntimeValue startVal = evaluate(stmt->start.get());
+    RuntimeValue endVal   = evaluate(stmt->end.get());
+
+    // Check that both start and end make sense
+    if (!startVal.is<int>() || !endVal.is<int>()) {
+        throw RuntimeError(stmt->variable, "Start and end values in FOR loop must be integers.");
+    }
+    int start = startVal.as<int>();
+    int end   = endVal.as<int>();
+
+    // Set step depending on which way the loop will go
+    int step = (start <= end) ? 1 : -1;
+
+    // Flexible forwards/backwards loop
+    int i = start;
+    while (true) {
+        // enforce stop condition
+        if (step > 0 && i > end)
+            break;
+        if (step < 0 && i < end)
+            break;
+
+        // update loop variable
+        environment->define(stmt->variable.lexeme, RuntimeValue{i});
+
+        // execute loop body
+        for (const auto &s : stmt->body) {
+            execute(s.get());
+        }
+        i += step;
+    }
 }
