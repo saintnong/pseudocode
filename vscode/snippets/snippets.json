@@ -49,5 +49,33 @@
       "\t\t$0",
       "END ${1:name}"
     ]
+  },
+  "CASE Statement": {
+    "prefix": "CASE",
+    "body": [
+      "CASE ${1:expression} OF",
+      "\t${2:value}: $3",
+      "\tOTHERWISE: $0",
+      "END CASE"
+    ]
+  },
+  "REPEAT-UNTIL Loop": {
+    "prefix": "REPEAT",
+    "body": [
+      "REPEAT",
+      "\t$0",
+      "UNTIL ${1:condition}"
+    ]
+  },
+  "Declare a CLASS with a Parent": {
+    "prefix": "CLASS",
+    "body": [
+      "CLASS ${1:name} : ${2:parent}",
+      "\tATTRIBUTES",
+      "\t\t$3",
+      "\tMETHODS",
+      "\t\t$0",
+      "END ${1:name}"
+    ]
   }
 }

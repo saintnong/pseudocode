@@ -2,7 +2,7 @@
   "name": "scsa-pseudocode",
   "displayName": "SCSA Pseudocode",
   "publisher": "SaintNong",
-  "version": "0.2.10",
+  "version": "0.3.0",
   "engines": {
     "vscode": "^1.6.0"
   },
