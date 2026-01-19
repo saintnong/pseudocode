@@ -1,0 +1,11 @@
+x = 0
+REPEAT
+    x = x + 1
+    PRINT(x)
+UNTIL x == 5
+
+# EXPECT: 1
+# EXPECT: 2
+# EXPECT: 3
+# EXPECT: 4
+# EXPECT: 5

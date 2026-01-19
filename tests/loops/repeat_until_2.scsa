@@ -1,0 +1,7 @@
+x = 10
+REPEAT
+    PRINT("ran once")
+    x = x + 1
+UNTIL x > 5
+
+# EXPECT: ran once

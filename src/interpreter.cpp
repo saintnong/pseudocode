@@ -1478,9 +1478,13 @@ void Interpreter::visitCaseStmt(CaseStmt *stmt) {
 
 /**
  * Visit: Repeat-Until Statement
- * Executes the body until the condition becomes truthy.
- * Note: This is an initial stub that throws an error until full execution logic is needed.
+ * Executes the body repeatedly until the condition becomes truthy.
+ * The body is executed at least once before the condition is checked.
  */
 void Interpreter::visitRepeatUntilStmt(RepeatUntilStmt *stmt) {
-    throw RuntimeError(stmt->keyword, "REPEAT UNTIL execution is not implemented yet.");
+    do {
+        for (const auto &s : stmt->body) {
+            execute(s.get());
+        }
+    } while (!isTruthy(evaluate(stmt->condition.get())));
 }
