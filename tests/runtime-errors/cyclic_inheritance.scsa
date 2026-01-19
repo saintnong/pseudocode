@@ -1,0 +1,36 @@
+# Test cyclic inheritance 3-way cycle
+
+# Forward declare C
+CLASS C
+    METHODS:
+        FUNCTION C()
+        END C
+END C
+
+# A -> C
+CLASS A : C
+    METHODS:
+        FUNCTION A()
+        END A
+END A
+
+# B -> A
+CLASS B : A
+    METHODS:
+        FUNCTION B()
+        END B
+END B
+
+# C -> B
+CLASS C : B
+    METHODS:
+        FUNCTION C()
+        END C
+END C
+
+# A, B and C form a cycle
+a = NEW A()
+b = NEW B()
+c = NEW C()
+
+# EXPECT ERROR: Cycle detected in inheritance chain.

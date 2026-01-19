@@ -1,0 +1,13 @@
+CLASS A
+    METHODS:
+        FUNCTION A()
+        END A
+
+        FUNCTION speak()
+            this.super().speak()
+        END speak
+END A
+
+a = NEW A()
+a.speak()
+# EXPECT ERROR: has no superclass.

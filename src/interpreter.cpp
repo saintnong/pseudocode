@@ -192,6 +192,10 @@ public:
         return superclass;
     }
 
+    std::string getName() const {
+        return name;
+    }
+
     /**
      * Add a method to the class
      * @param methodName The identifier for the method
@@ -1446,6 +1450,15 @@ void Interpreter::visitClassStmt(ClassStmt *stmt) {
         superclass = std::dynamic_pointer_cast<UserClass>(superVal.as<std::shared_ptr<Callable>>());
         if (!superclass) {
             throw RuntimeError(stmt->superclass, "Superclass must be a user-defined class.");
+        }
+
+        // Cyclic inheritance check
+        std::shared_ptr<UserClass> tracer = superclass;
+        while (tracer != nullptr) {
+            if (tracer->getName() == stmt->name.lexeme) {
+                throw RuntimeError(stmt->superclass, "Cycle detected in inheritance chain.");
+            }
+            tracer = tracer->getSuperclass();
         }
     }
 

@@ -1,0 +1,7 @@
+x = 5
+CLASS A : x
+    METHODS:
+        FUNCTION A()
+        END A
+END A
+# EXPECT ERROR: Superclass must be a class.
