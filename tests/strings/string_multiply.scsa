@@ -1,0 +1,12 @@
+# String Multiplication (Repetition)
+
+# Basic checks
+PRINT("abc" * 3) # EXPECT: abcabcabc
+PRINT(3 * "abc") # EXPECT: abcabcabc
+PRINT("!" * 5)   # EXPECT: !!!!!
+PRINT("abc" * 1) # EXPECT: abc
+
+# Multiplying by zero and negative
+PRINT("X" + ("abc" * 0) + "Y")  # EXPECT: XY
+PRINT("X" + ("abc" * -1) + "Y") # EXPECT: XY
+
