@@ -15,6 +15,7 @@ Makefile
 CTestTestfile.cmake
 Testing/
 generated/
+.cache/
 
 # Compile stuff
 *.o

@@ -54,8 +54,8 @@
     "prefix": "CASE",
     "body": [
       "CASE ${1:expression} OF",
-      "\t${2:value}: $0",
-      "\tOTHERWISE: $3",
+      "\t${2:value}: $3",
+      "\tOTHERWISE: $0",
       "END CASE"
     ]
   },
