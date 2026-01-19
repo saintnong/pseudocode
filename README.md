@@ -8,8 +8,8 @@
 </p>
 
 <p align="center">
-    Pseudocode is a high-level interpreted language with support for procedural and object oriented programming.
-    Based on the WA School Curriculum and Standards Authority's (SCSA) ATAR Computer Science <a href="https://senior-secondary.scsa.wa.edu.au/__data/assets/pdf_file/0003/1090875/Year-11_12_Computer-Science_ATAR_Additional-syllabus-support-booklet-.PDF">"Pseudocode" (2024)</a>.
+    SCSA Pseudocode is a high-level interpreted language with for object oriented programming.
+    It is based on the WA School Curriculum and Standards Authority's ATAR Computer Science <a href="https://senior-secondary.scsa.wa.edu.au/__data/assets/pdf_file/0003/1090875/Year-11_12_Computer-Science_ATAR_Additional-syllabus-support-booklet-.PDF">"Pseudocode" (2024)</a>.
 </p>
 
 ---
