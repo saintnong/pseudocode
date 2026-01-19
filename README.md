@@ -68,6 +68,9 @@ This repository contains a full toolchain for Pseudocode development, including 
 - While, For-In, and For-To loops
 - If & If-Else statements
 - Functions
+- CASE statements
+    - Multiple conditions can be checked by a single branch by separating them with commas
+    - Case branches with multi line statements are supported
 - Strings
     - `string[i]` Indexes into a string
     - `string.length` Returns the length of a string
@@ -104,7 +107,6 @@ The interpreter supports the following environment variables:
     - Inheritance and polymorphism are currently WIP
     - SCSA why did you do this to us?
 - REPEAT-UNTIL loop support
-- Case statement
 - ELSE IF statements
 
 ## Future Plans
