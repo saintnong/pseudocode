@@ -36,6 +36,8 @@ enum TokenKind {
     TOK_OF,
     TOK_OTHERWISE,
     TOK_TO,
+    TOK_REPEAT,
+    TOK_UNTIL,
 
     // === Operators ===
     // Normal operators
@@ -141,6 +143,10 @@ struct Token {
             return "KEYWORD(OF)";
         case TOK_OTHERWISE:
             return "KEYWORD(OTHERWISE)";
+        case TOK_REPEAT:
+            return "KEYWORD(REPEAT)";
+        case TOK_UNTIL:
+            return "KEYWORD(UNTIL)";
 
         case TOK_AND:
             return "OPERATOR(AND)";

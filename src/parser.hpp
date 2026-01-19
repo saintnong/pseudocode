@@ -141,6 +141,7 @@ private:
      * Parse a return statement (with optional value)
      */
     StmtPtr returnStatement();
+    StmtPtr repeatUntilStatement();
 
     /**
      * Parse a block of statements until a block-terminating keyword (END, ELSE)

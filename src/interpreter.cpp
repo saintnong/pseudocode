@@ -1475,3 +1475,16 @@ void Interpreter::visitCaseStmt(CaseStmt *stmt) {
         }
     }
 }
+
+/**
+ * Visit: Repeat-Until Statement
+ * Executes the body repeatedly until the condition becomes truthy.
+ * The body is executed at least once before the condition is checked.
+ */
+void Interpreter::visitRepeatUntilStmt(RepeatUntilStmt *stmt) {
+    do {
+        for (const auto &s : stmt->body) {
+            execute(s.get());
+        }
+    } while (!isTruthy(evaluate(stmt->condition.get())));
+}

@@ -32,6 +32,8 @@ Lexer::Lexer(const std::string &src, ErrorReporter &errReporter, size_t startLin
     keywords["OF"]        = TOK_OF;
     keywords["OTHERWISE"] = TOK_OTHERWISE;
     keywords["OTHER"]     = TOK_OTHERWISE; // Damn you SCSA ambiguity
+    keywords["REPEAT"]    = TOK_REPEAT;
+    keywords["UNTIL"]     = TOK_UNTIL;
     keywords["AND"]       = TOK_AND;
     keywords["OR"]        = TOK_OR;
     keywords["NOT"]       = TOK_NOT;

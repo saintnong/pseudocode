@@ -103,6 +103,7 @@ public:
     void visitForInStmt(ForInStmt *stmt) override;
     void visitForStmt(ForStmt *stmt) override;
     void visitCaseStmt(CaseStmt *stmt) override;
+    void visitRepeatUntilStmt(RepeatUntilStmt *stmt) override;
 
     /**
      * Error Reporter
