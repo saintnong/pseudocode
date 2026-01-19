@@ -27,6 +27,7 @@ Lexer::Lexer(const std::string &src, ErrorReporter &errReporter)
     keywords["ELSE"]  = TOK_ELSE;
     keywords["IN"]    = TOK_IN;
     keywords["FOR"]   = TOK_FOR;
+    keywords["TO"]    = TOK_TO;
     keywords["AND"]   = TOK_AND;
     keywords["OR"]    = TOK_OR;
     keywords["NOT"]   = TOK_NOT;

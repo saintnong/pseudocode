@@ -32,6 +32,7 @@ enum TokenKind {
     TOK_WHILE,
     TOK_FOR,
     TOK_IN,
+    TOK_TO,
 
     // === Operators ===
     // Normal operators
