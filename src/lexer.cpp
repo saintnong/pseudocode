@@ -6,8 +6,8 @@
  * @param src The source code to tokenize
  * @param errReporter Reference to error reporter for error handling
  */
-Lexer::Lexer(const std::string &src, ErrorReporter &errReporter)
-    : source(src), start(0), current(0), line(1), startLine(1), startColumn(0), column(0),
+Lexer::Lexer(const std::string &src, ErrorReporter &errReporter, size_t startLine)
+    : source(src), start(0), current(0), line(startLine), startLine(1), startColumn(0), column(0),
       reporter(errReporter) {
 
     /**

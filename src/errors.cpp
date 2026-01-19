@@ -54,6 +54,9 @@ void printAtarMessage() {
 ErrorReporter::ErrorReporter(InterpreterStage &stageRef, const std::string &file,
                              const std::string &source)
     : stage(stageRef), filename(file) {
+    if (source.empty())
+        return;
+
     // Split the source code into lines
     std::string currentLine;
     for (char c : source) {
@@ -129,20 +132,8 @@ std::string ErrorReporter::getStageLabel() {
  * @return The source code line, or empty string if out of range
  */
 std::string ErrorReporter::getSourceLine(size_t lineNum) {
-    /**
-     * REPL mode.
-     * Give the most recent line we have in history.
-     */
-    if (isRepl) {
-        if (lines.empty())
-            return "";
-        return lines.back();
-    }
+    // Returns the specified source line
 
-    /**
-     * File mode.
-     * Return the source line of the token from the source file.
-     */
     if (lines.empty() || lineNum < 1 || lineNum > lines.size()) {
         return "";
     }
@@ -215,6 +206,7 @@ void ErrorReporter::report(ErrorType type, size_t line, size_t column, const std
     std::cerr << C_BLUE << lineStr << separator << C_RESET;
 
     // Print the line up to the error
+    column = std::min(column, errorLine.length()); // Crash prevention
     std::cerr << errorLine.substr(0, column);
 
     // Print the erroneous token in red
@@ -254,17 +246,20 @@ void ErrorReporter::report(ErrorType type, size_t line, size_t column, const std
     std::cerr << " " << label << ": " << C_RESET << message << std::endl;
 
     // Print line after
-    std::string nextLine = getSourceLine(line + 1);
-    if (!nextLine.empty() && !isRepl) {
+    if (!isRepl) {
+        std::string nextLine       = getSourceLine(line + 1);
         std::string nextLineString = std::to_string(line + 1);
-        std::cerr << C_GRAY << nextLineString << C_RESET;
+        if (!nextLine.empty()) {
+            std::cerr << C_GRAY << nextLineString << C_RESET;
 
-        // Pad if necessary (though usually next line number is >= current line number width)
-        for (size_t i = nextLineString.length(); i < lineStr.length(); i++) {
-            std::cerr << " ";
+            // pad
+            for (size_t i = nextLineString.length(); i < lineStr.length(); i++) {
+                std::cerr << " ";
+            }
+
+            std::cerr << C_BLUE << separator << C_RESET << C_GRAY << nextLine << C_RESET
+                      << std::endl;
         }
-
-        std::cerr << C_BLUE << separator << C_RESET << C_GRAY << nextLine << C_RESET << std::endl;
     }
 
     // // Lovely message from our overlords SCSA

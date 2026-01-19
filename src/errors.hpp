@@ -83,6 +83,13 @@ public:
     void replAddLine(const std::string &sourceSegment);
 
     /**
+     * Gets the current source line count
+     */
+    size_t getLineCount() {
+        return lines.size();
+    }
+
+    /**
      * Report an error with full context including surrounding lines
      * @param type The error type (Syntax, Type, etc.)
      * @param line The line number where error occurred
