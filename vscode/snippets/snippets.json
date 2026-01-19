@@ -66,5 +66,16 @@
       "\t$0",
       "UNTIL ${1:condition}"
     ]
+  },
+  "Declare a CLASS with a Parent": {
+    "prefix": "CLASS",
+    "body": [
+      "CLASS ${1:name} : ${2:parent}",
+      "\tATTRIBUTES",
+      "\t\t$3",
+      "\tMETHODS",
+      "\t\t$0",
+      "END ${1:name}"
+    ]
   }
 }
