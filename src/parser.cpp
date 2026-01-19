@@ -577,14 +577,25 @@ StmtPtr Parser::forStatement(Token variable) {
 }
 
 /**
- * Checks if the next token is a case arm
- * @returns true if the next token is a case arm, false otherwise
+ * Checks if the next token is a case arm token
+ * @returns true if the next token is an arm token, false otherwise
  */
 bool Parser::nextTokenIsCaseArm() {
-    if (peek().type == TOK_OTHERWISE) {
+    if (peek().type == TOK_OTHERWISE || peek().type == TOK_END) {
         return true;
     }
-    return tokens[current + 1].type == TOK_COLON;
+
+    // Look ahead on the same line for a colon
+    size_t lookahead = current;
+    size_t startLine = tokens[lookahead].line;
+
+    while (lookahead < tokens.size() && tokens[lookahead].line == startLine) {
+        if (tokens[lookahead].type == TOK_COLON)
+            return true;
+        lookahead++;
+    }
+
+    return false;
 }
 
 /**
@@ -616,7 +627,8 @@ StmtPtr Parser::caseStatement() {
                 arm.values.push_back(parseExpression(PREC_NONE));
             } while (match(TOK_COMMA));
 
-            consume(TOK_COLON, "Expected ':' after case values.");
+            Token colon = consume(TOK_COLON, "Expected ':' after case values.");
+            arm.colon   = colon;
 
             // Parse statements for this arm until next arm, OTHERWISE or END CASE
             while (!check(TOK_END) && !check(TOK_OTHERWISE) && !isAtEnd()) {

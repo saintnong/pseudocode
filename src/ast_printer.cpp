@@ -409,7 +409,8 @@ void ASTPrinter::visitCaseStmt(CaseStmt *stmt) {
     }
 
     for (size_t i = 0; i < stmt->arms.size(); ++i) {
-        std::cout << indent << "Arm " << i << ":" << std::endl;
+        std::cout << indent << "Arm " << i << " (colon at " << stmt->arms[i].colon.line << ":"
+                  << stmt->arms[i].colon.column << "):" << std::endl;
         IndentScope armScope(*this);
         std::cout << indent << "Values:" << std::endl;
         {

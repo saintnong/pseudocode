@@ -409,6 +409,7 @@ struct ForStmt : Stmt {
  * Represents a single branch in a CASE statement.
  */
 struct CaseArm {
+    Token colon;
     std::vector<ExprPtr> values;
     std::vector<StmtPtr> body;
 };

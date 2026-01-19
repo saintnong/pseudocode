@@ -1,0 +1,16 @@
+# OTHERWISE and OTHER branch test
+
+value = 3
+CASE value OF
+    1: PRINT("one")
+    2: PRINT("two")
+    OTHERWISE: PRINT("otherwise")
+END CASE
+# EXPECT: otherwise
+
+CASE value OF
+    1: PRINT("one")
+    2: PRINT("two")
+    OTHER: PRINT("other")
+END CASE
+# EXPECT: other
