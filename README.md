@@ -62,7 +62,7 @@ Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Ins
     - `TYPE(value)`: Returns the type of the value as a string.
 - Binary operations/comparisons [+, -, *, /, >, <, >=, <=, ==, !=]
 - Logical operators [AND, OR, NOT]
-- While and For-In loops
+- While, For-In, and For-To loops
 - If & If-Else statements
 - Functions
 - Strings
@@ -97,7 +97,7 @@ The interpreter supports the following environment variables:
 - ✨✨Object Oriented Programming✨✨
     - This was a new, painful recent addition to the SCSA pseudocode "standard", when they decided that their ancient Pascal based pseudocode had to be more **"modern"**
     - Polymorphism and inheritance are WIP
-- FOR-TO loop support
+- REPEAT-UNTIL loop support
 - Case statement
 - ELSE IF statements
 

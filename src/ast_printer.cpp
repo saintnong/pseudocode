@@ -159,6 +159,35 @@ void ASTPrinter::visitForInStmt(ForInStmt *stmt) {
 }
 
 /**
+ * Visit a For-To Statement
+ * Prints the for-to loop structure: variable, start, end, and loop body.
+ * @param stmt Pointer to the for-to statement node
+ */
+void ASTPrinter::visitForStmt(ForStmt *stmt) {
+    std::cout << indent << "[For] " << stmt->variable.lexeme << std::endl;
+
+    IndentScope scope(*this);
+    std::cout << indent << "Start:" << std::endl;
+    {
+        IndentScope iterScope(*this);
+        accept(stmt->start.get());
+    }
+
+    std::cout << indent << "End:" << std::endl;
+    {
+        IndentScope iterScope(*this);
+        accept(stmt->end.get());
+    }
+
+    std::cout << indent << "Body:" << std::endl;
+    {
+        IndentScope bodyScope(*this);
+        for (const auto &st : stmt->body)
+            accept(st.get());
+    }
+}
+
+/**
  * Visit a Return Statement
  * Prints the return marker and recursively prints the return value if present.
  * @param stmt Pointer to the return statement node

@@ -1,0 +1,23 @@
+# Tests for loop is inclusive of start and end
+
+FOR x = 0 TO 5
+    PRINT(x)
+END FOR
+# EXPECT: 0
+# EXPECT: 1
+# EXPECT: 2
+# EXPECT: 3
+# EXPECT: 4
+# EXPECT: 5
+
+# Backwards loop
+
+FOR x = 5 TO 0
+    PRINT(x)
+END FOR
+# EXPECT: 5
+# EXPECT: 4
+# EXPECT: 3
+# EXPECT: 2
+# EXPECT: 1
+# EXPECT: 0

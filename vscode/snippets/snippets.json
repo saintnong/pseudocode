@@ -1,38 +1,53 @@
 {
-  "For Loop": {
+  "FOR-IN Loop": {
     "prefix": "FOR",
     "body": [
       "FOR ${1:item} IN ${2:collection}",
       "\t$0",
       "END FOR"
-    ],
-    "description": "Auto-completes a FOR block"
+    ]
   },
-  "If Statement": {
+  "FOR-TO Loop": {
+    "prefix": "FOR",
+    "body": [
+      "FOR ${1:variable} = ${2:start} TO ${3:end}",
+      "\t$0",
+      "END FOR"
+    ]
+  },
+  "IF Statement": {
     "prefix": "IF",
     "body": [
       "IF ${1:condition} THEN",
       "\t$0",
       "END IF"
-    ],
-    "description": "Auto-completes an IF block"
+    ]
   },
-  "While Loop": {
+  "WHILE Loop": {
     "prefix": "WHILE",
     "body": [
       "WHILE ${1:condition}",
       "\t$0",
       "END WHILE"
-    ],
-    "description": "Auto-completes a WHILE block"
+    ]
   },
-  "Function Block": {
+  "Declare a FUNCTION": {
     "prefix": "FUNCTION",
     "body": [
       "FUNCTION ${1:name}(${2:params})",
       "\t$0",
       "END ${1:name}"
-    ],
-    "description": "Auto-completes a FUNCTION block"
+    ]
+  },
+  "Declare a CLASS": {
+    "prefix": "CLASS",
+    "body": [
+      "CLASS ${1:name}",
+      "\tATTRIBUTES",
+      "\t\t$2",
+      "\tMETHODS",
+      "\t\t$0",
+      "END ${1:name}"
+    ]
   }
 }

@@ -38,6 +38,7 @@ public:
     void visitFunctionStmt(FunctionStmt *stmt) override;
     void visitClassStmt(ClassStmt *stmt) override;
     void visitForInStmt(ForInStmt *stmt) override;
+    void visitForStmt(ForStmt *stmt) override;
 
 private:
     std::string indent = ""; // Holds the current indentation string

@@ -164,13 +164,14 @@ int Pseudocode::runRepl() {
             continue;
         }
 
+        size_t startingLine = reporter.getLineCount() + 1;
         reporter.replAddLine(buffer);
         reporter.hadError = false;
 
         try {
             // === Lexing ===
             stage = InterpreterStage::Lexing;
-            Lexer lexer(buffer, reporter);
+            Lexer lexer(buffer, reporter, startingLine);
             std::vector<Token> tokens = lexer.scanTokens();
             if (debugTokens)
                 printTokenTable(tokens);

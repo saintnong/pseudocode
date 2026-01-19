@@ -76,7 +76,7 @@
       }
     },
     {
-      "comment": "Matches named END statements (END Animal, END x) - The Edge Case",
+      "comment": "Matches named END statements (END Animal, END x)",
       "match": "\\b(END)\\s+([a-zA-Z_][a-zA-Z0-9_]*)",
       "captures": {
         "1": {
@@ -90,7 +90,7 @@
     {
       "comment": "General Control Keywords",
       "name": "keyword.control.scsa",
-      "match": "\\b(IF|THEN|ELSE|FOR|WHILE|UNTIL|RETURN|IN|AND|OR|NOT|CASE|OF)\\b"
+      "match": "\\b(IF|THEN|ELSE|FOR|WHILE|UNTIL|RETURN|IN|TO|AND|OR|NOT|CASE|OF)\\b"
     },
     {
       "comment": "Object Oriented / Storage Keywords",

@@ -6,8 +6,8 @@
  * @param src The source code to tokenize
  * @param errReporter Reference to error reporter for error handling
  */
-Lexer::Lexer(const std::string &src, ErrorReporter &errReporter)
-    : source(src), start(0), current(0), line(1), startLine(1), startColumn(0), column(0),
+Lexer::Lexer(const std::string &src, ErrorReporter &errReporter, size_t startLine)
+    : source(src), start(0), current(0), line(startLine), startLine(1), startColumn(0), column(0),
       reporter(errReporter) {
 
     /**
@@ -27,6 +27,7 @@ Lexer::Lexer(const std::string &src, ErrorReporter &errReporter)
     keywords["ELSE"]  = TOK_ELSE;
     keywords["IN"]    = TOK_IN;
     keywords["FOR"]   = TOK_FOR;
+    keywords["TO"]    = TOK_TO;
     keywords["AND"]   = TOK_AND;
     keywords["OR"]    = TOK_OR;
     keywords["NOT"]   = TOK_NOT;

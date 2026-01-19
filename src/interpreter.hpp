@@ -101,6 +101,7 @@ public:
     void visitFunctionStmt(FunctionStmt *stmt) override;
     void visitClassStmt(ClassStmt *stmt) override;
     void visitForInStmt(ForInStmt *stmt) override;
+    void visitForStmt(ForStmt *stmt) override;
 
     /**
      * Error Reporter

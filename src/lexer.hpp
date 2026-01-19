@@ -41,8 +41,9 @@ public:
      * Construct a lexer for the given source code
      * @param src The source code string to tokenize
      * @param errReporter Reference to error reporter
+     * @param startLine Starting line in the current source
      */
-    Lexer(const std::string &src, ErrorReporter &errReporter);
+    Lexer(const std::string &src, ErrorReporter &errReporter, size_t startLine = 1);
 
     /**
      * Scan all tokens from the source code
