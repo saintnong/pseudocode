@@ -76,11 +76,13 @@ This repository contains a full toolchain for Pseudocode development, including 
     - `string[i]` Indexes into a string
     - `string.length` Returns the length of a string
     - `string.slice(a, b)` Returns the substring from index a to b (inclusive)
+    - Multiplication is supported (0 and negative return empty string)
 - Arrays
     - `array[i]` Indexes into an array
     - `array.slice(a, b)` Returns a shallow copy from index a to b (inclusive)
     - `array.append(x)` Appends value to the end of the array
     - `array.length` Returns length of the array as an integer
+    - Multiplication is supported (0 and negative return empty array)
 - Object Oriented Programming✨✨
     - Syntax requires 'this' to reference object attributes/methods which is technicaly not SCSA standard
     - this.super() is used to call parent constructor/methods/fields (it can be chained)
@@ -107,7 +109,6 @@ The interpreter supports the following environment variables:
 # Other stuff
 ## Currently WIP Features
 - Dictionary datatype
-- String and list multiplication
 
 ## Future Plans
 - Integrated file IO in standard library

@@ -921,14 +921,68 @@ RuntimeValue Interpreter::visitBinaryExpr(BinaryExpr *expr) {
         break;
     }
     case TOK_MULTIPLY: {
-        // Numeric Multiplication
-        checkNumberOperands(expr->op, left, right);
-        if (left.is<double>() || right.is<double>()) {
-            double l     = left.is<double>() ? left.as<double>() : left.as<int>();
-            double r     = right.is<double>() ? right.as<double>() : right.as<int>();
-            result.value = l * r;
-        } else {
-            result.value = left.as<int>() * right.as<int>();
+        // Handle String Multiplication
+        if (left.is<std::string>() || right.is<std::string>()) {
+            // Multiplier must be an int
+            bool validLeft  = left.is<std::string>() && right.is<int>();
+            bool validRight = right.is<std::string>() && left.is<int>();
+            if (!validLeft && !validRight) {
+                throw RuntimeError(expr->op, "A string can only be multiplied by an integer.");
+            }
+
+            // Find string and multiplier
+            std::string base =
+                left.is<std::string>() ? left.as<std::string>() : right.as<std::string>();
+            int count = left.is<int>() ? left.as<int>() : right.as<int>();
+
+            // Build result string
+            std::string res = "";
+            if (count > 0) {
+                // Reserve memory to prevent reallocation
+                res.reserve(base.length() * count);
+                for (int i = 0; i < count; ++i)
+                    res += base;
+            }
+            result.value = res;
+        }
+        // Handle Array Multiplication
+        else if (left.is<std::shared_ptr<std::vector<RuntimeValue>>>() ||
+                 right.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
+            using ArrayPtr = std::shared_ptr<std::vector<RuntimeValue>>;
+
+            // Multiplier must be an int
+            bool validLeft  = left.is<ArrayPtr>() && right.is<int>();
+            bool validRight = right.is<ArrayPtr>() && left.is<int>();
+            if (!validLeft && !validRight) {
+                throw RuntimeError(expr->op, "An array can only be multiplied by an integer.");
+            }
+
+            // Find array and multiplier
+            auto base = left.is<ArrayPtr>() ? left.as<ArrayPtr>() : right.as<ArrayPtr>();
+            int count = left.is<int>() ? left.as<int>() : right.as<int>();
+
+            // Build result array
+            auto res = std::make_shared<std::vector<RuntimeValue>>();
+            if (count > 0) {
+                // Reserve memory to prevent reallocation
+                res->reserve(base->size() * count);
+                for (int i = 0; i < count; ++i) {
+                    res->insert(res->end(), base->begin(), base->end());
+                }
+            }
+            result.value = res;
+        }
+        // Handle normal multiplication
+        else {
+            checkNumberOperands(expr->op, left, right);
+
+            if (left.is<double>() || right.is<double>()) {
+                double l     = left.is<double>() ? left.as<double>() : left.as<int>();
+                double r     = right.is<double>() ? right.as<double>() : right.as<int>();
+                result.value = l * r;
+            } else {
+                result.value = left.as<int>() * right.as<int>();
+            }
         }
         break;
     }
