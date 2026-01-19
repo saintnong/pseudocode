@@ -6,7 +6,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 enable_testing()
 
-file(GLOB_RECURSE SOURCES "src/*.cpp")
+file(GLOB_RECURSE SOURCES
+    "src/*.cpp"
+    "src/*.hpp"
+)
 
 add_executable(scsa ${SOURCES})
 
@@ -28,7 +31,7 @@ if(CLANG_FORMAT_EXE)
     # Target: cmake --build build --target format
     add_custom_target(format
         COMMAND ${CLANG_FORMAT_EXE} -i ${SOURCES}
-        COMMENT "Formatting source files with clang-format..."
+        COMMENT "Running clang-format..."
     )
 
     # Target: cmake --build build --target format-check
