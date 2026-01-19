@@ -63,6 +63,7 @@ private:
     Token peek();
     Token previous();
     bool isAtEnd();
+    bool nextTokenIsCaseArm();
     Precedence getPrecedence(TokenKind type);
 
     // --- Debug Tracing ---
@@ -130,6 +131,11 @@ private:
      * Parse a for-to loop with a variable, start, end, and body
      */
     StmtPtr forStatement(Token variable);
+
+    /**
+     * Parse a case statement
+     */
+    StmtPtr caseStatement();
 
     /**
      * Parse a return statement (with optional value)

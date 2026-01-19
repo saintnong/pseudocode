@@ -1449,3 +1449,7 @@ void Interpreter::visitForStmt(ForStmt *stmt) {
         i += step;
     }
 }
+
+void Interpreter::visitCaseStmt(CaseStmt *stmt) {
+    throw RuntimeError(stmt->keyword, "CASE statement is not implemented yet.");
+}
