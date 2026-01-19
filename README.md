@@ -46,6 +46,7 @@ This repository contains a full toolchain for Pseudocode development, including 
 - Good error reporting which is anchored to nearest token for easy debugging
 - Visual Studio Code Highlighting Extension
 - Integration tests
+- Circular inheritance check
 
 ### Supported Pseudocode Language Features
 - Basic datatypes and a dynamic typing system
@@ -81,13 +82,12 @@ This repository contains a full toolchain for Pseudocode development, including 
     - `array.append(x)` Appends value to the end of the array
     - `array.length` Returns length of the array as an integer
 - Object Oriented Programming✨✨
-    - Most features working, but the syntax requires 'this' to reference object attributes/methods which is technicaly not SCSA standard
+    - Syntax requires 'this' to reference object attributes/methods which is technicaly not SCSA standard
+    - this.super() is used to call parent constructor/methods/fields (it can be chained)
     - Encapsulation works
     - Object methods work
     - Inheritance works
-        - Use SUPER() to call parent constructor
-        - Use SUPER.method() to call parent method
-        - Use SUPER.field to access parent field
+    - Circular inheritance is checked
 
 ## Integration Tests
 This project uses a small custom Python test harness integrated with CTest for CI/CD. Tests execute `.scsa` files and check that the interpreter output matches what is expected in the comments. To run the test suite:
