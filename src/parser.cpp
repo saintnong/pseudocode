@@ -451,30 +451,29 @@ StmtPtr Parser::functionDeclaration() {
 
 /**
  * Statement parsing
- * Dispatches to specific statement types (if, while, print, return), or
- * expression statements
+ * Dispatches to specific statement types or expressions
  */
 StmtPtr Parser::statement() {
-    traceEnter("statement");
     if (match(TOK_RETURN)) {
-        traceExit("statement");
         return returnStatement();
     }
     if (match(TOK_WHILE)) {
-        traceExit("statement");
         return whileStatement();
     }
     if (match(TOK_FOR)) {
-        traceExit("statement");
-        return forInStatement();
+        Token variable = consume(TOK_IDENTIFIER, "Expected variable name after FOR.");
+        if (match(TOK_ASSIGN)) {
+            return forStatement(variable);
+        } else if (match(TOK_IN)) {
+            return forInStatement(variable);
+        }
+        errorAt(peek(), "Expected either 'IN' or '=' after FOR statement.");
     }
     if (match(TOK_IF)) {
-        traceExit("statement");
         return ifStatement();
     }
 
     ExprPtr expr = parseExpression(PREC_NONE);
-    traceExit("statement");
     return std::make_unique<ExpressionStmt>(std::move(expr));
 }
 
@@ -524,18 +523,16 @@ StmtPtr Parser::whileStatement() {
 }
 
 /**
- * For-in loop statement
- * Parses: FOR variable IN iterable statements END FOR
+ * For-In loop statement
+ * Parses:
+ * FOR variable IN iterable
+ *     stuff
+ * END FOR
+ *
+ * Assumes:
+ * 'FOR variable IN' is already consumed
  */
-StmtPtr Parser::forInStatement() {
-    traceEnter("forInStatement");
-
-    // Get the loop variable
-    Token variable = consume(TOK_IDENTIFIER, "Expected variable name after FOR.");
-
-    // Expect IN keyword
-    consume(TOK_IN, "Expected 'IN' after for loop variable.");
-
+StmtPtr Parser::forInStatement(Token variable) {
     // Parse the iterable expression
     ExprPtr iterable = parseExpression(PREC_NONE);
 
@@ -546,8 +543,34 @@ StmtPtr Parser::forInStatement() {
     consume(TOK_END, "Expected 'END' after for loop.");
     Token keyword = consume(TOK_FOR, "Expected 'FOR' after 'END'.");
 
-    traceExit("forInStatement");
     return std::make_unique<ForInStmt>(keyword, variable, std::move(iterable), std::move(body));
+}
+
+/**
+ * For-To loop statement
+ * Parses:
+ * FOR variable = start TO end
+ *     stuff
+ * END FOR
+ *
+ * Assumes:
+ * 'FOR variable =' is already consumed
+ */
+StmtPtr Parser::forStatement(Token variable) {
+    // Consume the following: 'start TO end'
+    ExprPtr start = parseExpression(PREC_ASSIGNMENT);
+    consume(TOK_TO, "Expected 'TO' after for loop start.");
+    ExprPtr end = parseExpression(PREC_ASSIGNMENT);
+
+    // Parse the loop body
+    std::vector<StmtPtr> body = block();
+
+    // Expect END FOR
+    consume(TOK_END, "Expected 'END' after for loop.");
+    Token keyword = consume(TOK_FOR, "Expected 'FOR' after 'END'.");
+
+    return std::make_unique<ForStmt>(keyword, variable, std::move(start), std::move(end),
+                                     std::move(body));
 }
 
 /**
@@ -649,7 +672,7 @@ Token Parser::consume(TokenKind type, std::string message) {
  */
 void Parser::errorAt(Token token, const std::string &message) {
     if (token.type == TOK_EOF) {
-        reporter.report(ErrorType::Syntax, token.line, 0, message + " at end", 1);
+        reporter.report(ErrorType::Syntax, token.line, 0, message + " At EOF.", 1);
         return;
     }
 

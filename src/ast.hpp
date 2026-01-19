@@ -29,6 +29,7 @@ struct FunctionStmt;
 struct ClassStmt;
 struct WhileStmt;
 struct ForInStmt;
+struct ForStmt;
 
 // --- Visitor Interfaces ---
 
@@ -65,6 +66,7 @@ struct StmtVisitor {
     virtual void visitClassStmt(ClassStmt *stmt)           = 0;
     virtual void visitWhileStmt(WhileStmt *stmt)           = 0;
     virtual void visitForInStmt(ForInStmt *stmt)           = 0;
+    virtual void visitForStmt(ForStmt *stmt)               = 0;
 };
 
 // --- Base Classes ---
@@ -356,7 +358,10 @@ struct ClassStmt : Stmt {
 
 /**
  * For-In Statement
- * Represents a range/collection loop: for (item in collection) { body }
+ * Represents a collection loop:
+ * FOR item IN collection
+ *     body
+ * END FOR
  */
 struct ForInStmt : Stmt {
     Token keyword;
@@ -370,5 +375,29 @@ struct ForInStmt : Stmt {
 
     void accept(StmtVisitor &visitor) override {
         visitor.visitForInStmt(this);
+    }
+};
+
+/**
+ * For-To Statement
+ * Represents a range loop:
+ * FOR item = start TO end
+ *     body
+ * END FOR
+ */
+struct ForStmt : Stmt {
+    Token keyword;
+    Token variable;
+    ExprPtr start;
+    ExprPtr end;
+    std::vector<StmtPtr> body;
+
+    ForStmt(Token kw, Token var, ExprPtr start, ExprPtr end, std::vector<StmtPtr> b)
+        : keyword(kw), variable(var), start(std::move(start)), end(std::move(end)),
+          body(std::move(b)) {
+    }
+
+    void accept(StmtVisitor &visitor) override {
+        visitor.visitForStmt(this);
     }
 };

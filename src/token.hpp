@@ -130,6 +130,8 @@ struct Token {
             return "KEYWORD(WHILE)";
         case TOK_FOR:
             return "KEYWORD(FOR)";
+        case TOK_TO:
+            return "KEYWORD(TO)";
 
         case TOK_AND:
             return "OPERATOR(AND)";

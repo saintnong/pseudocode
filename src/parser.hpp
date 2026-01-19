@@ -124,7 +124,12 @@ private:
     /**
      * Parse a for-in loop with variable, iterable, and body
      */
-    StmtPtr forInStatement();
+    StmtPtr forInStatement(Token variable);
+
+    /**
+     * Parse a for-to loop with a variable, start, end, and body
+     */
+    StmtPtr forStatement(Token variable);
 
     /**
      * Parse a return statement (with optional value)

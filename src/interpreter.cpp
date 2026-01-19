@@ -1409,3 +1409,12 @@ void Interpreter::visitForInStmt(ForInStmt *stmt) {
         throw RuntimeError(stmt->variable, "Can only iterate over arrays or strings.");
     }
 }
+
+/**
+ * Visit: For-In Loop
+ * Iterates over the elements of an iterable, executing the body for each one.
+ * Binds the current element to a local loop variable.
+ */
+void Interpreter::visitForStmt(ForStmt *stmt) {
+    throw RuntimeError(stmt->variable, "not implemented yet");
+}
