@@ -40,6 +40,7 @@ bool InputBuffer::needsContinuation(const std::string &input) {
         case TOK_WHILE:
         case TOK_CASE:
         case TOK_FOR:
+        case TOK_REPEAT:
             // If previous token was END, this is part of "END IF/WHILE/FOR"
             // compound terminator, not a new block opener
             if (!previousWasEnd) {
@@ -48,10 +49,13 @@ bool InputBuffer::needsContinuation(const std::string &input) {
             previousWasEnd = false;
             break;
 
-        // Block-closing keyword
+        // Block-closing keywords
         case TOK_END:
+        case TOK_UNTIL:
             depth--;
-            previousWasEnd = true;
+            // 'END' can sometimes form compound terminators
+            // E.g. "END IF", "END FOR"
+            previousWasEnd = (token.type == TOK_END);
             break;
 
         default:
