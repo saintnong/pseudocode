@@ -77,8 +77,11 @@ This repository contains a full toolchain for Pseudocode development, including 
     - `array.slice(a, b)` Returns a shallow copy from index a to b (inclusive)
     - `array.append(x)` Appends value to the end of the array
     - `array.length` Returns length of the array as an integer
-- ✨✨Object Oriented Programming✨✨
+- Object Oriented Programming✨✨
     - Most features working, but the syntax requires 'this' to reference object attributes/methods which is technicaly not SCSA standard
+    - Encapsulation works
+    - Object methods work
+    - **Inheritance is WIP**
 
 ## Integration Tests
 This project uses a small custom Python test harness integrated with CTest for CI/CD. Tests execute `.scsa` files and check that the interpreter output matches what is expected in the comments. To run the test suite:
@@ -97,9 +100,9 @@ The interpreter supports the following environment variables:
 
 # Other stuff
 ## Currently WIP Features
-- ✨✨Object Oriented Programming✨✨
-    - This was a new, painful recent addition to the SCSA pseudocode "standard", when they decided that their ancient Pascal based pseudocode had to be more **"modern"**
-    - Polymorphism and inheritance are WIP
+- Object Oriented Programming✨✨
+    - Inheritance and polymorphism are currently WIP
+    - SCSA why did you do this to us?
 - REPEAT-UNTIL loop support
 - Case statement
 - ELSE IF statements
