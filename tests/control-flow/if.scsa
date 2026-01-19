@@ -1,0 +1,14 @@
+x = 10
+IF x == 5 THEN
+    PRINT("x is 5")
+ELSE IF x == 10 THEN
+    PRINT("x is 10")
+END IF
+# EXPECT: x is 10
+
+name = "john"
+IF name == "john" THEN
+    PRINT(name)
+END IF
+# EXPECT: john
+

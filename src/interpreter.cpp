@@ -1308,12 +1308,29 @@ void Interpreter::visitIfStmt(IfStmt *stmt) {
     RuntimeValue condition = evaluate(stmt->condition.get());
 
     if (isTruthy(condition)) {
+        // Execute the then branch
         for (const auto &s : stmt->thenBranch) {
             execute(s.get());
         }
-    } else if (!stmt->elseBranch.empty()) {
-        for (const auto &s : stmt->elseBranch) {
-            execute(s.get());
+    } else {
+        // Execute else if branches if any of them are true
+        bool branchTaken = false;
+        for (const auto &elseIf : stmt->elseIfBranches) {
+            RuntimeValue elseIfCondition = evaluate(elseIf.condition.get());
+            if (isTruthy(elseIfCondition)) {
+                for (const auto &s : elseIf.body) {
+                    execute(s.get());
+                }
+                branchTaken = true;
+                break;
+            }
+        }
+
+        if (!branchTaken && !stmt->elseBranch.empty()) {
+            // Execute else branch if no other branch was taken
+            for (const auto &s : stmt->elseBranch) {
+                execute(s.get());
+            }
         }
     }
 }

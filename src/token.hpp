@@ -29,6 +29,7 @@ enum TokenKind {
     TOK_IF,
     TOK_THEN,
     TOK_ELSE,
+    TOK_ELSE_IF,
     TOK_WHILE,
     TOK_FOR,
     TOK_IN,
@@ -131,6 +132,8 @@ struct Token {
             return "KEYWORD(IN)";
         case TOK_ELSE:
             return "KEYWORD(ELSE)";
+        case TOK_ELSE_IF:
+            return "KEYWORD(ELSE IF)";
         case TOK_WHILE:
             return "KEYWORD(WHILE)";
         case TOK_FOR:

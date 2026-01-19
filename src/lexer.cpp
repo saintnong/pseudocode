@@ -231,6 +231,33 @@ void Lexer::identifier() {
     if (keywords.find(text) != keywords.end()) {
         type = keywords[text];
     }
+
+    // Special case: "ELSE IF"
+    if (type == TOK_ELSE) {
+        // Skip whitespace but not newlines to look for "IF"
+        size_t savedCurrent = current;
+        size_t savedColumn  = column;
+
+        while (peek() == ' ' || peek() == '\t' || peek() == '\r') {
+            advance();
+        }
+
+        // Check if the next word is "IF"
+        size_t ifStart = current;
+        while (isalnum(peek()) || peek() == '_') {
+            advance();
+        }
+
+        std::string nextWord = source.substr(ifStart, current - ifStart);
+        if (nextWord == "IF") {
+            type = TOK_ELSE_IF;
+        } else {
+            // Backtrack on failure
+            current = savedCurrent;
+            column  = savedColumn;
+        }
+    }
+
     addToken(type);
 }
 
