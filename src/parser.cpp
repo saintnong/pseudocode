@@ -485,7 +485,8 @@ StmtPtr Parser::statement() {
 
 /**
  * If-then-else statement
- * Parses: IF condition THEN statements [ELSE statements] END IF
+ * Parses: IF condition THEN statements [ELSE IF condition THEN statements]* [ELSE statements] END
+ * IF
  */
 StmtPtr Parser::ifStatement() {
     traceEnter("ifStatement");
@@ -493,10 +494,22 @@ StmtPtr Parser::ifStatement() {
     consume(TOK_THEN, "Expected 'THEN' after if condition.");
 
     std::vector<StmtPtr> thenBranch;
+    std::vector<ElseIfBranch> elseIfBranches;
     std::vector<StmtPtr> elseBranch;
 
-    while (!check(TOK_ELSE) && !check(TOK_END) && !isAtEnd()) {
+    while (!check(TOK_ELSE) && !check(TOK_ELSE_IF) && !check(TOK_END) && !isAtEnd()) {
         thenBranch.push_back(statement());
+    }
+
+    while (match(TOK_ELSE_IF)) {
+        ElseIfBranch branch;
+        branch.condition = parseExpression(PREC_NONE);
+        consume(TOK_THEN, "Expected 'THEN' after IF condition.");
+
+        while (!check(TOK_ELSE) && !check(TOK_ELSE_IF) && !check(TOK_END) && !isAtEnd()) {
+            branch.body.push_back(statement());
+        }
+        elseIfBranches.push_back(std::move(branch));
     }
 
     if (match(TOK_ELSE)) {
@@ -510,7 +523,7 @@ StmtPtr Parser::ifStatement() {
     traceExit("ifStatement");
 
     return std::make_unique<IfStmt>(keyword, std::move(condition), std::move(thenBranch),
-                                    std::move(elseBranch));
+                                    std::move(elseIfBranches), std::move(elseBranch));
 }
 
 /**
@@ -661,7 +674,7 @@ StmtPtr Parser::caseStatement() {
 StmtPtr Parser::returnStatement() {
     ExprPtr value = nullptr;
     // Check if next token is start of an expression
-    if (!check(TOK_END) && !check(TOK_ELSE)) {
+    if (!check(TOK_END) && !check(TOK_ELSE) && !check(TOK_ELSE_IF)) {
         value = parseExpression(PREC_NONE);
     }
     return std::make_unique<ReturnStmt>(std::move(value));
@@ -696,7 +709,7 @@ std::vector<StmtPtr> Parser::block() {
     std::vector<StmtPtr> stmts;
     // Keep parsing statements until we hit a keyword that terminates a block
     // (END, ELSE, etc.)
-    while (!check(TOK_END) && !check(TOK_ELSE) && !isAtEnd()) {
+    while (!check(TOK_END) && !check(TOK_ELSE) && !check(TOK_ELSE_IF) && !isAtEnd()) {
         stmts.push_back(statement());
     }
     return stmts;

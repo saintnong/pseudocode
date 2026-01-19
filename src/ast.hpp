@@ -295,6 +295,15 @@ struct BlockStmt : Stmt {
 };
 
 /**
+ * Else If Branch
+ * Represents a single branch in an if-statement.
+ */
+struct ElseIfBranch {
+    ExprPtr condition;
+    std::vector<StmtPtr> body;
+};
+
+/**
  * If Statement
  * Conditionally executes a branch of code based on a boolean expression.
  */
@@ -302,9 +311,12 @@ struct IfStmt : Stmt {
     Token keyword;
     ExprPtr condition;
     std::vector<StmtPtr> thenBranch;
+    std::vector<ElseIfBranch> elseIfBranches;
     std::vector<StmtPtr> elseBranch;
-    IfStmt(Token kw, ExprPtr c, std::vector<StmtPtr> t, std::vector<StmtPtr> e)
-        : keyword(kw), condition(std::move(c)), thenBranch(std::move(t)), elseBranch(std::move(e)) {
+    IfStmt(Token kw, ExprPtr c, std::vector<StmtPtr> t, std::vector<ElseIfBranch> ei,
+           std::vector<StmtPtr> e)
+        : keyword(kw), condition(std::move(c)), thenBranch(std::move(t)),
+          elseIfBranches(std::move(ei)), elseBranch(std::move(e)) {
     }
     void accept(StmtVisitor &visitor) override {
         visitor.visitIfStmt(this);

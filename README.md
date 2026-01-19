@@ -65,8 +65,8 @@ This repository contains a full toolchain for Pseudocode development, including 
     - `TYPE(value)`: Returns the type of the value as a string.
 - Binary operations/comparisons [+, -, *, /, >, <, >=, <=, ==, !=]
 - Logical operators [AND, OR, NOT]
-- While, For-In, and For-To loops
-- If & If-Else statements
+- While, For-In, For-To, and Repeat-Until loops
+- If, If-Else and Else-If statements
 - Functions
 - CASE statements
     - Multiple conditions can be checked by a single branch by separating them with commas
@@ -106,8 +106,6 @@ The interpreter supports the following environment variables:
 - Object Oriented Programming✨✨
     - Inheritance and polymorphism are currently WIP
     - SCSA why did you do this to us?
-- REPEAT-UNTIL loop support
-- ELSE IF statements
 
 ## Future Plans
 - Integrated file IO in standard library

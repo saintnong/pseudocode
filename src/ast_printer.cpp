@@ -104,6 +104,20 @@ void ASTPrinter::visitIfStmt(IfStmt *stmt) {
             accept(st.get());
     }
 
+    for (const auto &elseIf : stmt->elseIfBranches) {
+        std::cout << indent << "Else If Condition:" << std::endl;
+        {
+            IndentScope condScope(*this);
+            accept(elseIf.condition.get());
+        }
+        std::cout << indent << "Else If Body:" << std::endl;
+        {
+            IndentScope bodyScope(*this);
+            for (const auto &st : elseIf.body)
+                accept(st.get());
+        }
+    }
+
     if (!stmt->elseBranch.empty()) {
         std::cout << indent << "Else:" << std::endl;
         IndentScope elseScope(*this);
