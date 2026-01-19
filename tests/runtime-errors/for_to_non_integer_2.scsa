@@ -1,0 +1,5 @@
+FOR x = "start" TO 10
+    PRINT(x)
+END FOR
+
+# EXPECT ERROR: Start and end values in FOR loop must be integers.

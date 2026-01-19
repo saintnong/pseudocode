@@ -1,0 +1,5 @@
+FOR x 10 TO 20
+    PRINT(x)
+END FOR
+
+# EXPECT ERROR: Expected either 'IN' or '=' after FOR statement.

@@ -1,0 +1,5 @@
+FOR x = 1 to 10
+    PRINT(x)
+END FOR
+
+# EXPECT ERROR: Expected 'TO' after for loop start.

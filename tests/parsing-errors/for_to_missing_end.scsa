@@ -1,0 +1,5 @@
+FOR y = 10 TO 0
+    PRINT(y)
+END WHILE
+
+# EXPECT ERROR: Expected 'FOR' after 'END'.

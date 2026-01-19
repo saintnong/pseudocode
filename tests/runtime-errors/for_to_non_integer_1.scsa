@@ -1,0 +1,5 @@
+FOR x = 0 TO "not an integer"
+    PRINT(x)
+END FOR
+
+# EXPECT ERROR: Start and end values in FOR loop must be integers.

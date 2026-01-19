@@ -1,0 +1,4 @@
+FOR 10 = 0 TO 10
+END FOR
+
+# EXPECT ERROR: Expected variable name after FOR.
