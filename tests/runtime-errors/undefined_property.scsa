@@ -1,6 +1,8 @@
 CLASS Dog
 END Dog
 
-d = NEW Dog()
+d = new Dog()
 PRINT(d.age)
+d.age = 8
+
 # EXPECT ERROR: Undefined property 'age'.

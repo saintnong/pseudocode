@@ -16,21 +16,24 @@
 
 > "<em>This spec is so specific that it might as well be a real language...</em>"
 
-This repository contains a full toolchain for Pseudocode development, including an interpreter written in C++, and a VSCode extension with highlighting and snippets.
+This repository contains a full toolchain for Pseudocode development, including an interpreter written in C++, and a [VSCode extension](https://marketplace.visualstudio.com/items?itemName=SaintNong.scsa-pseudocode) with highlighting and snippets.
 
 ## Examples
 
-#### Working Bubble Sort in SCSA Pseudocode (and syntax highlights)!
-![Bubble Sort in Pseudocode](images/bubblesort.png)
-#### Integrated REPL
+#### Selection Sort in pseudocode (and syntax highlighting)!
+![Selection sort in pseudocode](images/selection_sort.png)
+![Selection sort output](images/selection_sort_result.png)
+#### Integrated command line REPL
 ![Pseudocode REPL](images/REPL.png)
 
-#### Good error messages!
+#### User friendly error messages!
 ![Error message](images/error.png)
 
 ## Installation
 
-Follow our [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Installation-Guide) to get started!
+- Follow the [Installation Guide](https://github.com/SaintNong/pseudocode/wiki/Installation-Guide) to get started with the interpreter!
+
+- If you only want Syntax Highlighting/Snippets then check out the [VSCode Extension](https://marketplace.visualstudio.com/items?itemName=SaintNong.scsa-pseudocode) on the marketplace.
 
 ## Features
 - Handwritten Lexer with locatable tokens
