@@ -126,3 +126,9 @@ The interpreter supports the following environment variables:
 - [tombl's scsa-pseudocode](https://github.com/tombl/scsa-pseudocode)
     - In highschool when my friends joked about making an interpreter, to our surprise some legend had already done it before, in Node.js of all languages!
     - This project is excellent, but is based on an older specification of pseudocode without OOP and when variable assignment was done with arrows
+
+## Disclaimer
+> [!NOTE]
+> I am not affiliated with SCSA in any way.
+> The SCSA logo is being used in this context in an educational setting without any commercial purpose (it's MIT Licensed). If someone at SCSA is unhappy with this usage they should contact me via email, or an issue on the attached GitHub repository and I will remove it immediately.
+> All other material such as the language specification is derived from the Australian curriculum, and is thus under [CC4 BY](https://creativecommons.org/licenses/by/4.0/).

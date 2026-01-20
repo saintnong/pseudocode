@@ -3,58 +3,39 @@
     "lineComment": "#"
   },
   "brackets": [
-    [
-      "[",
-      "]"
-    ],
-    [
-      "(",
-      ")"
-    ]
+    ["[", "]"],
+    ["(", ")"]
   ],
   "autoClosingPairs": [
-    {
-      "open": "[",
-      "close": "]"
-    },
-    {
-      "open": "(",
-      "close": ")"
-    },
-    {
-      "open": "\"",
-      "close": "\""
-    },
-    {
-      "open": "'",
-      "close": "'"
-    },
-    {
-      "open": "\"",
-      "close": "\""
-    },
+    { "open": "[", "close": "]" },
+    { "open": "(", "close": ")" },
+    { "open": "\"", "close": "\"" },
+    { "open": "'", "close": "'" }
   ],
   "surroundingPairs": [
-    [
-      "[",
-      "]"
-    ],
-    [
-      "(",
-      ")"
-    ],
-    [
-      "\"",
-      "\""
-    ],
-    [
-      "'",
-      "'"
-    ]
+    ["[", "]"],
+    ["(", ")"],
+    ["\"", "\""],
+    ["'", "'"]
   ],
   "wordPattern": "(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\#\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\'\\\"\\,\\.\\<\\>\\/\\?\\s]+)",
   "indentationRules": {
-    "increaseIndentPattern": "^\\s*(IF|WHILE|FOR|ELSE|FUNCTION|CLASS|CASE).*",
+    "increaseIndentPattern": "^\\s*(IF|WHILE|FOR|ELSE|FUNCTION|CLASS|CASE|REPEAT|ATTRIBUTES|METHODS|Attributes|Methods).*",
     "decreaseIndentPattern": "^\\s*(END|ELSE|UNTIL).*"
   },
+  "onEnterRules": [
+    {
+      "beforeText": "^\\s*(IF|WHILE|FOR|ELSE|FUNCTION|CLASS|CASE|REPEAT|ATTRIBUTES|METHODS|Attributes|Methods).*",
+      "action": {
+        "indent": "indent"
+      }
+    },
+    {
+      "beforeText": "^\\s*(END|UNTIL).*",
+      "action": {
+        "indent": "none",
+        "outdent": true
+      }
+    }
+  ]
 }
