@@ -1,0 +1,159 @@
+# =============================================================
+#      Negamax + Alpha Beta Pruning in Pseudocode
+# =============================================================
+
+# Global Board State
+# 1 = AI (X), -1 = Human (O), 0 = Empty
+board = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+FUNCTION printBoard(b)
+    FOR i = 0 TO 2
+        r = i * 3
+        rowStr = ""
+        FOR j = 0 TO 2
+            val = b[r + j]
+            char = "."
+            IF val == 1 THEN char = "X" END IF
+            IF val == -1 THEN char = "O" END IF
+            rowStr = rowStr + char + " "
+        END FOR
+        PRINT(rowStr)
+    END FOR
+    PRINT("")
+END printBoard
+
+FUNCTION checkWinner(b)
+    # Row check
+    FOR i = 0 TO 2
+        s = i * 3
+        IF b[s] != 0 AND b[s] == b[s+1] AND b[s+1] == b[s+2] THEN RETURN b[s] END IF
+    END FOR
+    # Column check
+    FOR i = 0 TO 2
+        IF b[i] != 0 AND b[i] == b[i+3] AND b[i+3] == b[i+6] THEN RETURN b[i] END IF
+    END FOR
+    # Diagonal check
+    IF b[0] != 0 AND b[0] == b[4] AND b[4] == b[8] THEN RETURN b[0] END IF
+    IF b[2] != 0 AND b[2] == b[4] AND b[4] == b[6] THEN RETURN b[2] END IF
+    RETURN 0
+END checkWinner
+
+FUNCTION isFull(b)
+    FOR val IN b
+        IF val == 0 THEN RETURN FALSE END IF
+    END FOR
+    RETURN TRUE
+END isFull
+
+# Simple negamax with alpha-beta pruning
+# Returns the score relative to the current player to move
+FUNCTION Negamax(b, depth, alpha, beta, player)
+    # Check if we're on a leaf node
+    winner = checkWinner(b)
+    IF winner == player THEN RETURN 10 - depth END IF
+    IF winner == -player THEN RETURN depth - 10 END IF
+    IF isFull(b) THEN RETURN 0 END IF
+
+    # Iterate through moves to find this node's score
+    bestVal = -100
+    i = 0
+    WHILE i < 9
+        IF b[i] == 0 THEN
+            b[i] = player # Make move
+
+            # Next iteration
+            val = -Negamax(b, depth + 1, -beta, -alpha, -player)
+
+            b[i] = 0 # Unmake move
+
+            IF val > bestVal THEN bestVal = val END IF
+            IF val > alpha THEN alpha = val END IF
+            
+            # Alpha-Beta Pruning
+            IF alpha >= beta THEN
+                i = 9
+                # weird crappy break
+            END IF
+        END IF
+        i = i + 1
+    END WHILE
+    RETURN bestVal
+END Negamax
+
+# Root node search
+FUNCTION GetBestMove(b)
+    bestMove = -1
+    bestScore = -100
+    
+    FOR i = 0 TO 8
+        IF b[i] == 0 THEN
+            b[i] = 1 # AI turn
+            score = -Negamax(b, 0, -100, 100, -1)
+            b[i] = 0
+            
+            IF score > bestScore THEN
+                bestScore = score
+                bestMove = i
+            END IF
+        END IF
+    END FOR
+    RETURN bestMove
+END GetBestMove
+
+# ===============================
+#          MAIN LOOP
+# ===============================
+
+PRINT("--- Pseudocode plays Tic-Tac-Toe ---")
+PRINT("AI: X (1), Human: O (-1)")
+gameRunning = TRUE
+
+WHILE gameRunning
+    printBoard(board)
+    
+    validInput = FALSE
+    WHILE NOT validInput
+        # Human Turn
+        choice = INT(INPUT("Enter position (1-9): "))
+        IF choice >= 1 AND choice <= 9 THEN
+            idx = choice - 1
+            IF board[idx] == 0 THEN
+                board[idx] = -1
+                validInput = TRUE
+            ELSE
+                PRINT("Position taken!")
+            END IF
+        ELSE
+            PRINT("Invalid input. Use 1-9.")
+        END IF
+    END WHILE
+
+    # Check Game Over
+    IF checkWinner(board) == -1 THEN
+        printBoard(board)
+        PRINT("Human wins! (Wait, that shouldn't happen...)")
+        gameRunning = FALSE
+    ELSE IF isFull(board) THEN
+        printBoard(board)
+        PRINT("It's a draw!")
+        gameRunning = FALSE
+    END IF
+
+    IF gameRunning THEN
+        # AI Turn
+        PRINT("AI is thinking...")
+        move = GetBestMove(board)
+        board[move] = 1
+        
+        IF checkWinner(board) == 1 THEN
+            printBoard(board)
+            PRINT("You actually lost to Pseudocode?")
+            PRINT("LMAO")
+            gameRunning = FALSE
+        ELSE IF isFull(board) THEN
+            printBoard(board)
+            PRINT("It's a draw!")
+            gameRunning = FALSE
+        END IF
+    END IF
+END WHILE
