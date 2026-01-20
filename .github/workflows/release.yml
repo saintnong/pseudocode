@@ -5,7 +5,7 @@ on:
     types: [published]
 
 permissions:
-        contents: write
+  contents: write
 
 jobs:
   build-and-release:
@@ -21,16 +21,30 @@ jobs:
           - os: windows-latest
             original_path: build/Release/scsa.exe
             release_name: scsa-windows.exe
+          - os: macos-latest
+            original_path: build/scsa
+            release_name: scsa-macos-universal
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+        # Universal compile flag to cmake on macOS
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          else
+            cmake -B build -DCMAKE_BUILD_TYPE=Release
+          fi
 
       - name: Build Project
         run: cmake --build build --config Release
+
+      - name: Code Sign (macOS)
+        if: runner.os == 'macOS'
+        run: codesign -s - ${{ matrix.original_path }}
 
       - name: Prepare Assets
         shell: bash
