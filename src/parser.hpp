@@ -17,10 +17,9 @@ public:
     /**
      * Parser Constructor
      * @param tokens Vector of tokens from the lexer
-     * @param source The original source code (for error context)
      * @param reporter Error reporter for handling parse failures
      */
-    Parser(const std::vector<Token> &tokens, const std::string &source, ErrorReporter &reporter);
+    Parser(const std::vector<Token> &tokens, ErrorReporter &reporter);
 
     /**
      * Entry point for parsing
@@ -31,7 +30,7 @@ public:
 
 private:
     const std::vector<Token> &tokens;
-    const std::string &source;
+    // const std::string &source;
     ErrorReporter &reporter;
     size_t current              = 0;
     static constexpr bool TRACE = false; // Set to false to disable tracing

@@ -1,8 +1,6 @@
 name: Build and Test
 
 on:
-  # On every push/pull to main
-  # Ignore changes to documentation to save CI minutes
   push:
     branches: ["main"]
     paths-ignore:
@@ -18,10 +16,9 @@ on:
 
 jobs:
   build:
-    # Runs job on both Windows and Ubuntu
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     
     runs-on: ${{ matrix.os }}
 
@@ -39,7 +36,14 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y clang-format
 
     - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      # Make binary universal in macOS
+      run: |
+        if [ "${{ runner.os }}" = "macOS" ]; then
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+        else
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+        fi
+      shell: bash
 
     - name: Format Check
       if: runner.os == 'Linux'
@@ -47,6 +51,11 @@ jobs:
 
     - name: Build Project
       run: cmake --build build --config Release
+
+    # Sign the binary on mac
+    - name: Code Sign (macOS only)
+      if: runner.os == 'macOS'
+      run: codesign -s - build/scsa
 
     - name: Run Integration Tests
       run: ctest --test-dir build -C Release --output-on-failure
@@ -58,4 +67,5 @@ jobs:
         path: |
           build/scsa
           build/Release/scsa.exe
+        if-no-files-found: ignore
         retention-days: 5
