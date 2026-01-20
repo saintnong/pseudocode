@@ -15,9 +15,9 @@ This extension provides syntax highlighting and snippets for **SCSA Pseudocode**
 #### Part of a binary search tree
 ![Binary search tree](images/bst.png)
 
-> [!NOTE]
-> Since SCSA pseudocode has very poor standardisation, many compromises had to be made.
-> E.g. OTHER and OTHERWISE are both valid CASE 'default' branches, and both '//' and '#' are valid ways of making comments.
+#### Note
+> SCSA pseudocode has very poor standardisation, so many compromises had to be made.
+> E.g. OTHER and OTHERWISE are both valid CASE 'default' branches.
 
 ## Pseudocode Interpreter
 
