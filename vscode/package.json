@@ -4,6 +4,15 @@
   "displayName": "SCSA Pseudocode",
   "publisher": "SaintNong",
   "version": "0.3.1",
+  "license": "MIT",
+  "keywords": [
+    "WA",
+    "Western Austrlalia",
+    "ATAR",
+    "SCSA",
+    "Computer Science",
+    "Pseudocode"
+  ],
   "engines": {
     "vscode": "^1.6.0"
   },
