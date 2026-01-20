@@ -82,7 +82,7 @@ int Pseudocode::runFile(const std::string &path) {
 
         // === Parsing ===
         stage = InterpreterStage::Parsing;
-        Parser parser(tokens, source, reporter);
+        Parser parser(tokens, reporter);
         std::vector<StmtPtr> statements = parser.parse();
 
         if (debugParse) {
@@ -189,7 +189,7 @@ int Pseudocode::runRepl() {
 
             // === Parsing ===
             stage = InterpreterStage::Parsing;
-            Parser parser(tokens, buffer, reporter);
+            Parser parser(tokens, reporter);
             std::vector<StmtPtr> parsed = parser.parse();
 
             if (debugParse) {

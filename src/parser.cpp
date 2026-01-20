@@ -6,11 +6,10 @@
  * Parser Constructor
  * Initializes the parser with a token stream and source code for error reporting
  * @param tokens Vector of tokens from lexer
- * @param source Original source code for error context
  * @param reporter Error reporting utility
  */
-Parser::Parser(const std::vector<Token> &tokens, const std::string &source, ErrorReporter &reporter)
-    : tokens(tokens), source(source), reporter(reporter) {
+Parser::Parser(const std::vector<Token> &tokens, ErrorReporter &reporter)
+    : tokens(tokens), reporter(reporter) {
 }
 
 // ============================================================
