@@ -11,9 +11,7 @@ This extension provides syntax highlighting and snippets for **SCSA Pseudocode**
 
 #### Selection sort
 ![Selection Sort](images/selection_sort.png)
-
-#### Part of a binary search tree
-![Binary search tree](images/bst.png)
+![BST](./images/bst_example.png)
 
 #### Note
 > SCSA pseudocode has very poor standardisation, so many compromises had to be made.
