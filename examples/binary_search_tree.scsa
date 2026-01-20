@@ -1,5 +1,6 @@
 # Binary search tree using classes
 
+# Simple Tree Node
 CLASS BSTNode
     ATTRIBUTES
         value = 0
@@ -152,17 +153,20 @@ WHILE running
     
     choice = INPUT("Enter choice (1-5): ")
     
-    IF choice == "1" THEN
-        valStr = INPUT("Enter integer to insert: ")
-        val = INT(valStr)
-        IF val == -1 AND valStr != "-1" THEN
-            PRINT("Invalid input. Please enter an integer.")
-        ELSE
-            tree.insert(val)
-            PRINT("Inserted " + STRING(val))
-        END IF
-    ELSE
-        IF choice == "2" THEN
+    CASE choice OF
+        "1":
+            # Node insertion
+            valStr = INPUT("Enter integer to insert: ")
+            val = INT(valStr)
+            IF val == -1 AND valStr != "-1" THEN
+                PRINT("Invalid input. Please enter an integer.")
+            ELSE
+                tree.insert(val)
+                PRINT("Inserted " + STRING(val))
+            END IF
+            
+        "2":
+            # Node deletion
             valStr = INPUT("Enter integer to delete: ")
             val = INT(valStr)
             IF val == -1 AND valStr != "-1" THEN
@@ -171,45 +175,45 @@ WHILE running
                 tree.delete(val)
                 PRINT("Deleted " + STRING(val) + " (if it existed)")
             END IF
-        ELSE
-            IF choice == "3" THEN
-                valStr = INPUT("Enter integer to search: ")
-                val = INT(valStr)
-                IF val == -1 AND valStr != "-1" THEN
-                    PRINT("Invalid input. Please enter an integer.")
-                ELSE
-                    IF tree.contains(val) THEN
-                        PRINT("Tree contains " + STRING(val))
-                    ELSE
-                        PRINT("Tree does not contain " + STRING(val))
-                    END IF
-                END IF
+            
+        "3":
+            # Tree probe
+            valStr = INPUT("Enter integer to search: ")
+            val = INT(valStr)
+            IF val == -1 AND valStr != "-1" THEN
+                PRINT("Invalid input. Please enter an integer.")
             ELSE
-                IF choice == "4" THEN
-                    IF tree.root == 0 THEN
-                        PRINT("Tree is empty.")
-                    ELSE
-                        OUTPUT("In-order:   ")
-                        tree.inOrder(tree.root)
-                        PRINT("")
-                        
-                        OUTPUT("Pre-order:  ")
-                        tree.preOrder(tree.root)
-                        PRINT("")
-                        
-                        OUTPUT("Post-order: ")
-                        tree.postOrder(tree.root)
-                        PRINT("")
-                    END IF
+                IF tree.contains(val) THEN
+                    PRINT("Tree contains " + STRING(val))
                 ELSE
-                    IF choice == "5" THEN
-                        running = FALSE
-                        PRINT("Exiting...")
-                    ELSE
-                        PRINT("Invalid choice. Please enter a number between 1 and 5.")
-                    END IF
+                    PRINT("Tree does not contain " + STRING(val))
                 END IF
             END IF
-        END IF
-    END IF
+            
+        "4":
+            # Tree traversals
+            IF tree.root == 0 THEN
+                PRINT("Tree is empty.")
+            ELSE
+                OUTPUT("In-order:   ")
+                tree.inOrder(tree.root)
+                PRINT("")
+                
+                OUTPUT("Pre-order:  ")
+                tree.preOrder(tree.root)
+                PRINT("")
+                
+                OUTPUT("Post-order: ")
+                tree.postOrder(tree.root)
+                PRINT("")
+            END IF
+            
+        "5":
+            # Terminate loop
+            running = FALSE
+            PRINT("Exiting...")
+            
+        OTHERWISE:
+            PRINT("Invalid choice. Please enter a number between 1 and 5.")
+    END CASE
 END WHILE
