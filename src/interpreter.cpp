@@ -1531,12 +1531,12 @@ void Interpreter::visitClassStmt(ClassStmt *stmt) {
     }
 
     // Add methods to the class definition
-    // for (const auto &method : stmt->methods) {
-    //     if (auto *funcStmt = dynamic_cast<FunctionStmt *>(method.get())) {
-    //         auto methodFunc = std::make_shared<UserFunction>(funcStmt, environment, klass);
-    //         klass->addMethod(funcStmt->name.lexeme, methodFunc);
-    //     }
-    // }
+    for (const auto &method : stmt->methods) {
+        if (auto *funcStmt = dynamic_cast<FunctionStmt *>(method.get())) {
+            auto methodFunc = std::make_shared<UserFunction>(funcStmt, environment, klass);
+            klass->addMethod(funcStmt->name.lexeme, methodFunc);
+        }
+    }
 
     RuntimeValue klassValue;
     klassValue.value = std::static_pointer_cast<Callable>(klass);
