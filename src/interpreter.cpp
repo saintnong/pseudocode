@@ -1571,7 +1571,7 @@ void Interpreter::visitForInStmt(ForInStmt *stmt) {
             RuntimeValue charVal = RuntimeValue{std::string(1, c)};
             environment->define(stmt->variable.lexeme, charVal);
             for (const auto &s : stmt->body) {
-                execute(s.get());
+                // execute(s.get());
             }
         }
     } else {
