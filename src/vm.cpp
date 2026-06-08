@@ -257,6 +257,31 @@ void VM::execute() {
             break;
         }
 
+        case OP_MOD: {
+            RuntimeValue b = pop();
+            RuntimeValue a = pop();
+            if ((a.is<double>() || a.is<int>()) && (b.is<double>() || b.is<int>())) {
+                if (a.is<int>() && b.is<int>()) {
+                    int valA = a.as<int>();
+                    int valB = b.as<int>();
+                    if (valB == 0) {
+                        runtimeError("Modulo by zero.");
+                    }
+                    push(RuntimeValue{valA % valB});
+                } else {
+                    double valA = a.is<double>() ? a.as<double>() : a.as<int>();
+                    double valB = b.is<double>() ? b.as<double>() : b.as<int>();
+                    if (valB == 0.0) {
+                        runtimeError("Modulo by zero.");
+                    }
+                    push(RuntimeValue{std::fmod(valA, valB)});
+                }
+            } else {
+                runtimeError("Operands must be numbers.");
+            }
+            break;
+        }
+
         case OP_NEGATE: {
             RuntimeValue a = pop();
             if (a.is<double>()) {

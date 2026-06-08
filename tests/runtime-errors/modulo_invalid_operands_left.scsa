@@ -1,0 +1,2 @@
+res = "string" % 3
+# EXPECT ERROR: Operands must be numbers

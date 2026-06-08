@@ -1,0 +1,4 @@
+x = 10
+y = 0
+res = x % y
+# EXPECT ERROR: Modulo by zero

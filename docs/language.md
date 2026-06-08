@@ -28,8 +28,9 @@ SCSA Pseudocode is a high-level, dynamically typed, object-oriented language. Be
 - `TYPE(value)`: Returns the type of the value as a string.
 
 ## Basic Operations
-- Binary operations/comparisons: `+`, `-`, `*`, `/`, `>`, `<`, `>=`, `<=`, `==`, `!=`
+- Binary operations/comparisons: `+`, `-`, `*`, `/`, `MOD`, `%`, `>`, `<`, `>=`, `<=`, `==`, `!=`
 - Logical operators: `AND`, `OR`, `NOT`
+- Modulo operations: `MOD` or `%` (computes remainder of division, supports both integers and floats)
 
 ## Control Flow
 - **While loops**:
