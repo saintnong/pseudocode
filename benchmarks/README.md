@@ -5,7 +5,7 @@ System specifications and performance results comparing the SCSA Pseudocode Inte
 ## System Information
 - **OS**: Linux 6.17.0-35-generic
 - **CPU**: AMD Ryzen 7 5800H with Radeon Graphics
-- **Date**: 2026-06-08 05:01:34 UTC
+- **Date**: 2026-06-08 05:46:20 UTC
 - **Runs**: 3
 
 ---
@@ -16,9 +16,9 @@ System specifications and performance results comparing the SCSA Pseudocode Inte
 
 | Language | Min Time | Avg Time | Checksum | Relative Speed (vs SCSA) |
 | --- | --- | --- | --- | --- |
-| SCSA Pseudocode | 0.0728s | 0.0739s | Passed | 1.0x (Baseline) |
-| Python 3 | 0.0286s | 0.0289s | Passed | 2.6x |
-| Node.js | 0.0257s | 0.0269s | Passed | 2.8x |
+| SCSA Pseudocode | 0.0726s | 0.0746s | Passed | 1.0x (Baseline) |
+| Python 3 | 0.0285s | 0.0285s | Passed | 2.6x |
+| Node.js | 0.0250s | 0.0674s | Passed | 1.1x |
 
 ---
 
@@ -28,8 +28,8 @@ System specifications and performance results comparing the SCSA Pseudocode Inte
 
 | Language | Min Time | Avg Time | Checksum | Relative Speed (vs SCSA) |
 | --- | --- | --- | --- | --- |
-| SCSA Pseudocode | 0.0138s | 0.0147s | Passed | 1.0x (Baseline) |
-| Python 3 | 0.0112s | 0.0113s | Passed | 1.3x |
-| Node.js | 0.0239s | 0.0249s | Passed | 0.6x |
+| SCSA Pseudocode | 0.0131s | 0.0134s | Passed | 1.0x (Baseline) |
+| Python 3 | 0.0103s | 0.0106s | Passed | 1.3x |
+| Node.js | 0.0221s | 0.0240s | Passed | 0.6x |
 
 ---

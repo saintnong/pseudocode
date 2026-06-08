@@ -349,6 +349,23 @@ public:
 };
 
 /**
+ * Type Name Utility
+ * Returns a human-readable type name for a RuntimeValue.
+ */
+inline std::string typeName(const RuntimeValue &v) {
+    if (v.is<Null>()) return "null";
+    if (v.is<int>()) return "integer";
+    if (v.is<double>()) return "float";
+    if (v.is<bool>()) return "boolean";
+    if (v.is<std::string>()) return "string";
+    if (v.is<std::shared_ptr<std::vector<RuntimeValue>>>()) return "array";
+    if (v.is<std::shared_ptr<Dictionary>>()) return "dictionary";
+    if (v.is<std::shared_ptr<Callable>>()) return "function";
+    if (v.is<std::shared_ptr<Instance>>()) return "object";
+    return "unknown";
+}
+
+/**
  * Stringify Utility
  * Converts any RuntimeValue into its string representation for display.
  * Handles recursion for collections like arrays.

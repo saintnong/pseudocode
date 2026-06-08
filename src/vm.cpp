@@ -156,8 +156,8 @@ void VM::execute() {
         case OP_ADD: {
             RuntimeValue b = pop();
             RuntimeValue a = pop();
-            if (a.is<std::string>() || b.is<std::string>()) {
-                push(RuntimeValue{stringify(a) + stringify(b)});
+            if (a.is<std::string>() && b.is<std::string>()) {
+                push(RuntimeValue{a.as<std::string>() + b.as<std::string>()});
             } else if (a.is<std::shared_ptr<std::vector<RuntimeValue>>>() &&
                        b.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
                 auto arrA   = a.as<std::shared_ptr<std::vector<RuntimeValue>>>();
@@ -166,14 +166,17 @@ void VM::execute() {
                 newArr->insert(newArr->end(), arrA->begin(), arrA->end());
                 newArr->insert(newArr->end(), arrB->begin(), arrB->end());
                 push(RuntimeValue{newArr});
-            } else if (a.is<double>() || b.is<double>()) {
-                double valA = a.is<double>() ? a.as<double>() : a.as<int>();
-                double valB = b.is<double>() ? b.as<double>() : b.as<int>();
-                push(RuntimeValue{valA + valB});
-            } else if (a.is<int>() && b.is<int>()) {
-                push(RuntimeValue{a.as<int>() + b.as<int>()});
+            } else if ((a.is<double>() || a.is<int>()) && (b.is<double>() || b.is<int>())) {
+                if (a.is<double>() || b.is<double>()) {
+                    double valA = a.is<double>() ? a.as<double>() : a.as<int>();
+                    double valB = b.is<double>() ? b.as<double>() : b.as<int>();
+                    push(RuntimeValue{valA + valB});
+                } else {
+                    push(RuntimeValue{a.as<int>() + b.as<int>()});
+                }
             } else {
-                runtimeError("Operands must be numbers, strings, or arrays.");
+                runtimeError("unsupported operand types for +: '" + typeName(a) + "' and '" +
+                             typeName(b) + "'");
             }
             break;
         }
@@ -181,14 +184,17 @@ void VM::execute() {
         case OP_SUBTRACT: {
             RuntimeValue b = pop();
             RuntimeValue a = pop();
-            if (a.is<double>() || b.is<double>()) {
-                double valA = a.is<double>() ? a.as<double>() : a.as<int>();
-                double valB = b.is<double>() ? b.as<double>() : b.as<int>();
-                push(RuntimeValue{valA - valB});
-            } else if (a.is<int>() && b.is<int>()) {
-                push(RuntimeValue{a.as<int>() - b.as<int>()});
+            if ((a.is<double>() || a.is<int>()) && (b.is<double>() || b.is<int>())) {
+                if (a.is<double>() || b.is<double>()) {
+                    double valA = a.is<double>() ? a.as<double>() : a.as<int>();
+                    double valB = b.is<double>() ? b.as<double>() : b.as<int>();
+                    push(RuntimeValue{valA - valB});
+                } else {
+                    push(RuntimeValue{a.as<int>() - b.as<int>()});
+                }
             } else {
-                runtimeError("Operands must be numbers.");
+                runtimeError("unsupported operand types for -: '" + typeName(a) + "' and '" +
+                             typeName(b) + "'");
             }
             break;
         }
@@ -200,7 +206,8 @@ void VM::execute() {
                 bool validLeft  = a.is<std::string>() && b.is<int>();
                 bool validRight = b.is<std::string>() && a.is<int>();
                 if (!validLeft && !validRight) {
-                    runtimeError("A string can only be multiplied by an integer.");
+                    runtimeError("unsupported operand types for *: '" + typeName(a) + "' and '" +
+                                 typeName(b) + "'");
                 }
                 std::string base = a.is<std::string>() ? a.as<std::string>() : b.as<std::string>();
                 int count        = a.is<int>() ? a.as<int>() : b.as<int>();
@@ -217,7 +224,8 @@ void VM::execute() {
                 bool validLeft  = a.is<ArrayPtr>() && b.is<int>();
                 bool validRight = b.is<ArrayPtr>() && a.is<int>();
                 if (!validLeft && !validRight) {
-                    runtimeError("An array can only be multiplied by an integer.");
+                    runtimeError("unsupported operand types for *: '" + typeName(a) + "' and '" +
+                                 typeName(b) + "'");
                 }
                 auto base = a.is<ArrayPtr>() ? a.as<ArrayPtr>() : b.as<ArrayPtr>();
                 int count = a.is<int>() ? a.as<int>() : b.as<int>();
@@ -229,14 +237,17 @@ void VM::execute() {
                     }
                 }
                 push(RuntimeValue{res});
-            } else if (a.is<double>() || b.is<double>()) {
-                double valA = a.is<double>() ? a.as<double>() : a.as<int>();
-                double valB = b.is<double>() ? b.as<double>() : b.as<int>();
-                push(RuntimeValue{valA * valB});
-            } else if (a.is<int>() && b.is<int>()) {
-                push(RuntimeValue{a.as<int>() * b.as<int>()});
+            } else if ((a.is<double>() || a.is<int>()) && (b.is<double>() || b.is<int>())) {
+                if (a.is<double>() || b.is<double>()) {
+                    double valA = a.is<double>() ? a.as<double>() : a.as<int>();
+                    double valB = b.is<double>() ? b.as<double>() : b.as<int>();
+                    push(RuntimeValue{valA * valB});
+                } else {
+                    push(RuntimeValue{a.as<int>() * b.as<int>()});
+                }
             } else {
-                runtimeError("Operands must be numbers.");
+                runtimeError("unsupported operand types for *: '" + typeName(a) + "' and '" +
+                             typeName(b) + "'");
             }
             break;
         }
@@ -244,12 +255,17 @@ void VM::execute() {
         case OP_DIVIDE: {
             RuntimeValue b = pop();
             RuntimeValue a = pop();
-            double valA    = a.is<double>() ? a.as<double>() : a.as<int>();
-            double valB    = b.is<double>() ? b.as<double>() : b.as<int>();
-            if (valB == 0.0) {
-                runtimeError("Division by zero.");
+            if ((a.is<double>() || a.is<int>()) && (b.is<double>() || b.is<int>())) {
+                double valA = a.is<double>() ? a.as<double>() : a.as<int>();
+                double valB = b.is<double>() ? b.as<double>() : b.as<int>();
+                if (valB == 0.0) {
+                    runtimeError("Division by zero.");
+                }
+                push(RuntimeValue{valA / valB});
+            } else {
+                runtimeError("unsupported operand types for /: '" + typeName(a) + "' and '" +
+                             typeName(b) + "'");
             }
-            push(RuntimeValue{valA / valB});
             break;
         }
 
@@ -273,7 +289,8 @@ void VM::execute() {
                     push(RuntimeValue{std::fmod(valA, valB)});
                 }
             } else {
-                runtimeError("Operands must be numbers.");
+                runtimeError("unsupported operand types for %: '" + typeName(a) + "' and '" +
+                             typeName(b) + "'");
             }
             break;
         }
@@ -285,7 +302,7 @@ void VM::execute() {
             } else if (a.is<int>()) {
                 push(RuntimeValue{-a.as<int>()});
             } else {
-                runtimeError("Operand must be a number.");
+                runtimeError("unsupported operand type for unary -: '" + typeName(a) + "'");
             }
             break;
         }
@@ -317,7 +334,8 @@ void VM::execute() {
                 double valB = b.is<double>() ? b.as<double>() : b.as<int>();
                 push(RuntimeValue{valA > valB});
             } else {
-                runtimeError("Operands must be numbers.");
+                runtimeError("unsupported operand types for >: '" + typeName(a) + "' and '" +
+                             typeName(b) + "'");
             }
             break;
         }
@@ -330,7 +348,8 @@ void VM::execute() {
                 double valB = b.is<double>() ? b.as<double>() : b.as<int>();
                 push(RuntimeValue{valA >= valB});
             } else {
-                runtimeError("Operands must be numbers.");
+                runtimeError("unsupported operand types for >=: '" + typeName(a) + "' and '" +
+                             typeName(b) + "'");
             }
             break;
         }
@@ -343,7 +362,8 @@ void VM::execute() {
                 double valB = b.is<double>() ? b.as<double>() : b.as<int>();
                 push(RuntimeValue{valA < valB});
             } else {
-                runtimeError("Operands must be numbers.");
+                runtimeError("unsupported operand types for <: '" + typeName(a) + "' and '" +
+                             typeName(b) + "'");
             }
             break;
         }
@@ -356,7 +376,8 @@ void VM::execute() {
                 double valB = b.is<double>() ? b.as<double>() : b.as<int>();
                 push(RuntimeValue{valA <= valB});
             } else {
-                runtimeError("Operands must be numbers.");
+                runtimeError("unsupported operand types for <=: '" + typeName(a) + "' and '" +
+                             typeName(b) + "'");
             }
             break;
         }
