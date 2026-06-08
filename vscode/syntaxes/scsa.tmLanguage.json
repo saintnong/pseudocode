@@ -90,7 +90,7 @@
     {
       "comment": "General Control Keywords",
       "name": "keyword.control.scsa",
-      "match": "\\b(IF|THEN|ELSE|FOR|WHILE|REPEAT|UNTIL|RETURN|IN|TO|AND|OR|NOT|CASE|OF|OTHER|OTHERWISE)\\b"
+      "match": "\\b(IF|THEN|ELSE|FOR|WHILE|REPEAT|UNTIL|RETURN|IN|TO|AND|OR|NOT|MOD|CASE|OF|OTHER|OTHERWISE)\\b"
     },
     {
       "comment": "Object Oriented / Storage Keywords",
@@ -114,7 +114,7 @@
     {
       "comment": "Operators",
       "name": "keyword.operator.scsa",
-      "match": "(!=|>=|<=|==|\\+|\\-|\\*|\\/|=|\\>|\\<)"
+      "match": "(!=|>=|<=|==|\\+|\\-|\\*|\\/|\\%|=|\\>|\\<)"
     }
   ]
 }

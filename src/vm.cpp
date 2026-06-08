@@ -3,8 +3,6 @@
 #include "opcodes.hpp"
 #include <algorithm>
 #include <cmath>
-#include <iostream>
-#include <stdexcept>
 
 VM::VM(Interpreter &interpreter, EnvironmentPtr globals)
     : interpreter(interpreter), globals(globals) {
@@ -89,8 +87,6 @@ void VM::runtimeError(const std::string &message) {
         size_t offset    = frame->ip - frame->function->chunk->code.data() - 1;
         line             = frame->function->chunk->getLine(offset);
     }
-    // Report syntax error? No, runtime error.
-    // SCSA has a RuntimeError exception that main.cpp catches
     throw RuntimeError(Token{TOK_EOF, "", line, 0, 0}, message);
 }
 
@@ -1042,10 +1038,6 @@ void VM::execute() {
 
             auto klass =
                 std::dynamic_pointer_cast<UserClass>(classVal.as<std::shared_ptr<Callable>>());
-            // Wait! initVal contains the compiled function wrapping the initializer expression.
-            // Under UserClass:
-            // `std::map<std::string, std::shared_ptr<CompiledFunction>> defaultFields;`
-            // We need to cast initVal to a UserFunction, get its CompiledFunction, and add it!
             auto userFunc =
                 std::dynamic_pointer_cast<UserFunction>(initVal.as<std::shared_ptr<Callable>>());
             klass->addField(attrName, userFunc->getCompiledFunction());

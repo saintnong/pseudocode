@@ -1,0 +1,48 @@
+# Greatest Common Divisor (GCD) and Least Common Multiple (LCM) Example
+# Demonstrates Euclid's algorithm using the modulo operator (MOD and %)
+
+FUNCTION gcd(a, b)
+    WHILE b != 0
+        temp = b
+        b = a MOD b
+        a = temp
+    END WHILE
+    RETURN a
+END gcd
+
+FUNCTION lcm(a, b)
+    # LCM(a, b) = (a * b) / GCD(a, b)
+    RETURN (a / gcd(a, b)) * b
+END lcm
+
+# Demonstrate MOD in GCD
+num1 = 48
+num2 = 18
+PRINT("Calculating GCD and LCM for " + STRING(num1) + " and " + STRING(num2))
+PRINT("GCD: " + STRING(gcd(num1, num2))) # Expected: 6
+PRINT("LCM: " + STRING(lcm(num1, num2))) # Expected: 144
+
+# Demonstrate % in a simple parity and custom checking loop
+PRINT("")
+PRINT("Divisibility and parity check for numbers 1 to 20:")
+FOR i = 1 TO 20
+    output_str = STRING(i)
+    
+    # Check if number is divisible by 3 and/or 5 using %
+    IF i % 15 == 0 THEN
+        output_str = output_str + " (FizzBuzz)"
+    ELSE IF i % 3 == 0 THEN
+        output_str = output_str + " (Fizz)"
+    ELSE IF i % 5 == 0 THEN
+        output_str = output_str + " (Buzz)"
+    END IF
+    
+    # Check parity using MOD
+    IF i MOD 2 == 0 THEN
+        output_str = output_str + " - EVEN"
+    ELSE
+        output_str = output_str + " - ODD"
+    END IF
+    
+    PRINT(output_str)
+END FOR
