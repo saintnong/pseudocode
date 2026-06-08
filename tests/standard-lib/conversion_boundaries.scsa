@@ -1,0 +1,35 @@
+# EXPECT: -1
+# EXPECT: 12
+# EXPECT: -1
+# EXPECT: -1
+# EXPECT: 1.2
+# EXPECT: 0
+# EXPECT: true
+# EXPECT: false
+# EXPECT: false
+# EXPECT: true
+# EXPECT: false
+
+# INT string casting boundaries
+PRINT(INT("not_a_number"))
+PRINT(INT("12abc"))  # std::stoi allows prefix numbers
+PRINT(INT("abc12"))  # fails completely
+PRINT(INT(""))
+
+# FLOAT string casting boundaries
+PRINT(FLOAT("1.2"))
+PRINT(FLOAT("not_a_float"))
+
+# BOOL string casting boundaries
+PRINT(BOOL("true"))
+PRINT(BOOL("FALSE"))
+PRINT(BOOL("any_other_string"))
+
+# BOOL complex type casting boundaries
+arr = [1, 2, 3]
+PRINT(BOOL(arr))
+
+FUNCTION getNull()
+END getNull
+
+PRINT(BOOL(getNull()))

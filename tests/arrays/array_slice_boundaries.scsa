@@ -1,0 +1,18 @@
+# EXPECT: [1, 2, 3]
+# EXPECT: [2, 3]
+# EXPECT: [3]
+# EXPECT: [1, 2, 3]
+# EXPECT: []
+# EXPECT: []
+
+arr = [1, 2, 3]
+
+# Normal slice
+PRINT(arr.slice(0, 2))
+PRINT(arr.slice(1, 2))
+
+# Indices clamping / negative handling
+PRINT(arr.slice(2, 10)) # Clamps end index to size-1
+PRINT(arr.slice(-2, 2)) # Negative start gets clamped to 0
+PRINT(arr.slice(2, 1))  # Start > End returns empty array
+PRINT(arr.slice(5, 10)) # Start >= size returns empty array

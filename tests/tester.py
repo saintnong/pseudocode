@@ -20,8 +20,10 @@ def run_test(interpreter_path, file_path):
     with open(file_path, 'r') as f:
         content = f.read()
     
-    expect_matches = re.findall(r'#\s*EXPECT:\s*(.*)', content)
-    error_matches = re.findall(r'#\s*EXPECT ERROR:\s*(.*)', content)
+    expect_matches = re.findall(r'#[ \t]*EXPECT:[ \t]*(.*)', content)
+    error_matches = re.findall(r'#[ \t]*EXPECT ERROR:[ \t]*(.*)', content)
+    input_matches = re.findall(r'#[ \t]*INPUT:[ \t]*(.*)', content)
+    mock_stdin = "\n".join(input_matches) if input_matches else None
 
     if not expect_matches and not error_matches:
         return "SKIP", "No expectations defined"
@@ -32,6 +34,7 @@ def run_test(interpreter_path, file_path):
     try:
         result = subprocess.run(
             [interpreter_path, str(file_path)],
+            input=mock_stdin,
             capture_output=True,
             text=True,
             timeout=2 
@@ -45,7 +48,7 @@ def run_test(interpreter_path, file_path):
         # This stops the tester from finding its own test cases and passing them
         combined_output = "\n".join([
             line for line in combined_output.splitlines() 
-            if "# EXPECT" not in line
+            if "# EXPECT" not in line and "# INPUT" not in line
         ])
 
         if is_error_test:
