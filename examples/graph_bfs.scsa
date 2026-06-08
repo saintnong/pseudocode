@@ -1,0 +1,46 @@
+# Graph BFS Traversal Example
+#
+# This example demonstrates representing a directed graph as an adjacency list
+# using a Dictionary, and performing a Breadth-First Search (BFS) traversal.
+
+# Adjacency list representation of a directed graph
+graph = {
+    "A": ["B", "C"],
+    "B": ["D", "E"],
+    "C": ["F"],
+    "D": [],
+    "E": ["F"],
+    "F": []
+}
+
+# BFS Traversal Function
+FUNCTION bfs(graph, startNode)
+    # Track visited nodes using a dictionary for O(1) lookup
+    visited = {}
+    visited[startNode] = TRUE
+    
+    # Queue for BFS traversal
+    queue = [startNode]
+    
+    PRINT("BFS Traversal starting from node " + startNode + ":")
+    
+    WHILE queue.length > 0
+        # Dequeue the first element
+        currentNode = queue[0]
+        queue = queue.slice(1, queue.length - 1)
+        
+        PRINT("Visited node: " + currentNode)
+        
+        # Get neighbors of current node
+        neighbors = graph.get(currentNode, [])
+        FOR neighbor IN neighbors
+            IF NOT (neighbor IN visited) THEN
+                visited[neighbor] = TRUE
+                queue.append(neighbor)
+            END IF
+        END FOR
+    END WHILE
+END bfs
+
+# Execute BFS starting from Node 'A'
+bfs(graph, "A")
