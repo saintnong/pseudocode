@@ -27,30 +27,22 @@ bool isValidDictKey(const RuntimeValue &key) {
     return key.is<int>() || key.is<std::string>() || key.is<bool>();
 }
 
-bool dictKeysEqual(const RuntimeValue &a, const RuntimeValue &b) {
-    if (a.is<int>() && b.is<int>())
-        return a.as<int>() == b.as<int>();
-    if (a.is<bool>() && b.is<bool>())
-        return a.as<bool>() == b.as<bool>();
-    if (a.is<std::string>() && b.is<std::string>())
-        return a.as<std::string>() == b.as<std::string>();
-    return false;
-}
-
 RuntimeValue *findDictEntry(Dictionary &dict, const RuntimeValue &key) {
-    for (auto &entry : dict.entries) {
-        if (dictKeysEqual(entry.first, key))
-            return &entry.second;
+    if (!isValidDictKey(key)) return nullptr;
+    DictKey dk = toDictKey(key);
+    auto it = dict.entries.find(dk);
+    if (it != dict.entries.end()) {
+        return &(it->second);
     }
     return nullptr;
 }
 
 void setDictEntry(Dictionary &dict, const RuntimeValue &key, const RuntimeValue &value) {
-    if (RuntimeValue *existing = findDictEntry(dict, key)) {
-        *existing = value;
-        return;
+    DictKey dk = toDictKey(key);
+    if (dict.entries.find(dk) == dict.entries.end()) {
+        dict.keys.push_back(dk);
     }
-    dict.entries.push_back({key, value});
+    dict.entries[dk] = value;
 }
 
 } // namespace
@@ -1112,11 +1104,9 @@ RuntimeValue Interpreter::visitBinaryExpr(BinaryExpr *expr) {
             result.value = false;
 
             if (isValidDictKey(left)) {
-                for (const auto &entry : dict->entries) {
-                    if (dictKeysEqual(entry.first, left)) {
-                        result.value = true;
-                        break;
-                    }
+                DictKey dk = toDictKey(left);
+                if (dict->entries.find(dk) != dict->entries.end()) {
+                    result.value = true;
                 }
             }
         } else {
@@ -1277,8 +1267,8 @@ RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
                 0, [dict](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
                     (void) args;
                     auto keys = std::make_shared<std::vector<RuntimeValue>>();
-                    for (const auto &entry : dict->entries) {
-                        keys->push_back(entry.first);
+                    for (const auto &k : dict->keys) {
+                        keys->push_back(fromDictKey(k));
                     }
                     RuntimeValue result;
                     result.value = keys;
@@ -1295,8 +1285,8 @@ RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
                 0, [dict](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
                     (void) args;
                     auto values = std::make_shared<std::vector<RuntimeValue>>();
-                    for (const auto &entry : dict->entries) {
-                        values->push_back(entry.second);
+                    for (const auto &k : dict->keys) {
+                        values->push_back(dict->entries.at(k));
                     }
                     RuntimeValue result;
                     result.value = values;
@@ -1336,7 +1326,7 @@ RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
 
         if (name == "length") {
             RuntimeValue len;
-            len.value = static_cast<int>(dict->entries.size());
+            len.value = static_cast<int>(dict->keys.size());
             return len;
         }
 
@@ -1751,8 +1741,8 @@ void Interpreter::visitForInStmt(ForInStmt *stmt) {
     // Dictionaries (iterate over keys)
     else if (iterable.is<std::shared_ptr<Dictionary>>()) {
         auto dict = iterable.as<std::shared_ptr<Dictionary>>();
-        for (const auto &entry : dict->entries) {
-            environment->define(stmt->variable.lexeme, entry.first);
+        for (const auto &k : dict->keys) {
+            environment->define(stmt->variable.lexeme, fromDictKey(k));
             for (const auto &s : stmt->body) {
                 execute(s.get());
             }

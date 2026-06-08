@@ -2,6 +2,7 @@
 
 #include "token.hpp"
 #include <map>
+#include <unordered_map>
 #include <memory>
 #include <stdexcept>
 #include <variant>
@@ -74,12 +75,34 @@ struct RuntimeValue {
     }
 };
 
+using DictKey = std::variant<int, bool, std::string>;
+
+inline DictKey toDictKey(const RuntimeValue &val) {
+    if (val.is<int>()) return val.as<int>();
+    if (val.is<bool>()) return val.as<bool>();
+    if (val.is<std::string>()) return val.as<std::string>();
+    throw std::logic_error("Internal error: invalid dictionary key type in toDictKey");
+}
+
+inline RuntimeValue fromDictKey(const DictKey &key) {
+    RuntimeValue rv;
+    if (std::holds_alternative<int>(key)) {
+        rv.value = std::get<int>(key);
+    } else if (std::holds_alternative<bool>(key)) {
+        rv.value = std::get<bool>(key);
+    } else {
+        rv.value = std::get<std::string>(key);
+    }
+    return rv;
+}
+
 /**
  * Dictionary Type
  * An ordered collection of key-value pairs. Keys must be strings, integers, or booleans.
  */
 struct Dictionary {
-    std::vector<std::pair<RuntimeValue, RuntimeValue>> entries;
+    std::vector<DictKey> keys;
+    std::unordered_map<DictKey, RuntimeValue> entries;
 };
 
 using DictPtr = std::shared_ptr<Dictionary>;
@@ -292,11 +315,12 @@ inline std::string stringify(const RuntimeValue &v) {
     if (v.is<std::shared_ptr<Dictionary>>()) {
         auto dict          = v.as<std::shared_ptr<Dictionary>>();
         std::string result = "{";
-        for (size_t i = 0; i < dict->entries.size(); ++i) {
-            result += stringify(dict->entries[i].first);
+        for (size_t i = 0; i < dict->keys.size(); ++i) {
+            DictKey k = dict->keys[i];
+            result += stringify(fromDictKey(k));
             result += ": ";
-            result += stringify(dict->entries[i].second);
-            if (i < dict->entries.size() - 1)
+            result += stringify(dict->entries.at(k));
+            if (i < dict->keys.size() - 1)
                 result += ", ";
         }
         result += "}";
