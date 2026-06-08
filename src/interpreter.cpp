@@ -1,352 +1,11 @@
 #include "interpreter.hpp"
+#include "compiler.hpp"
 #include <chrono>
 #include <functional>
 #include <iostream>
 #include <random>
 
-/**
- * Return Signal
- * A special exception-based mechanism used to propagate return values from deep within
- * nested statement execution back to the function call site.
- */
-struct ReturnSignal {
-    // The value being returned from the function
-    RuntimeValue value;
-
-    /**
-     * Create a new return signal
-     * @param v The value to return
-     */
-    explicit ReturnSignal(RuntimeValue v) : value(v) {
-    }
-};
-
-namespace {
-
-bool isValidDictKey(const RuntimeValue &key) {
-    return key.is<int>() || key.is<std::string>() || key.is<bool>();
-}
-
-RuntimeValue *findDictEntry(Dictionary &dict, const RuntimeValue &key) {
-    if (!isValidDictKey(key))
-        return nullptr;
-    DictKey dk = toDictKey(key);
-    auto it    = dict.entries.find(dk);
-    if (it != dict.entries.end()) {
-        return &(it->second);
-    }
-    return nullptr;
-}
-
-void setDictEntry(Dictionary &dict, const RuntimeValue &key, const RuntimeValue &value) {
-    DictKey dk = toDictKey(key);
-    if (dict.entries.find(dk) == dict.entries.end()) {
-        dict.keys.push_back(dk);
-    }
-    dict.entries[dk] = value;
-}
-
-} // namespace
-
-// =================================================================================================
-//           Forward Declarations
-// =================================================================================================
-class UserClass;
-
-/**
- * User-Defined Function
- * Represents a function defined in Pseudocode source.
- * Implements the Callable interface for runtime invocation.
- */
-class UserFunction : public Callable {
-    // The AST node where the function was defined
-    FunctionStmt *declaration;
-    // The lexicographical environment where the function was created (for closures)
-    std::shared_ptr<Environment> closure;
-    // The class where the function was defined (if it's a method)
-    std::shared_ptr<UserClass> definingClass;
-
-public:
-    /**
-     * Create a user function
-     * @param decl The function declaration statement
-     * @param closure The surrounding environment scope
-     * @param definingClass The class where this function is defined (null for top-level)
-     */
-    UserFunction(FunctionStmt *decl, std::shared_ptr<Environment> closure,
-                 std::shared_ptr<UserClass> definingClass = nullptr)
-        : declaration(decl), closure(closure), definingClass(definingClass) {
-    }
-
-    /**
-     * Bind function to a class instance
-     * Creates a new environment where "this" refers to the provided instance.
-     * @param instance The object instance to bind to
-     * @return A new UserFunction with the bound environment
-     */
-    std::shared_ptr<UserFunction> bind(std::shared_ptr<Instance> instance) {
-        auto environment = std::make_shared<Environment>(closure);
-
-        RuntimeValue instanceValue;
-        // If the instance doesn't have a class context, use the defining class
-        if (instance->superclassContext == nullptr) {
-            auto boundInstance  = std::make_shared<Instance>(*instance, definingClass);
-            instanceValue.value = boundInstance;
-        } else {
-            instanceValue.value = instance;
-        }
-
-        environment->define("this", instanceValue);
-
-        return std::make_shared<UserFunction>(declaration, environment, definingClass);
-    }
-
-    /**
-     * @return Number of expected parameters
-     */
-    int arity() override {
-        return static_cast<int>(declaration->params.size());
-    }
-
-    /**
-     * Execute the function body
-     * @param interpreter The active interpreter
-     * @param arguments Evaluated argument values
-     * @return The function's return value (or Null if no return)
-     */
-    RuntimeValue call(Interpreter &interpreter, std::vector<RuntimeValue> arguments) override {
-        auto functionEnv = std::make_shared<Environment>(closure);
-
-        // Bind arguments to parameter names in the local scope
-        for (size_t i = 0; i < declaration->params.size(); i++) {
-            functionEnv->define(declaration->params[i].lexeme, arguments[i]);
-        }
-
-        try {
-            // Execute the body statements
-            interpreter.executeBlock(declaration->body, functionEnv);
-        } catch (const ReturnSignal &signal) {
-            // Intercept return signals to get the result
-            return signal.value;
-        }
-
-        // Default return value is Null
-        RuntimeValue nullValue;
-        nullValue.value = Null{};
-        return nullValue;
-    }
-
-    /**
-     * @return Debug string for the function
-     */
-    std::string toString() override {
-        return "<FUNCTION " + declaration->name.lexeme + ">";
-    }
-};
-
-/**
- * Native Function
- * Bridge for C++ functions to be called within Pseudocode.
- */
-typedef std::function<RuntimeValue(Interpreter &, std::vector<RuntimeValue>)> NativeFn;
-
-class NativeFunction : public Callable {
-    // The C++ implementation of the function
-    NativeFn function;
-    // Cached arity
-    int _arity;
-
-public:
-    /**
-     * Create a native function
-     * @param arity Expected number of arguments
-     * @param function The C++ implementation
-     */
-    NativeFunction(int arity, NativeFn function) : function(std::move(function)), _arity(arity) {
-    }
-
-    /**
-     * @return Function arity
-     */
-    int arity() override {
-        return _arity;
-    }
-
-    /**
-     * Invoke the native implementation
-     * @param interpreter The current interpreter
-     * @param arguments Evaluated parameters
-     * @return The result from the C++ implementation
-     */
-    RuntimeValue call(Interpreter &interpreter, std::vector<RuntimeValue> arguments) override {
-        return function(interpreter, arguments);
-    }
-
-    /**
-     * @return Debug string for native functions
-     */
-    std::string toString() override {
-        return "<NATIVE FUNCTION>";
-    }
-};
-
-/**
- * User-Defined Class
- * Represents a class blueprint in Pseudocode.
- * Manages its own methods and field defaults.
- */
-class UserClass : public Callable, public std::enable_shared_from_this<UserClass> {
-    // Name of the class
-    std::string name;
-    // The superclass of this class (can be nullptr)
-    std::shared_ptr<UserClass> superclass;
-    // Map of method names to their implementations
-    std::map<std::string, std::shared_ptr<Callable>> methods;
-    // Initial field value expressions for new instances
-    std::map<std::string, Expr *> defaultFields;
-
-public:
-    /**
-     * Create a new class definition
-     * @param n The class name
-     * @param s The superclass (if any)
-     */
-    UserClass(const std::string &n, std::shared_ptr<UserClass> s = nullptr)
-        : name(n), superclass(s) {
-    }
-
-    std::shared_ptr<UserClass> getSuperclass() const {
-        return superclass;
-    }
-
-    std::string getName() const {
-        return name;
-    }
-
-    /**
-     * Add a method to the class
-     * @param methodName The identifier for the method
-     * @param method The implementation callable
-     */
-    void addMethod(const std::string &methodName, std::shared_ptr<Callable> method) {
-        methods[methodName] = method;
-    }
-
-    /**
-     * Add a default field value expression
-     * @param fieldName The identifier for the attribute
-     * @param valueExpr Its initial state expression
-     */
-    void addField(const std::string &fieldName, Expr *valueExpr) {
-        defaultFields[fieldName] = valueExpr;
-    }
-
-    /**
-     * Lookup a method by name
-     * @param methodName The name to search for
-     * @return Shared pointer to the method, or nullptr if not found
-     */
-    std::shared_ptr<UserFunction> findMethod(const std::string &methodName) {
-        if (methods.count(methodName)) {
-            return std::dynamic_pointer_cast<UserFunction>(methods.at(methodName));
-        }
-
-        if (superclass != nullptr) {
-            return superclass->findMethod(methodName);
-        }
-
-        return nullptr;
-    }
-
-    /**
-     * Lookup a constructor in the inheritance chain
-     * @return Shared pointer to the constructor, or nullptr if none exists
-     */
-    std::shared_ptr<UserFunction> findConstructor() {
-        std::shared_ptr<UserFunction> constructor = findMethod(name);
-        if (constructor != nullptr)
-            return constructor;
-
-        if (superclass != nullptr) {
-            return superclass->findConstructor();
-        }
-
-        return nullptr;
-    }
-
-    /**
-     * @return Arity of the constructor (same as the class-named method or inherited)
-     */
-    int arity() override {
-        std::shared_ptr<UserFunction> constructor = findConstructor();
-        if (constructor != nullptr) {
-            return constructor->arity();
-        }
-        return 0;
-    }
-
-    /**
-     * Class Instantiation (e.g. new MyClass())
-     * Creates a new instance, initializes fields, and runs the constructor.
-     * @param interpreter The active interpreter
-     * @param arguments Constructor arguments
-     * @return The newly created Instance
-     */
-    RuntimeValue call(Interpreter &interpreter, std::vector<RuntimeValue> arguments) override {
-        auto instance =
-            std::make_shared<Instance>(std::static_pointer_cast<Callable>(shared_from_this()));
-
-        // Populate new instance with field values (from inheritance chain)
-        initializeFields(interpreter, instance);
-
-        // Find and execute the class constructor method if it exists
-        // Searching up the inheritance chain happens inside findConstructor
-        std::shared_ptr<UserFunction> constructor = findConstructor();
-        if (constructor != nullptr) {
-            constructor->bind(instance)->call(interpreter, arguments);
-        }
-
-        // Return the instance wrapped as a runtime value
-        RuntimeValue result;
-        result.value = instance;
-        return result;
-    }
-
-private:
-    /**
-     * Initialize fields recursively from top of inheritance chain down to this class.
-     * This ensures that subclass fields can overwrite superclass defaults.
-     */
-    void initializeFields(Interpreter &interpreter, std::shared_ptr<Instance> instance) {
-        if (superclass != nullptr) {
-            superclass->initializeFields(interpreter, instance);
-        }
-
-        for (const auto &[key, expr] : defaultFields) {
-            (*instance->fields)[key] = interpreter.evaluate(expr);
-        }
-    }
-
-public:
-    /**
-     * @return Debug string for the class
-     */
-    std::string toString() override {
-        return "<CLASS " + name + ">";
-    }
-};
-
-// =================================================================================================
-//                             Interpreter Class Implementation
-// =================================================================================================
-
-/**
- * Interpreter Constructor
- * Initializes the execution environment and registers the standard library.
- * @param reporterRef Reference to error reporter for communicating runtime failure
- */
 Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
-    // Initiate our global environment, and begin interpreting in global scope.
     globals     = std::make_shared<Environment>();
     environment = globals;
 
@@ -354,45 +13,21 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
     // SCSA Pseudocode Standard Library
     // ==========================================================================
 
-    /**
-     * INPUT native function
-     * >> INPUT(prompt: String)
-     * => String
-     * Reads a line of text from standard input.
-     * @param prompt Optional string to display before reading
-     * @return The input string (trimmed of newline)
-     */
     auto inputNative = std::make_shared<NativeFunction>(
         VARIADIC_ARITY, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
-            // Optional prompt argument handling
             if (args.size() > 0) {
                 std::cout << stringify(args[0]);
             }
-
-            // Read from standard input
             std::string inputLine;
             if (!std::getline(std::cin, inputLine)) {
                 inputLine = "";
             }
-
-            // Return the result as a RuntimeValue variant
             RuntimeValue result;
             result.value = inputLine;
             return result;
         });
+    globals->define("INPUT", {std::static_pointer_cast<Callable>(inputNative)});
 
-    // Register INPUT in the global scope
-    RuntimeValue inputVal;
-    inputVal.value = std::static_pointer_cast<Callable>(inputNative);
-    globals->define("INPUT", inputVal);
-
-    /**
-     * PRINT native function
-     * >> PRINT(... vars: Any)
-     * => Null
-     * Outputs values to the console followed by a newline.
-     * Multiple arguments are separated by spaces.
-     */
     auto printNative = std::make_shared<NativeFunction>(
         VARIADIC_ARITY, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
             for (size_t i = 0; i < args.size(); ++i) {
@@ -401,24 +36,12 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
                 std::cout << stringify(args[i]);
             }
             std::cout << std::endl;
-
             RuntimeValue nullValue;
             nullValue.value = Null{};
             return nullValue;
         });
+    globals->define("PRINT", {std::static_pointer_cast<Callable>(printNative)});
 
-    // Register PRINT in the global scope
-    RuntimeValue printVal;
-    printVal.value = std::static_pointer_cast<Callable>(printNative);
-    globals->define("PRINT", printVal);
-
-    /**
-     * OUTPUT native function
-     * >> OUTPUT(... vars: Any)
-     * => Null
-     * Outputs values to the console WITHOUT a trailing newline.
-     * Multiple arguments are separated by spaces.
-     */
     auto outputNative = std::make_shared<NativeFunction>(
         VARIADIC_ARITY, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
             for (size_t i = 0; i < args.size(); ++i) {
@@ -426,31 +49,18 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
                     std::cout << " ";
                 std::cout << stringify(args[i]);
             }
-
             RuntimeValue nullValue;
             nullValue.value = Null{};
             return nullValue;
         });
+    globals->define("OUTPUT", {std::static_pointer_cast<Callable>(outputNative)});
 
-    // Register OUTPUT in the global scope
-    RuntimeValue outputVal;
-    outputVal.value = std::static_pointer_cast<Callable>(outputNative);
-    globals->define("OUTPUT", outputVal);
-
-    /**
-     * INT native function
-     * >> INT(value: Any)
-     * => Integer
-     * Explicitly casts a value to an integer.
-     */
     auto intNative = std::make_shared<NativeFunction>(
         1, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
             if (args.empty())
                 return {Null{}};
             const auto &val = args[0];
-
             int result = 0;
-
             if (val.is<int>()) {
                 result = val.as<int>();
             } else if (val.is<double>()) {
@@ -461,32 +71,21 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
                 try {
                     result = std::stoi(val.as<std::string>());
                 } catch (...) {
-                    // Fallback for failed parsing
                     result = -1;
                 }
             }
-
             RuntimeValue retVal;
             retVal.value = result;
             return retVal;
         });
-
     globals->define("INT", {std::static_pointer_cast<Callable>(intNative)});
 
-    /**
-     * FLOAT native function
-     * >> FLOAT(value: Any)
-     * => Double
-     * Explicitly casts a value to a floating point number.
-     */
     auto floatNative = std::make_shared<NativeFunction>(
         1, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
             if (args.empty())
                 return {Null{}};
             const auto &val = args[0];
-
             double result = 0.0;
-
             if (val.is<double>()) {
                 result = val.as<double>();
             } else if (val.is<int>()) {
@@ -500,47 +99,29 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
                     result = 0.0;
                 }
             }
-
             RuntimeValue retVal;
             retVal.value = result;
             return retVal;
         });
-
     globals->define("FLOAT", {std::static_pointer_cast<Callable>(floatNative)});
 
-    /**
-     * STRING native function
-     * >> STRING(value: Any)
-     * => String
-     * Converts any value to its string representation.
-     */
     auto stringNative = std::make_shared<NativeFunction>(
         1, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
             if (args.empty())
                 return {Null{}};
             std::string result = stringify(args[0]);
-
             RuntimeValue retVal;
             retVal.value = result;
             return retVal;
         });
-
     globals->define("STRING", {std::static_pointer_cast<Callable>(stringNative)});
 
-    /**
-     * BOOL native function
-     * >> BOOL(value: Any)
-     * => Boolean
-     * Explicitly casts a value to a boolean.
-     */
     auto boolNative = std::make_shared<NativeFunction>(
         1, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
             if (args.empty())
                 return {Null{}};
             const auto &val = args[0];
-
             bool result = false;
-
             if (val.is<bool>()) {
                 result = val.as<bool>();
             } else if (val.is<int>()) {
@@ -553,77 +134,46 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
             } else if (!val.is<Null>()) {
                 result = true;
             }
-
             RuntimeValue retVal;
             retVal.value = result;
             return retVal;
         });
-
     globals->define("BOOL", {std::static_pointer_cast<Callable>(boolNative)});
 
-    /**
-     * RANDOM native function
-     * >> RANDOM(min: Integer, max: Integer)
-     * => Integer
-     * Returns a pseudo-random integer within the specified range [min, max].
-     */
     auto randomNative = std::make_shared<NativeFunction>(
         2, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
             if (!args[0].is<int>() || !args[1].is<int>()) {
-                // Returns 0 if parameters are wrong type
                 return {0};
             }
-
             int min = args[0].as<int>();
             int max = args[1].as<int>();
-
-            // Inverted ranges when the user is a dumbass
             if (min > max)
                 std::swap(min, max);
-
             static std::mt19937 gen(std::random_device{}());
             std::uniform_int_distribution<> dis(min, max);
-
             RuntimeValue retVal;
             retVal.value = dis(gen);
             return retVal;
         });
-
     globals->define("RANDOM", {std::static_pointer_cast<Callable>(randomNative)});
 
-    /**
-     * TIME native function
-     * >> TIME()
-     * => Double
-     * Returns the number of seconds since the Unix epoch.
-     */
     auto timeNative = std::make_shared<NativeFunction>(
         0, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
             (void) args;
             auto now = std::chrono::system_clock::now();
             auto duration =
                 std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
-
-            // Convert milliseconds to seconds
             RuntimeValue retVal;
             retVal.value = static_cast<double>(duration.count()) / 1000.0;
             return retVal;
         });
-
     globals->define("TIME", {std::static_pointer_cast<Callable>(timeNative)});
 
-    /**
-     * TYPE native function
-     * >> TYPE(value: Any)
-     * => String
-     * Returns the name of the value's internal type as a string.
-     */
     auto typeNative = std::make_shared<NativeFunction>(
         1, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
             if (args.empty())
                 return {"NULL"};
             const auto &val = args[0];
-
             std::string typeStr = "UNKNOWN";
             if (val.is<int>())
                 typeStr = "INT";
@@ -643,1191 +193,33 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
                 typeStr = "CALLABLE";
             else if (val.is<std::shared_ptr<Instance>>())
                 typeStr = "INSTANCE";
-
             RuntimeValue retVal;
             retVal.value = typeStr;
             return retVal;
         });
-
     globals->define("TYPE", {std::static_pointer_cast<Callable>(typeNative)});
+
+    vm = std::make_unique<VM>(*this, reporter, globals);
 }
 
-/**
- * Execute Statement
- * Dispatches the statement to the appropriate StmtVisitor implementation.
- * @param stmt Pointer to the statement to execute
- */
-void Interpreter::execute(Stmt *stmt) {
-    stmt->accept(*this);
-}
-
-/**
- * Evaluate Expression
- * Evaluates an expression AST node into a concrete RuntimeValue.
- * Uses manual dispatch (downcasting) as an alternative to the visitor pattern
- * for better integration with return values.
- * @param expr The expression to evaluate
- * @return The resulting value
- */
-RuntimeValue Interpreter::evaluate(Expr *expr) {
-    if (auto *e = dynamic_cast<LiteralExpr *>(expr))
-        return visitLiteralExpr(e);
-    if (auto *e = dynamic_cast<VariableExpr *>(expr))
-        return visitVariableExpr(e);
-    if (auto *e = dynamic_cast<AssignExpr *>(expr))
-        return visitAssignExpr(e);
-    if (auto *e = dynamic_cast<BinaryExpr *>(expr))
-        return visitBinaryExpr(e);
-    if (auto *e = dynamic_cast<UnaryExpr *>(expr))
-        return visitUnaryExpr(e);
-    if (auto *e = dynamic_cast<CallExpr *>(expr))
-        return visitCallExpr(e);
-    if (auto *e = dynamic_cast<GetExpr *>(expr))
-        return visitGetExpr(e);
-    if (auto *e = dynamic_cast<ArrayAccessExpr *>(expr))
-        return visitArrayAccessExpr(e);
-    if (auto *e = dynamic_cast<ArrayLitExpr *>(expr))
-        return visitArrayLitExpr(e);
-    if (auto *e = dynamic_cast<DictLitExpr *>(expr))
-        return visitDictLitExpr(e);
-    if (auto *e = dynamic_cast<NewExpr *>(expr))
-        return visitNewExpr(e);
-
-    // Fallback for null expressions
-    RuntimeValue null;
-    null.value = Null{};
-    return null;
-}
-
-/**
- * Execute Scoped Block
- * Evaluates a list of statements within a provided environment.
- * Restores the previous environment after the block finishes, even if an error occurs.
- * @param statements Statement nodes in the block
- * @param env The environment scope for this block
- */
-void Interpreter::executeBlock(const std::vector<StmtPtr> &statements,
-                               std::shared_ptr<Environment> env) {
-    std::shared_ptr<Environment> previous = environment;
+void Interpreter::interpret(const std::vector<StmtPtr> &statements) {
     try {
-        environment = env;
-        for (const auto &stmt : statements) {
-            execute(stmt.get());
-        }
-        environment = previous;
-    } catch (...) {
-        // Ensure environment is restored on exceptions (like ReturnSignal)
-        environment = previous;
-        throw;
+        Compiler compiler(reporter);
+        auto compiled = compiler.compile(statements);
+        vm->run(compiled, {});
+    } catch (const RuntimeError &error) {
+        Token token = error.token;
+        std::string msg = error.what();
+        reporter.report(ErrorType::Runtime, token.line, token.column, msg, token.lexeme.length());
     }
 }
 
-/**
- * Logic: Truthiness
- * Determines the boolean interpretation of any runtime value.
- * - Null is false
- * - False is false
- * - 0 and 0.0 are false
- * - Everything else is true
- */
-bool Interpreter::isTruthy(const RuntimeValue &object) {
-    if (object.is<Null>())
-        return false;
-    if (object.is<bool>())
-        return object.as<bool>();
-    if (object.is<int>())
-        return object.as<int>() != 0;
-    if (object.is<double>())
-        return object.as<double>() != 0.0;
-    return true;
+RuntimeValue Interpreter::evaluate(Expr *expr) {
+    Compiler compiler(reporter);
+    auto compiled = compiler.compileExpressionOnly(expr);
+    return vm->run(compiled, {});
 }
 
-/**
- * Check equality between two runtime values
- * Handles all supported types with proper comparison logic
- */
-bool Interpreter::isEqual(const RuntimeValue &a, const RuntimeValue &b) {
-    if (a.is<Null>() && b.is<Null>())
-        return true;
-    if (a.is<Null>() || b.is<Null>())
-        return false;
-
-    if (a.is<int>() && b.is<int>())
-        return a.as<int>() == b.as<int>();
-    if (a.is<double>() && b.is<double>())
-        return a.as<double>() == b.as<double>();
-    if (a.is<int>() && b.is<double>())
-        return a.as<int>() == b.as<double>();
-    if (a.is<double>() && b.is<int>())
-        return a.as<double>() == b.as<int>();
-    if (a.is<bool>() && b.is<bool>())
-        return a.as<bool>() == b.as<bool>();
-    if (a.is<std::string>() && b.is<std::string>())
-        return a.as<std::string>() == b.as<std::string>();
-
-    // Reference Equality for shared objects (Arrays, Instances, Callables)
-    if (a.is<std::shared_ptr<std::vector<RuntimeValue>>>() &&
-        b.is<std::shared_ptr<std::vector<RuntimeValue>>>())
-        return a.as<std::shared_ptr<std::vector<RuntimeValue>>>() ==
-               b.as<std::shared_ptr<std::vector<RuntimeValue>>>();
-
-    if (a.is<std::shared_ptr<Dictionary>>() && b.is<std::shared_ptr<Dictionary>>())
-        return a.as<std::shared_ptr<Dictionary>>() == b.as<std::shared_ptr<Dictionary>>();
-
-    if (a.is<std::shared_ptr<Instance>>() && b.is<std::shared_ptr<Instance>>())
-        return a.as<std::shared_ptr<Instance>>() == b.as<std::shared_ptr<Instance>>();
-
-    if (a.is<std::shared_ptr<Callable>>() && b.is<std::shared_ptr<Callable>>())
-        return a.as<std::shared_ptr<Callable>>() == b.as<std::shared_ptr<Callable>>();
-
-    return false;
-}
-
-/**
- * Verify that a single operand is numeric
- */
-void Interpreter::checkNumberOperand(const Token &operatorToken, const RuntimeValue &operand) {
-    if (operand.is<int>() || operand.is<double>())
-        return;
-    throw RuntimeError(operatorToken, "Operand must be a number.");
-}
-
-/**
- * Verify that both operands are numeric
- */
-void Interpreter::checkNumberOperands(const Token &operatorToken, const RuntimeValue &left,
-                                      const RuntimeValue &right) {
-    if ((left.is<int>() || left.is<double>()) && (right.is<int>() || right.is<double>()))
-        return;
-    throw RuntimeError(operatorToken, "Operands must be numbers.");
-}
-
-/**
- * Visit: Literal Expression
- * Converts a primitive AST literal into its runtime equivalent.
- * @param expr Literal node (TOK_INTEGER, TOK_FLOAT, TOK_STRING, TOK_TRUE, TOK_FALSE)
- * @return The corresponding RuntimeValue
- */
-RuntimeValue Interpreter::visitLiteralExpr(LiteralExpr *expr) {
-    RuntimeValue result;
-
-    switch (expr->token.type) {
-    case TOK_INTEGER:
-        result.value = std::stoi(expr->token.lexeme);
-        break;
-    case TOK_FLOAT:
-        result.value = std::stod(expr->token.lexeme);
-        break;
-    case TOK_STRING:
-        result.value = expr->token.lexeme;
-        break;
-    case TOK_TRUE:
-        result.value = true;
-        break;
-    case TOK_FALSE:
-        result.value = false;
-        break;
-    default:
-        result.value = Null{};
-    }
-
-    return result;
-}
-
-/**
- * Visit: Variable Reference
- * Retrieves the value of an identifier from the current environment scope.
- * @param expr Variable node containing the name token
- * @return The value currently bound to the name
- */
-RuntimeValue Interpreter::visitVariableExpr(VariableExpr *expr) {
-    return environment->get(expr->name);
-}
-
-/**
- * Visit: Assignment
- * Evaluates the right-hand side and binds it to the target (variable, field, or array element).
- * Supports complex targets like object properties and array indices.
- * @param expr Assignment node (target = value)
- * @return The assigned value
- */
-RuntimeValue Interpreter::visitAssignExpr(AssignExpr *expr) {
-    RuntimeValue value = evaluate(expr->value.get());
-
-    if (auto *varExpr = dynamic_cast<VariableExpr *>(expr->target.get())) {
-        // Simple variable assignment
-        environment->define(varExpr->name.lexeme, value);
-    } else if (auto *getExpr = dynamic_cast<GetExpr *>(expr->target.get())) {
-        // Object property assignment (object.field = value)
-        RuntimeValue object = evaluate(getExpr->object.get());
-        if (!object.is<std::shared_ptr<Instance>>()) {
-            throw RuntimeError(getExpr->name, "Only instances have fields.");
-        }
-        object.as<std::shared_ptr<Instance>>()->set(getExpr->name, value);
-    } else if (auto *arrayAccess = dynamic_cast<ArrayAccessExpr *>(expr->target.get())) {
-        RuntimeValue containerVal = evaluate(arrayAccess->array.get());
-        RuntimeValue indexVal     = evaluate(arrayAccess->index.get());
-
-        if (containerVal.is<std::shared_ptr<Dictionary>>()) {
-            if (!isValidDictKey(indexVal)) {
-                throw RuntimeError(expr->anchor,
-                                   "Dictionary keys must be strings, integers, or booleans.");
-            }
-            auto dict = containerVal.as<std::shared_ptr<Dictionary>>();
-            setDictEntry(*dict, indexVal, value);
-        } else if (containerVal.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
-            if (!indexVal.is<int>()) {
-                throw RuntimeError(expr->anchor, "Array index must be an integer.");
-            }
-
-            auto arr = containerVal.as<std::shared_ptr<std::vector<RuntimeValue>>>();
-            int idx  = indexVal.as<int>();
-
-            if (idx < 0 || idx >= static_cast<int>(arr->size())) {
-                throw RuntimeError(expr->anchor, "Array index out of bounds.");
-            }
-
-            (*arr)[idx] = value;
-        } else {
-            throw RuntimeError(expr->anchor, "Can only assign to array or dictionary elements.");
-        }
-    }
-
-    return value;
-}
-
-/**
- * Visit: Unary Expression
- * Handles logical negation (NOT) and numeric negation (-).
- * @param expr Unary node containing operator and operand
- * @return Result of the operation
- */
-RuntimeValue Interpreter::visitUnaryExpr(UnaryExpr *expr) {
-    RuntimeValue right = evaluate(expr->right.get());
-
-    // Switch for both NOT and -
-    switch (expr->op.type) {
-    case TOK_MINUS:
-        checkNumberOperand(expr->op, right);
-        if (right.is<double>()) {
-            return {-right.as<double>()};
-        }
-        return {-right.as<int>()};
-    case TOK_NOT:
-        return {!isTruthy(right)};
-    default:
-        throw RuntimeError(expr->op, "Invalid unary operator.");
-    }
-}
-
-/**
- * Visit: Binary Expression
- * Handles arithmetic (+, -, *, /), comparison (>, >=, <, <=),
- * equality (==), logical (AND, OR), and collection membership (IN) operators.
- * @param expr Binary node containing operator and operands
- * @return Result of the operation
- */
-RuntimeValue Interpreter::visitBinaryExpr(BinaryExpr *expr) {
-    RuntimeValue left  = evaluate(expr->left.get());
-    RuntimeValue right = evaluate(expr->right.get());
-    RuntimeValue result;
-
-    switch (expr->op.type) {
-    case TOK_PLUS: {
-        // String Concatenation or Numeric Addition
-        if (left.is<std::string>() && right.is<std::string>()) {
-            result.value = left.as<std::string>() + right.as<std::string>();
-        } else {
-            checkNumberOperands(expr->op, left, right);
-            if (left.is<double>() || right.is<double>()) {
-                double l     = left.is<double>() ? left.as<double>() : left.as<int>();
-                double r     = right.is<double>() ? right.as<double>() : right.as<int>();
-                result.value = l + r;
-            } else {
-                result.value = left.as<int>() + right.as<int>();
-            }
-        }
-        break;
-    }
-    case TOK_MINUS: {
-        // Numeric Subtraction
-        checkNumberOperands(expr->op, left, right);
-        if (left.is<double>() || right.is<double>()) {
-            double l     = left.is<double>() ? left.as<double>() : left.as<int>();
-            double r     = right.is<double>() ? right.as<double>() : right.as<int>();
-            result.value = l - r;
-        } else {
-            result.value = left.as<int>() - right.as<int>();
-        }
-        break;
-    }
-    case TOK_MULTIPLY: {
-        // Handle String Multiplication
-        if (left.is<std::string>() || right.is<std::string>()) {
-            // Multiplier must be an int
-            bool validLeft  = left.is<std::string>() && right.is<int>();
-            bool validRight = right.is<std::string>() && left.is<int>();
-            if (!validLeft && !validRight) {
-                throw RuntimeError(expr->op, "A string can only be multiplied by an integer.");
-            }
-
-            // Find string and multiplier
-            std::string base =
-                left.is<std::string>() ? left.as<std::string>() : right.as<std::string>();
-            int count = left.is<int>() ? left.as<int>() : right.as<int>();
-
-            // Build result string
-            std::string res = "";
-            if (count > 0) {
-                // Reserve memory to prevent reallocation
-                res.reserve(base.length() * count);
-                for (int i = 0; i < count; ++i)
-                    res += base;
-            }
-            result.value = res;
-        }
-        // Handle Array Multiplication
-        else if (left.is<std::shared_ptr<std::vector<RuntimeValue>>>() ||
-                 right.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
-            using ArrayPtr = std::shared_ptr<std::vector<RuntimeValue>>;
-
-            // Multiplier must be an int
-            bool validLeft  = left.is<ArrayPtr>() && right.is<int>();
-            bool validRight = right.is<ArrayPtr>() && left.is<int>();
-            if (!validLeft && !validRight) {
-                throw RuntimeError(expr->op, "An array can only be multiplied by an integer.");
-            }
-
-            // Find array and multiplier
-            auto base = left.is<ArrayPtr>() ? left.as<ArrayPtr>() : right.as<ArrayPtr>();
-            int count = left.is<int>() ? left.as<int>() : right.as<int>();
-
-            // Build result array
-            auto res = std::make_shared<std::vector<RuntimeValue>>();
-            if (count > 0) {
-                // Reserve memory to prevent reallocation
-                res->reserve(base->size() * count);
-                for (int i = 0; i < count; ++i) {
-                    res->insert(res->end(), base->begin(), base->end());
-                }
-            }
-            result.value = res;
-        }
-        // Handle normal multiplication
-        else {
-            checkNumberOperands(expr->op, left, right);
-
-            if (left.is<double>() || right.is<double>()) {
-                double l     = left.is<double>() ? left.as<double>() : left.as<int>();
-                double r     = right.is<double>() ? right.as<double>() : right.as<int>();
-                result.value = l * r;
-            } else {
-                result.value = left.as<int>() * right.as<int>();
-            }
-        }
-        break;
-    }
-    case TOK_DIVIDE: {
-        // Numeric Division (always returns double)
-        checkNumberOperands(expr->op, left, right);
-        double l = left.is<double>() ? left.as<double>() : left.as<int>();
-        double r = right.is<double>() ? right.as<double>() : right.as<int>();
-        if (r == 0.0) {
-            throw RuntimeError(expr->op, "Division by zero.");
-        }
-        result.value = l / r;
-        break;
-    }
-    case TOK_GREATER_THAN: {
-        checkNumberOperands(expr->op, left, right);
-        double l     = left.is<double>() ? left.as<double>() : left.as<int>();
-        double r     = right.is<double>() ? right.as<double>() : right.as<int>();
-        result.value = l > r;
-        break;
-    }
-    case TOK_GT_OR_EQ: {
-        checkNumberOperands(expr->op, left, right);
-        double l     = left.is<double>() ? left.as<double>() : left.as<int>();
-        double r     = right.is<double>() ? right.as<double>() : right.as<int>();
-        result.value = l >= r;
-        break;
-    }
-    case TOK_LESS_THAN: {
-        checkNumberOperands(expr->op, left, right);
-        double l     = left.is<double>() ? left.as<double>() : left.as<int>();
-        double r     = right.is<double>() ? right.as<double>() : right.as<int>();
-        result.value = l < r;
-        break;
-    }
-    case TOK_LT_OR_EQ: {
-        checkNumberOperands(expr->op, left, right);
-        double l     = left.is<double>() ? left.as<double>() : left.as<int>();
-        double r     = right.is<double>() ? right.as<double>() : right.as<int>();
-        result.value = l <= r;
-        break;
-    }
-    case TOK_EQUAL: {
-        // Generic Equality Check
-        result.value = isEqual(left, right);
-        break;
-    }
-    case TOK_NOT_EQUAL: {
-        // Generic Inequality Check
-        result.value = !isEqual(left, right);
-        break;
-    }
-    case TOK_AND: {
-        // Logical AND (short-circuiting)
-        if (!isTruthy(left))
-            return left;
-        return evaluate(expr->right.get());
-    }
-    case TOK_OR: {
-        // Logical OR (short-circuiting)
-        if (isTruthy(left))
-            return left;
-        return evaluate(expr->right.get());
-    }
-    case TOK_IN: {
-        // Collection Membership
-        if (right.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
-            auto arr     = right.as<std::shared_ptr<std::vector<RuntimeValue>>>();
-            result.value = false;
-
-            for (const auto &item : *arr) {
-                if (isEqual(left, item)) {
-                    result.value = true;
-                    break;
-                }
-            }
-        } else if (right.is<std::shared_ptr<Dictionary>>()) {
-            auto dict    = right.as<std::shared_ptr<Dictionary>>();
-            result.value = false;
-
-            if (isValidDictKey(left)) {
-                DictKey dk = toDictKey(left);
-                if (dict->entries.find(dk) != dict->entries.end()) {
-                    result.value = true;
-                }
-            }
-        } else {
-            throw RuntimeError(expr->op, "'IN' operator requires right hand side to be an array or "
-                                         "dictionary.");
-        }
-        break;
-    }
-    default:
-        result.value = Null{};
-    }
-
-    return result;
-}
-
-/**
- * Visit: Function or Constructor Call
- * Evaluates the callee and arguments, then invokes the call method.
- * @param expr Call node (callee(args))
- * @return Return value from the invocation
- */
-RuntimeValue Interpreter::visitCallExpr(CallExpr *expr) {
-    RuntimeValue callee = evaluate(expr->callee.get());
-
-    std::vector<RuntimeValue> arguments;
-    for (const auto &arg : expr->args) {
-        arguments.push_back(evaluate(arg.get()));
-    }
-
-    if (!callee.is<std::shared_ptr<Callable>>()) {
-        throw RuntimeError(expr->anchor, "Can only call functions and classes.");
-    }
-
-    std::shared_ptr<Callable> function = callee.as<std::shared_ptr<Callable>>();
-
-    // Validate argument count (arity)
-    if (function->arity() != VARIADIC_ARITY &&
-        (size_t) arguments.size() != (size_t) function->arity()) {
-        throw RuntimeError(expr->anchor, "Expected " + std::to_string(function->arity()) +
-                                             " arguments but got " +
-                                             std::to_string(arguments.size()) + ".");
-    }
-
-    return function->call(*this, arguments);
-}
-
-/**
- * Visit: Property Access
- * Retrieves a field or method from a class instance.
- * @param expr Get node (object.name)
- * @return Property value or bound method
- */
-RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
-    RuntimeValue object = evaluate(expr->object.get());
-
-    /**
-     * Special case: Arrays are objects
-     */
-    if (object.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
-        // Anchor token for better error reporting
-        Token anchor     = expr->name;
-        auto arr         = object.as<std::shared_ptr<std::vector<RuntimeValue>>>();
-        std::string name = expr->name.lexeme;
-
-        // ===============================
-        // Array Methods
-        // ===============================
-
-        // Appends an item to the array
-        // arr.append(item)
-        /**
-         * Appends the given item to the end of the array
-         *
-         */
-        if (name == "append") {
-            // Return a native which simply appends the list
-            auto appendMethod = std::make_shared<NativeFunction>(
-                1, [arr](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
-                    arr->push_back(args[0]);
-                    return {arr};
-                });
-
-            RuntimeValue method;
-            method.value = std::static_pointer_cast<Callable>(appendMethod);
-            return method;
-        }
-
-        /**
-         * Slices the array from the start to end index (inclusive)
-         * If start is not given, the array is sliced from 0 to end.
-         * array.slice(start?, end)
-         * @param start?
-         * @param end
-         * @returns shallow copy of array
-         */
-        if (name == "slice") {
-            // Return a native function which returns the slice
-            auto sliceMethod = std::make_shared<NativeFunction>(
-                2, [arr, anchor](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
-                    if (!args[0].is<int>() || !args[1].is<int>()) {
-                        throw RuntimeError(anchor, "Slice indices must be integers.");
-                    }
-
-                    int start = args[0].as<int>();
-                    int end   = args[1].as<int>();
-                    int size  = static_cast<int>(arr->size());
-
-                    // Clamp indices
-                    if (start < 0)
-                        start = 0;
-                    if (end >= size)
-                        end = size - 1;
-
-                    // New vector
-                    auto res = std::make_shared<std::vector<RuntimeValue>>();
-
-                    // Shallowly copy the old vector
-                    if (start <= end && start < size) {
-                        for (int i = start; i <= end; ++i) {
-                            res->push_back((*arr)[i]);
-                        }
-                    }
-
-                    RuntimeValue result;
-                    result.value = res;
-                    return result;
-                });
-
-            RuntimeValue method;
-            method.value = std::static_pointer_cast<Callable>(sliceMethod);
-            return method;
-        }
-
-        // ===============================
-        // Array Properties
-        // ===============================
-        // arr.length
-        if (name == "length") {
-            RuntimeValue len;
-            len.value = static_cast<int>(arr->size());
-            return len;
-        }
-
-        // Fallback
-        throw RuntimeError(expr->name, "This is not a valid array property or method.");
-    }
-
-    /**
-     * Special case: Dictionaries are objects
-     */
-    if (object.is<std::shared_ptr<Dictionary>>()) {
-        Token anchor     = expr->name;
-        auto dict        = object.as<std::shared_ptr<Dictionary>>();
-        std::string name = expr->name.lexeme;
-
-        if (name == "keys") {
-            auto keysMethod = std::make_shared<NativeFunction>(
-                0, [dict](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
-                    (void) args;
-                    auto keys = std::make_shared<std::vector<RuntimeValue>>();
-                    for (const auto &k : dict->keys) {
-                        keys->push_back(fromDictKey(k));
-                    }
-                    RuntimeValue result;
-                    result.value = keys;
-                    return result;
-                });
-
-            RuntimeValue method;
-            method.value = std::static_pointer_cast<Callable>(keysMethod);
-            return method;
-        }
-
-        if (name == "values") {
-            auto valuesMethod = std::make_shared<NativeFunction>(
-                0, [dict](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
-                    (void) args;
-                    auto values = std::make_shared<std::vector<RuntimeValue>>();
-                    for (const auto &k : dict->keys) {
-                        values->push_back(dict->entries.at(k));
-                    }
-                    RuntimeValue result;
-                    result.value = values;
-                    return result;
-                });
-
-            RuntimeValue method;
-            method.value = std::static_pointer_cast<Callable>(valuesMethod);
-            return method;
-        }
-
-        if (name == "get") {
-            auto getMethod = std::make_shared<NativeFunction>(
-                VARIADIC_ARITY,
-                [dict, anchor](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
-                    if (args.size() < 1 || args.size() > 2) {
-                        throw RuntimeError(anchor, "Expected 1 or 2 arguments but got " +
-                                                       std::to_string(args.size()) + ".");
-                    }
-                    if (!isValidDictKey(args[0])) {
-                        throw RuntimeError(anchor, "Dictionary keys must be strings, integers, or "
-                                                   "booleans.");
-                    }
-                    if (RuntimeValue *found = findDictEntry(*dict, args[0])) {
-                        return *found;
-                    }
-                    if (args.size() == 2) {
-                        return args[1];
-                    }
-                    return RuntimeValue{Null{}};
-                });
-
-            RuntimeValue method;
-            method.value = std::static_pointer_cast<Callable>(getMethod);
-            return method;
-        }
-
-        if (name == "length") {
-            RuntimeValue len;
-            len.value = static_cast<int>(dict->keys.size());
-            return len;
-        }
-
-        throw RuntimeError(expr->name, "This is not a valid dictionary property or method.");
-    }
-
-    /**
-     * Special case: String properties
-     */
-    if (object.is<std::string>()) {
-        std::string str  = object.as<std::string>();
-        std::string name = expr->name.lexeme;
-
-        // ===============================
-        // String Properties
-        // ===============================
-
-        // str.length
-        if (name == "length") {
-            RuntimeValue len;
-            len.value = static_cast<int>(str.length());
-            return len;
-        }
-
-        // str.slice(a, b)
-        if (name == "slice") {
-            // Returns string from indices a to b inclusive
-            Token anchor     = expr->name;
-            auto sliceMethod = std::make_shared<NativeFunction>(
-                2, [str, anchor](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
-                    if (!args[0].is<int>() || !args[1].is<int>()) {
-                        throw RuntimeError(anchor, "Slice indices must be integers.");
-                    }
-
-                    int start  = args[0].as<int>();
-                    int end    = args[1].as<int>();
-                    int length = static_cast<int>(str.length());
-
-                    // Clamp indices
-                    if (start < 0)
-                        start = 0;
-                    if (end >= length)
-                        end = length - 1;
-
-                    std::string res = "";
-                    if (start <= end && start < length) {
-                        res = str.substr(start, end - start + 1);
-                    }
-
-                    return RuntimeValue{res};
-                });
-
-            RuntimeValue method;
-            method.value = std::static_pointer_cast<Callable>(sliceMethod);
-            return method;
-        }
-        throw RuntimeError(expr->name, "Undefined property '" + name + "' on string.");
-    }
-
-    // Ensure that we are only accessing instances
-    if (!object.is<std::shared_ptr<Instance>>()) {
-        throw RuntimeError(expr->name, "Only instances have properties.");
-    }
-
-    auto instance    = object.as<std::shared_ptr<Instance>>();
-    std::string name = expr->name.lexeme;
-
-    // First check for fields on the instance
-    if (instance->fields->count(name)) {
-        return instance->fields->at(name);
-    }
-
-    // Then look for methods in the instance's class
-    std::shared_ptr<UserClass> lookupClass;
-    if (instance->superclassContext) {
-        lookupClass = std::dynamic_pointer_cast<UserClass>(instance->superclassContext);
-    } else {
-        lookupClass = std::dynamic_pointer_cast<UserClass>(instance->klass);
-    }
-
-    if (lookupClass) {
-        // Special property: super
-        if (name == "super") {
-            if (!lookupClass->getSuperclass()) {
-                throw RuntimeError(expr->name,
-                                   "Class '" + lookupClass->toString() + "' has no superclass.");
-            }
-            auto superMethod = std::make_shared<NativeFunction>(
-                0,
-                [instance, lookupClass](Interpreter &,
-                                        std::vector<RuntimeValue> args) -> RuntimeValue {
-                    (void) args;
-                    auto superInstance =
-                        std::make_shared<Instance>(*instance, lookupClass->getSuperclass());
-                    return {superInstance};
-                });
-            return {superMethod};
-        }
-
-        auto method = lookupClass->findMethod(name);
-        if (method) {
-            // If the method is found, we MUST bind it to the instance.
-            // This ensures that when the function is eventually called,
-            // 'this' refers to 'instance'.
-            RuntimeValue result;
-            result.value = method->bind(instance);
-            return result;
-        }
-    }
-
-    throw RuntimeError(expr->name, "Undefined property '" + name + "'.");
-}
-
-/**
- * Visit: Array and string index access node
- * Retrieves an element from an array/string using a numeric index.
- * @param expr Index node (container[index])
- * @return The value at the specified position
- */
-RuntimeValue Interpreter::visitArrayAccessExpr(ArrayAccessExpr *expr) {
-    RuntimeValue containerVal = evaluate(expr->array.get());
-    RuntimeValue indexVal     = evaluate(expr->index.get());
-
-    if (containerVal.is<std::shared_ptr<Dictionary>>()) {
-        if (!isValidDictKey(indexVal)) {
-            throw RuntimeError(expr->anchor,
-                               "Dictionary keys must be strings, integers, or booleans.");
-        }
-        auto dict = containerVal.as<std::shared_ptr<Dictionary>>();
-        if (RuntimeValue *found = findDictEntry(*dict, indexVal)) {
-            return *found;
-        }
-        throw RuntimeError(expr->anchor, "Dictionary key not found.");
-    }
-
-    if (!containerVal.is<std::shared_ptr<std::vector<RuntimeValue>>>() &&
-        !containerVal.is<std::string>()) {
-        throw RuntimeError(expr->anchor, "Can only index arrays, strings, or dictionaries.");
-    }
-
-    if (!indexVal.is<int>()) {
-        throw RuntimeError(expr->anchor, "Array index must be an integer.");
-    }
-    int idx = indexVal.as<int>();
-
-    if (containerVal.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
-        auto arr = containerVal.as<std::shared_ptr<std::vector<RuntimeValue>>>();
-
-        if (idx < 0 || idx >= static_cast<int>(arr->size())) {
-            throw RuntimeError(expr->anchor, "Array index out of bounds.");
-        }
-        return (*arr)[idx];
-    }
-
-    std::string str = containerVal.as<std::string>();
-
-    if (idx < 0 || idx >= static_cast<int>(str.length())) {
-        throw RuntimeError(expr->anchor, "String index out of bounds.");
-    }
-
-    return RuntimeValue{std::string(1, str[idx])};
-}
-
-/**
- * Visit: Array Literal
- * Creates a new heap-allocated vector holding the evaluated elements.
- * @param expr List of expressions [e1, e2, ...]
- * @return A shared pointer to the new array
- */
-RuntimeValue Interpreter::visitArrayLitExpr(ArrayLitExpr *expr) {
-    auto arr = std::make_shared<std::vector<RuntimeValue>>();
-
-    for (const auto &elem : expr->elements) {
-        arr->push_back(evaluate(elem.get()));
-    }
-
-    RuntimeValue result;
-    result.value = arr;
-    return result;
-}
-
-/**
- * Visit: Dictionary Literal
- * Creates a new heap-allocated dictionary holding the evaluated key-value pairs.
- * @param expr List of key-value pairs {k1: v1, k2: v2, ...}
- * @return A shared pointer to the new dictionary
- */
-RuntimeValue Interpreter::visitDictLitExpr(DictLitExpr *expr) {
-    auto dict = std::make_shared<Dictionary>();
-
-    for (const auto &entry : expr->entries) {
-        RuntimeValue key   = evaluate(entry.key.get());
-        RuntimeValue value = evaluate(entry.value.get());
-
-        if (!isValidDictKey(key)) {
-            throw RuntimeError(expr->anchor,
-                               "Dictionary keys must be strings, integers, or booleans.");
-        }
-        setDictEntry(*dict, key, value);
-    }
-
-    RuntimeValue result;
-    result.value = dict;
-    return result;
-}
-
-/**
- * Visit: Class Instantiation
- * Creates a new object instance. Syntactic sugar for calling a class.
- * @param expr New node (NEW ClassName(args))
- * @return The created instance
- */
-RuntimeValue Interpreter::visitNewExpr(NewExpr *expr) {
-    RuntimeValue classVal = environment->get(expr->className);
-
-    if (!classVal.is<std::shared_ptr<Callable>>()) {
-        throw RuntimeError(expr->className, "Can only instantiate classes.");
-    }
-
-    std::vector<RuntimeValue> arguments;
-    for (const auto &arg : expr->args) {
-        arguments.push_back(evaluate(arg.get()));
-    }
-
-    auto klass = classVal.as<std::shared_ptr<Callable>>();
-
-    if (klass->arity() != VARIADIC_ARITY && arguments.size() != (size_t) klass->arity()) {
-        throw RuntimeError(expr->className, "Expected " + std::to_string(klass->arity()) +
-                                                " arguments but got " +
-                                                std::to_string(arguments.size()) + ".");
-    }
-
-    return klass->call(*this, arguments);
-}
-
-/**
- * Visit: Expression Statement
- * Evaluates an expression and ignores its result.
- * Used for calls or assignments that stand alone as statements.
- */
-void Interpreter::visitExpressionStmt(ExpressionStmt *stmt) {
-    evaluate(stmt->expression.get());
-}
-
-/**
- * Visit: Return Statement
- * Triggers a stack unwind by throwing a ReturnSignal.
- * This is the only way to exit a function body early with a value.
- */
-void Interpreter::visitReturnStmt(ReturnStmt *stmt) {
-    RuntimeValue value;
-    if (stmt->value) {
-        value = evaluate(stmt->value.get());
-    } else {
-        value.value = Null{};
-    }
-    throw ReturnSignal(value);
-}
-
-/**
- * Visit: Block Statement
- * Executes a group of statements within a new local environment scope.
- */
-void Interpreter::visitBlockStmt(BlockStmt *stmt) {
-    executeBlock(stmt->statements, std::make_shared<Environment>(environment));
-}
-
-/**
- * Visit: If Statement
- * Evaluates the condition and conditionally executes the then or else branch.
- */
-void Interpreter::visitIfStmt(IfStmt *stmt) {
-    RuntimeValue condition = evaluate(stmt->condition.get());
-
-    if (isTruthy(condition)) {
-        // Execute the then branch
-        for (const auto &s : stmt->thenBranch) {
-            execute(s.get());
-        }
-    } else {
-        // Execute else if branches if any of them are true
-        bool branchTaken = false;
-        for (const auto &elseIf : stmt->elseIfBranches) {
-            RuntimeValue elseIfCondition = evaluate(elseIf.condition.get());
-            if (isTruthy(elseIfCondition)) {
-                for (const auto &s : elseIf.body) {
-                    execute(s.get());
-                }
-                branchTaken = true;
-                break;
-            }
-        }
-
-        if (!branchTaken && !stmt->elseBranch.empty()) {
-            // Execute else branch if no other branch was taken
-            for (const auto &s : stmt->elseBranch) {
-                execute(s.get());
-            }
-        }
-    }
-}
-
-/**
- * Visit: While Statement
- * Executes the body repeatedly as long as the condition remains truthy.
- */
-void Interpreter::visitWhileStmt(WhileStmt *stmt) {
-    while (isTruthy(evaluate(stmt->condition.get()))) {
-        for (const auto &s : stmt->body) {
-            execute(s.get());
-        }
-    }
-}
-
-/**
- * Visit: Function Declaration
- * Creates a UserFunction object and defines it in the current scope.
- */
-void Interpreter::visitFunctionStmt(FunctionStmt *stmt) {
-    auto function = std::make_shared<UserFunction>(stmt, environment);
-    RuntimeValue funcValue;
-    funcValue.value = std::static_pointer_cast<Callable>(function);
-    environment->define(stmt->name.lexeme, funcValue);
-}
-
-/**
- * Visit: Class Declaration
- * Creates a UserClass object, populates it with methods and field defaults,
- * and defines it in the current scope.
- */
-void Interpreter::visitClassStmt(ClassStmt *stmt) {
-    std::shared_ptr<UserClass> superclass = nullptr;
-    if (stmt->superclass.type != TOK_EOF) {
-        RuntimeValue superVal = environment->get(stmt->superclass);
-        if (!superVal.is<std::shared_ptr<Callable>>()) {
-            throw RuntimeError(stmt->superclass, "Superclass must be a class.");
-        }
-        superclass = std::dynamic_pointer_cast<UserClass>(superVal.as<std::shared_ptr<Callable>>());
-        if (!superclass) {
-            throw RuntimeError(stmt->superclass, "Superclass must be a user-defined class.");
-        }
-
-        // Cyclic inheritance check
-        std::shared_ptr<UserClass> tracer = superclass;
-        while (tracer != nullptr) {
-            if (tracer->getName() == stmt->name.lexeme) {
-                throw RuntimeError(stmt->superclass, "Cycle detected in inheritance chain.");
-            }
-            tracer = tracer->getSuperclass();
-        }
-    }
-
-    auto klass = std::make_shared<UserClass>(stmt->name.lexeme, superclass);
-
-    // Add the class's default attributes (fields)
-    for (const auto &attr : stmt->attributes) {
-        if (auto *assignment = dynamic_cast<AssignExpr *>(attr.get())) {
-            if (auto *varExpr = dynamic_cast<VariableExpr *>(assignment->target.get())) {
-                std::string fieldName = varExpr->name.lexeme;
-                klass->addField(fieldName, assignment->value.get());
-            } else {
-                throw RuntimeError(assignment->anchor, "Expected a valid field name.");
-            }
-        }
-    }
-
-    // Add methods to the class definition
-    for (const auto &method : stmt->methods) {
-        if (auto *funcStmt = dynamic_cast<FunctionStmt *>(method.get())) {
-            auto methodFunc = std::make_shared<UserFunction>(funcStmt, environment, klass);
-            klass->addMethod(funcStmt->name.lexeme, methodFunc);
-        }
-    }
-
-    RuntimeValue klassValue;
-    klassValue.value = std::static_pointer_cast<Callable>(klass);
-    environment->define(stmt->name.lexeme, klassValue);
-}
-
-/**
- * Visit: For-In Loop
- * Iterates over the elements of an iterable, executing the body for each one.
- * Binds the current element to a local loop variable.
- */
-void Interpreter::visitForInStmt(ForInStmt *stmt) {
-    RuntimeValue iterable = evaluate(stmt->iterable.get());
-
-    // Arrays
-    if (iterable.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
-        auto arr = iterable.as<std::shared_ptr<std::vector<RuntimeValue>>>();
-
-        for (const auto &elem : *arr) {
-            // Make loop variable
-            environment->define(stmt->variable.lexeme, elem);
-            for (const auto &s : stmt->body) {
-                execute(s.get());
-            }
-        }
-    }
-    // Strings
-    else if (iterable.is<std::string>()) {
-        std::string str = iterable.as<std::string>();
-        for (char c : str) {
-            // Convert to single char RuntimeValue
-            RuntimeValue charVal = RuntimeValue{std::string(1, c)};
-            environment->define(stmt->variable.lexeme, charVal);
-            for (const auto &s : stmt->body) {
-                execute(s.get());
-            }
-        }
-    }
-    // Dictionaries (iterate over keys)
-    else if (iterable.is<std::shared_ptr<Dictionary>>()) {
-        auto dict = iterable.as<std::shared_ptr<Dictionary>>();
-        for (const auto &k : dict->keys) {
-            environment->define(stmt->variable.lexeme, fromDictKey(k));
-            for (const auto &s : stmt->body) {
-                execute(s.get());
-            }
-        }
-    } else {
-        throw RuntimeError(stmt->variable,
-                           "Can only iterate over arrays, strings, or dictionaries.");
-    }
-}
-
-/**
- * Visit: For-To Loop
- * Iterates through the blocks while changing the loop variable from start to end
- */
-void Interpreter::visitForStmt(ForStmt *stmt) {
-    // Resolve start and end
-    RuntimeValue startVal = evaluate(stmt->start.get());
-    RuntimeValue endVal   = evaluate(stmt->end.get());
-
-    // Check that both start and end make sense
-    if (!startVal.is<int>() || !endVal.is<int>()) {
-        throw RuntimeError(stmt->variable, "Start and end values in FOR loop must be integers.");
-    }
-    int start = startVal.as<int>();
-    int end   = endVal.as<int>();
-
-    // Set step depending on which way the loop will go
-    int step = (start <= end) ? 1 : -1;
-
-    // Flexible forwards/backwards loop
-    int i = start;
-    while (true) {
-        // enforce stop condition
-        if (step > 0 && i > end)
-            break;
-        if (step < 0 && i < end)
-            break;
-
-        // update loop variable
-        environment->define(stmt->variable.lexeme, RuntimeValue{i});
-
-        // execute loop body
-        for (const auto &s : stmt->body) {
-            execute(s.get());
-        }
-        i += step;
-    }
-}
-
-/**
- * Visit: Case Statement
- * Executes the matching arm of a CASE statement.
- */
-void Interpreter::visitCaseStmt(CaseStmt *stmt) {
-    RuntimeValue conditionValue = evaluate(stmt->condition.get());
-
-    for (const auto &arm : stmt->arms) {
-        for (const auto &valueExpr : arm.values) {
-            RuntimeValue caseValue = evaluate(valueExpr.get());
-            if (isEqual(conditionValue, caseValue)) {
-                for (const auto &bodyStmt : arm.body) {
-                    execute(bodyStmt.get());
-                }
-                return;
-            }
-        }
-    }
-
-    if (!stmt->defaultBranch.empty()) {
-        for (const auto &bodyStmt : stmt->defaultBranch) {
-            execute(bodyStmt.get());
-        }
-    }
-}
-
-/**
- * Visit: Repeat-Until Statement
- * Executes the body repeatedly until the condition becomes truthy.
- * The body is executed at least once before the condition is checked.
- */
-void Interpreter::visitRepeatUntilStmt(RepeatUntilStmt *stmt) {
-    do {
-        for (const auto &s : stmt->body) {
-            execute(s.get());
-        }
-    } while (!isTruthy(evaluate(stmt->condition.get())));
+RuntimeValue Interpreter::runFunction(std::shared_ptr<CompiledFunction> compiledFn, const std::vector<RuntimeValue> &args, std::shared_ptr<Environment> closure) {
+    return vm->run(compiledFn, args, closure);
 }
