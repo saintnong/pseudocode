@@ -1,0 +1,18 @@
+# EXPECT: hello
+# EXPECT: ell
+# EXPECT: o
+# EXPECT: hello
+# EXPECT: 
+# EXPECT: 
+
+str = "hello"
+
+# Normal slice
+PRINT(str.slice(0, 4))
+PRINT(str.slice(1, 3))
+
+# Indices clamping / negative handling
+PRINT(str.slice(4, 10)) # Clamps end index to length-1
+PRINT(str.slice(-2, 4)) # Negative start gets clamped to 0
+PRINT(str.slice(3, 2))  # Start > End returns empty string
+PRINT(str.slice(10, 15)) # Start >= length returns empty string

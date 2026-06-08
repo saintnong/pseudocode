@@ -50,6 +50,18 @@ else()
 endif()
 
 # =========================================================
+# Code Coverage
+# =========================================================
+option(ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
+if(ENABLE_COVERAGE)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        target_compile_options(scsa PRIVATE --coverage)
+        target_link_options(scsa PRIVATE --coverage)
+    endif()
+endif()
+
+
+# =========================================================
 # Integration tests
 # =========================================================
 add_test(

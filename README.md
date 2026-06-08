@@ -100,16 +100,25 @@ This repository contains a full toolchain for Pseudocode development, including 
     - Inheritance works
     - Circular inheritance is checked
 
-## Integration Tests
-This project uses a small custom Python test harness integrated with CTest for CI/CD. Tests execute `.scsa` files and check that the interpreter output matches what is expected in the comments. To run the test suite:
+## Integration Tests & Coverage
+This project uses a small custom Python test harness integrated with CTest for CI/CD. Tests execute `.scsa` files and check that the interpreter output matches what is expected in the comments.
 
+To run the integration tests:
 1. Build the project ([see installation](https://github.com/SaintNong/pseudocode/wiki/Installation-Guide))
-2. Run the tests from the `/tests` directory
+2. Run the tests from the `/tests` directory:
+   ```bash
+   python3 tester.py <path-to-your-binary>
+   ```
 
+### Measuring Code Coverage
+To measure code coverage, you can use the coverage runner helper:
 ```bash
-# Runs the integration tests
-python3 tester.py <path-to-your-binary>
+# From the repository root, runs tests with coverage instrumentation and generates a report
+python3 tests/coverage.py
 ```
+
+Requires `gcov`
+
 
 ## Environment Variables
 The interpreter supports the following environment variables:

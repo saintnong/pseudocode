@@ -1,0 +1,12 @@
+# INPUT: Alice
+# INPUT: Bob
+# EXPECT: Enter name: Enter age: Hello Alice
+# EXPECT: Hello Bob
+# EXPECT: Hello Alice and Bob
+
+name = INPUT("Enter name: ")
+age = INPUT("Enter age: ")
+
+PRINT("Hello " + name)
+PRINT("Hello " + age)
+PRINT("Hello " + name + " and " + age)
