@@ -5,7 +5,7 @@ Matrix multiplication benchmark ($N \times N$) comparing the SCSA Pseudocode Int
 ## System Information
 - **OS**: Linux 6.17.0-35-generic
 - **CPU**: AMD Ryzen 7 5800H with Radeon Graphics
-- **Date**: 2026-06-08 03:48:55 UTC
+- **Date**: 2026-06-08 03:10:24 UTC
 - **Matrix Size**: 60x60 (216,000 inner loop operations)
 - **Runs**: 3
 
@@ -13,8 +13,8 @@ Matrix multiplication benchmark ($N \times N$) comparing the SCSA Pseudocode Int
 
 | Language | Min Alg Time | Avg Alg Time | Min Process Time | Avg Process Time | Checksum | Relative Speed (vs SCSA) |
 | --- | --- | --- | --- | --- | --- | --- |
-| SCSA Pseudocode | 0.0490s | 0.0523s | 0.0636s | 0.0654s | Passed | 1.0x (Baseline) |
-| Python 3 | 0.0087s | 0.0087s | 0.0299s | 0.0307s | Passed | 6.0x |
-| Node.js | 0.0029s | 0.0030s | 0.0275s | 0.0286s | Passed | 17.6x |
+| SCSA Pseudocode | 0.2310s | 0.2387s | 0.2403s | 0.2474s | Passed | 1.0x (Baseline) |
+| Python 3 | 0.0085s | 0.0085s | 0.0284s | 0.0288s | Passed | 27.9x |
+| Node.js | 0.0026s | 0.0027s | 0.0254s | 0.0262s | Passed | 89.1x |
 
 *Note: Alg Time measures pure execution of the matrix multiplication algorithm, whereas Process Time includes process startup, bytecode compilation, and AST parsing.*
