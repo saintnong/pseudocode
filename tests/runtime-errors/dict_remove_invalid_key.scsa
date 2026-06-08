@@ -1,0 +1,4 @@
+# Dict remove with invalid key type (array) — must error
+d = {"k": "v"}
+d.remove([1, 2])
+# EXPECT ERROR: Dictionary keys must be strings, integers, or booleans.

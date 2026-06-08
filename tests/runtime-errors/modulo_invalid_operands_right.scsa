@@ -1,2 +1,2 @@
 res = 3 MOD "string"
-# EXPECT ERROR: Operands must be numbers
+# EXPECT ERROR: unsupported operand types for %: 'integer' and 'string'

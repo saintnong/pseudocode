@@ -20,8 +20,7 @@
  */
 bool InputBuffer::needsContinuation(const std::string &input) {
     // Use a silent error reporter - ignore errors until we have a full program
-    InterpreterStage stage = InterpreterStage::Lexing;
-    ErrorReporter reporter(stage, "", input);
+    ErrorReporter reporter("", input);
     reporter.setSilent(true);
 
     Lexer lexer(input, reporter);

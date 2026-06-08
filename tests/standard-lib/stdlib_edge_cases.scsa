@@ -1,0 +1,64 @@
+# Standard library edge cases
+
+# Helper to produce a Null value
+FUNCTION getNull()
+END getNull
+
+nullVal = getNull()
+
+# INT(Null) → 0
+PRINT(INT(nullVal))
+# EXPECT: 0
+
+# FLOAT(Null) → 0.0
+PRINT(FLOAT(nullVal))
+# EXPECT: 0
+
+# BOOL(Null) → FALSE
+PRINT(BOOL(nullVal))
+# EXPECT: false
+
+# STRING(Null) → "Null"
+PRINT(STRING(nullVal))
+# EXPECT: Null
+
+# TYPE of a user-defined function → "CALLABLE"
+FUNCTION foo()
+    RETURN 1
+END foo
+PRINT(TYPE(foo))
+# EXPECT: CALLABLE
+
+# TYPE of an instance → "INSTANCE"
+CLASS MyClass
+    METHODS
+        FUNCTION MyClass()
+            this.name = "test"
+        END MyClass
+END MyClass
+obj = NEW MyClass()
+PRINT(TYPE(obj))
+# EXPECT: INSTANCE
+
+# TYPE of built-in function
+PRINT(TYPE(PRINT))
+# EXPECT: CALLABLE
+
+# TYPE of array
+PRINT(TYPE([1, 2, 3]))
+# EXPECT: ARRAY
+
+# RANDOM with equal min/max
+x = RANDOM(1, 1)
+PRINT(x)
+# EXPECT: 1
+
+# RANDOM with min > max — should swap internally
+r = RANDOM(100, 1)
+PRINT(r >= 1 AND r <= 100)
+# EXPECT: true
+
+# RANDOM with max > min — normal case
+r2 = RANDOM(5, 10)
+PRINT(r2 >= 5 AND r2 <= 10)
+# EXPECT: true

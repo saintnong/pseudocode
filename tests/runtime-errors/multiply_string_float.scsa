@@ -1,2 +1,2 @@
 PRINT("abc" * 3.5)
-# EXPECT ERROR: A string can only be multiplied by an integer.
+# EXPECT ERROR: unsupported operand types for *: 'string' and 'float'

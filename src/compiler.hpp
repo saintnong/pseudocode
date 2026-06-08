@@ -28,16 +28,16 @@ private:
         return *currentFn->chunk;
     }
 
-    void emitByte(uint8_t byte, size_t line);
-    void emitShort(uint16_t value, size_t line);
-    void emitConstant(RuntimeValue value, size_t line);
-    size_t emitJump(uint8_t instruction, size_t line);
-    void patchJump(size_t offset, size_t line);
-    void emitLoop(size_t loopStart, size_t line);
+    void emitByte(uint8_t byte, Span span);
+    void emitShort(uint16_t value, Span span);
+    void emitConstant(RuntimeValue value, Span span);
+    size_t emitJump(uint8_t instruction, Span span);
+    void patchJump(size_t offset, Span span);
+    void emitLoop(size_t loopStart, Span span);
 
     void beginScope();
-    void endScope(size_t line);
-    int addLocal(const std::string &name, size_t line, bool reserveSlot = false);
+    void endScope(Span span);
+    int addLocal(const std::string &name, Span span, bool reserveSlot = false);
     int resolveLocal(const std::string &name);
 
     // Expression compilation (manual dispatch)
@@ -68,7 +68,7 @@ private:
     void compileCaseStmt(CaseStmt *stmt);
     void compileRepeatUntilStmt(RepeatUntilStmt *stmt);
 
-    void errorAt(size_t line, const std::string &message);
+    void errorAt(Span span, const std::string &message);
 
 public:
     Compiler(ErrorReporter &reporter, Compiler *enclosing = nullptr, std::string fnName = "");

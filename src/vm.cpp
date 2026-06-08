@@ -10,21 +10,21 @@ VM::VM(Interpreter &interpreter, EnvironmentPtr globals)
 
 void VM::push(RuntimeValue value) {
     if (stackTop >= STACK_MAX) {
-        runtimeError("Stack overflow.");
+        runtimeError(ErrorType::VM, "Stack overflow.");
     }
     stack[stackTop++] = value;
 }
 
 RuntimeValue VM::pop() {
     if (stackTop == 0) {
-        runtimeError("Stack underflow.");
+        runtimeError(ErrorType::VM, "Stack underflow.");
     }
     return stack[--stackTop];
 }
 
 RuntimeValue VM::peek(int distance) {
     if (stackTop <= static_cast<size_t>(distance)) {
-        runtimeError("Stack underflow during peek.");
+        runtimeError(ErrorType::VM, "Stack underflow during peek.");
     }
     return stack[stackTop - 1 - distance];
 }
@@ -80,14 +80,27 @@ bool VM::isEqual(const RuntimeValue &a, const RuntimeValue &b) const {
     return false;
 }
 
-void VM::runtimeError(const std::string &message) {
-    size_t line = 1;
+void VM::runtimeError(ErrorType type, const std::string &message) {
+    Span span = {1, 0, 1};
     if (frameCount > 0) {
         CallFrame *frame = &frames[frameCount - 1];
         size_t offset    = frame->ip - frame->function->chunk->code.data() - 1;
-        line             = frame->function->chunk->getLine(offset);
+        span             = frame->function->chunk->getSpan(offset);
     }
-    throw RuntimeError(Token{TOK_EOF, "", line, 0, 0}, message);
+    switch (type) {
+    case ErrorType::Type:
+        throw TypeError(span, message);
+    case ErrorType::Name:
+        throw NameError(span, message);
+    case ErrorType::Argument:
+        throw ArgumentError(span, message);
+    case ErrorType::Index:
+        throw IndexError(span, message);
+    case ErrorType::VM:
+        throw VMError(span, message);
+    default:
+        throw IndexError(span, message);
+    }
 }
 
 RuntimeValue VM::run(std::shared_ptr<CompiledFunction> function,
@@ -156,8 +169,8 @@ void VM::execute() {
         case OP_ADD: {
             RuntimeValue b = pop();
             RuntimeValue a = pop();
-            if (a.is<std::string>() || b.is<std::string>()) {
-                push(RuntimeValue{stringify(a) + stringify(b)});
+            if (a.is<std::string>() && b.is<std::string>()) {
+                push(RuntimeValue{a.as<std::string>() + b.as<std::string>()});
             } else if (a.is<std::shared_ptr<std::vector<RuntimeValue>>>() &&
                        b.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
                 auto arrA   = a.as<std::shared_ptr<std::vector<RuntimeValue>>>();
@@ -166,14 +179,17 @@ void VM::execute() {
                 newArr->insert(newArr->end(), arrA->begin(), arrA->end());
                 newArr->insert(newArr->end(), arrB->begin(), arrB->end());
                 push(RuntimeValue{newArr});
-            } else if (a.is<double>() || b.is<double>()) {
-                double valA = a.is<double>() ? a.as<double>() : a.as<int>();
-                double valB = b.is<double>() ? b.as<double>() : b.as<int>();
-                push(RuntimeValue{valA + valB});
-            } else if (a.is<int>() && b.is<int>()) {
-                push(RuntimeValue{a.as<int>() + b.as<int>()});
+            } else if ((a.is<double>() || a.is<int>()) && (b.is<double>() || b.is<int>())) {
+                if (a.is<double>() || b.is<double>()) {
+                    double valA = a.is<double>() ? a.as<double>() : a.as<int>();
+                    double valB = b.is<double>() ? b.as<double>() : b.as<int>();
+                    push(RuntimeValue{valA + valB});
+                } else {
+                    push(RuntimeValue{a.as<int>() + b.as<int>()});
+                }
             } else {
-                runtimeError("Operands must be numbers, strings, or arrays.");
+                runtimeError(ErrorType::Type, "unsupported operand types for +: '" + typeName(a) +
+                                                  "' and '" + typeName(b) + "'");
             }
             break;
         }
@@ -181,14 +197,17 @@ void VM::execute() {
         case OP_SUBTRACT: {
             RuntimeValue b = pop();
             RuntimeValue a = pop();
-            if (a.is<double>() || b.is<double>()) {
-                double valA = a.is<double>() ? a.as<double>() : a.as<int>();
-                double valB = b.is<double>() ? b.as<double>() : b.as<int>();
-                push(RuntimeValue{valA - valB});
-            } else if (a.is<int>() && b.is<int>()) {
-                push(RuntimeValue{a.as<int>() - b.as<int>()});
+            if ((a.is<double>() || a.is<int>()) && (b.is<double>() || b.is<int>())) {
+                if (a.is<double>() || b.is<double>()) {
+                    double valA = a.is<double>() ? a.as<double>() : a.as<int>();
+                    double valB = b.is<double>() ? b.as<double>() : b.as<int>();
+                    push(RuntimeValue{valA - valB});
+                } else {
+                    push(RuntimeValue{a.as<int>() - b.as<int>()});
+                }
             } else {
-                runtimeError("Operands must be numbers.");
+                runtimeError(ErrorType::Type, "unsupported operand types for -: '" + typeName(a) +
+                                                  "' and '" + typeName(b) + "'");
             }
             break;
         }
@@ -200,7 +219,8 @@ void VM::execute() {
                 bool validLeft  = a.is<std::string>() && b.is<int>();
                 bool validRight = b.is<std::string>() && a.is<int>();
                 if (!validLeft && !validRight) {
-                    runtimeError("A string can only be multiplied by an integer.");
+                    runtimeError(ErrorType::Type, "unsupported operand types for *: '" +
+                                                      typeName(a) + "' and '" + typeName(b) + "'");
                 }
                 std::string base = a.is<std::string>() ? a.as<std::string>() : b.as<std::string>();
                 int count        = a.is<int>() ? a.as<int>() : b.as<int>();
@@ -217,7 +237,8 @@ void VM::execute() {
                 bool validLeft  = a.is<ArrayPtr>() && b.is<int>();
                 bool validRight = b.is<ArrayPtr>() && a.is<int>();
                 if (!validLeft && !validRight) {
-                    runtimeError("An array can only be multiplied by an integer.");
+                    runtimeError(ErrorType::Type, "unsupported operand types for *: '" +
+                                                      typeName(a) + "' and '" + typeName(b) + "'");
                 }
                 auto base = a.is<ArrayPtr>() ? a.as<ArrayPtr>() : b.as<ArrayPtr>();
                 int count = a.is<int>() ? a.as<int>() : b.as<int>();
@@ -229,14 +250,17 @@ void VM::execute() {
                     }
                 }
                 push(RuntimeValue{res});
-            } else if (a.is<double>() || b.is<double>()) {
-                double valA = a.is<double>() ? a.as<double>() : a.as<int>();
-                double valB = b.is<double>() ? b.as<double>() : b.as<int>();
-                push(RuntimeValue{valA * valB});
-            } else if (a.is<int>() && b.is<int>()) {
-                push(RuntimeValue{a.as<int>() * b.as<int>()});
+            } else if ((a.is<double>() || a.is<int>()) && (b.is<double>() || b.is<int>())) {
+                if (a.is<double>() || b.is<double>()) {
+                    double valA = a.is<double>() ? a.as<double>() : a.as<int>();
+                    double valB = b.is<double>() ? b.as<double>() : b.as<int>();
+                    push(RuntimeValue{valA * valB});
+                } else {
+                    push(RuntimeValue{a.as<int>() * b.as<int>()});
+                }
             } else {
-                runtimeError("Operands must be numbers.");
+                runtimeError(ErrorType::Type, "unsupported operand types for *: '" + typeName(a) +
+                                                  "' and '" + typeName(b) + "'");
             }
             break;
         }
@@ -244,12 +268,17 @@ void VM::execute() {
         case OP_DIVIDE: {
             RuntimeValue b = pop();
             RuntimeValue a = pop();
-            double valA    = a.is<double>() ? a.as<double>() : a.as<int>();
-            double valB    = b.is<double>() ? b.as<double>() : b.as<int>();
-            if (valB == 0.0) {
-                runtimeError("Division by zero.");
+            if ((a.is<double>() || a.is<int>()) && (b.is<double>() || b.is<int>())) {
+                double valA = a.is<double>() ? a.as<double>() : a.as<int>();
+                double valB = b.is<double>() ? b.as<double>() : b.as<int>();
+                if (valB == 0.0) {
+                    runtimeError(ErrorType::Type, "Division by zero.");
+                }
+                push(RuntimeValue{valA / valB});
+            } else {
+                runtimeError(ErrorType::Type, "unsupported operand types for /: '" + typeName(a) +
+                                                  "' and '" + typeName(b) + "'");
             }
-            push(RuntimeValue{valA / valB});
             break;
         }
 
@@ -261,19 +290,20 @@ void VM::execute() {
                     int valA = a.as<int>();
                     int valB = b.as<int>();
                     if (valB == 0) {
-                        runtimeError("Modulo by zero.");
+                        runtimeError(ErrorType::Type, "Modulo by zero.");
                     }
                     push(RuntimeValue{valA % valB});
                 } else {
                     double valA = a.is<double>() ? a.as<double>() : a.as<int>();
                     double valB = b.is<double>() ? b.as<double>() : b.as<int>();
                     if (valB == 0.0) {
-                        runtimeError("Modulo by zero.");
+                        runtimeError(ErrorType::Type, "Modulo by zero.");
                     }
                     push(RuntimeValue{std::fmod(valA, valB)});
                 }
             } else {
-                runtimeError("Operands must be numbers.");
+                runtimeError(ErrorType::Type, "unsupported operand types for %: '" + typeName(a) +
+                                                  "' and '" + typeName(b) + "'");
             }
             break;
         }
@@ -285,7 +315,8 @@ void VM::execute() {
             } else if (a.is<int>()) {
                 push(RuntimeValue{-a.as<int>()});
             } else {
-                runtimeError("Operand must be a number.");
+                runtimeError(ErrorType::Type,
+                             "unsupported operand type for unary -: '" + typeName(a) + "'");
             }
             break;
         }
@@ -317,7 +348,8 @@ void VM::execute() {
                 double valB = b.is<double>() ? b.as<double>() : b.as<int>();
                 push(RuntimeValue{valA > valB});
             } else {
-                runtimeError("Operands must be numbers.");
+                runtimeError(ErrorType::Type, "unsupported operand types for >: '" + typeName(a) +
+                                                  "' and '" + typeName(b) + "'");
             }
             break;
         }
@@ -330,7 +362,8 @@ void VM::execute() {
                 double valB = b.is<double>() ? b.as<double>() : b.as<int>();
                 push(RuntimeValue{valA >= valB});
             } else {
-                runtimeError("Operands must be numbers.");
+                runtimeError(ErrorType::Type, "unsupported operand types for >=: '" + typeName(a) +
+                                                  "' and '" + typeName(b) + "'");
             }
             break;
         }
@@ -343,7 +376,8 @@ void VM::execute() {
                 double valB = b.is<double>() ? b.as<double>() : b.as<int>();
                 push(RuntimeValue{valA < valB});
             } else {
-                runtimeError("Operands must be numbers.");
+                runtimeError(ErrorType::Type, "unsupported operand types for <: '" + typeName(a) +
+                                                  "' and '" + typeName(b) + "'");
             }
             break;
         }
@@ -356,7 +390,8 @@ void VM::execute() {
                 double valB = b.is<double>() ? b.as<double>() : b.as<int>();
                 push(RuntimeValue{valA <= valB});
             } else {
-                runtimeError("Operands must be numbers.");
+                runtimeError(ErrorType::Type, "unsupported operand types for <=: '" + typeName(a) +
+                                                  "' and '" + typeName(b) + "'");
             }
             break;
         }
@@ -377,19 +412,21 @@ void VM::execute() {
             } else if (coll.is<std::shared_ptr<Dictionary>>()) {
                 auto dict = coll.as<std::shared_ptr<Dictionary>>();
                 if (!isValidDictKey(item)) {
-                    runtimeError("Dictionary keys must be strings, integers, or booleans.");
+                    runtimeError(ErrorType::Type,
+                                 "Dictionary keys must be strings, integers, or booleans.");
                 }
                 DictKey key = toDictKey(item);
                 push(RuntimeValue{dict->entries.count(key) > 0});
             } else if (coll.is<std::string>()) {
                 if (!item.is<std::string>()) {
-                    runtimeError("Can only search for substrings inside strings.");
+                    runtimeError(ErrorType::Type, "Can only search for substrings inside strings.");
                 }
                 std::string s   = coll.as<std::string>();
                 std::string sub = item.as<std::string>();
                 push(RuntimeValue{s.find(sub) != std::string::npos});
             } else {
                 runtimeError(
+                    ErrorType::Type,
                     "'IN' operator requires right hand side to be an array or dictionary.");
             }
             break;
@@ -413,17 +450,17 @@ void VM::execute() {
             bool found = false;
             if (frame->closure) {
                 try {
-                    val   = frame->closure->get(Token{TOK_IDENTIFIER, name, 0, 0, 0});
+                    val   = frame->closure->get(Token{TOK_IDENTIFIER, name, {0, 0, 0}});
                     found = true;
                 } catch (...) {
                 }
             }
             if (!found) {
                 try {
-                    val   = globals->get(Token{TOK_IDENTIFIER, name, 0, 0, 0});
+                    val   = globals->get(Token{TOK_IDENTIFIER, name, {0, 0, 0}});
                     found = true;
                 } catch (...) {
-                    runtimeError("Undefined variable '" + name + "'.");
+                    runtimeError(ErrorType::Name, "Undefined variable '" + name + "'.");
                 }
             }
             push(val);
@@ -436,7 +473,7 @@ void VM::execute() {
             bool assigned    = false;
             if (frame->closure) {
                 try {
-                    frame->closure->get(Token{TOK_IDENTIFIER, name, 0, 0, 0});
+                    frame->closure->get(Token{TOK_IDENTIFIER, name, {0, 0, 0}});
                     frame->closure->define(name, val);
                     assigned = true;
                 } catch (...) {
@@ -485,8 +522,8 @@ void VM::execute() {
                     // Special property: super
                     if (name == "super") {
                         if (!lookupClass->getSuperclass()) {
-                            runtimeError("Class '" + lookupClass->toString() +
-                                         "' has no superclass.");
+                            runtimeError(ErrorType::Name, "Class '" + lookupClass->toString() +
+                                                              "' has no superclass.");
                         }
                         auto superMethod = std::make_shared<NativeFunction>(
                             0,
@@ -508,7 +545,7 @@ void VM::execute() {
                     }
                 }
 
-                runtimeError("Undefined property '" + name + "'.");
+                runtimeError(ErrorType::Name, "Undefined property '" + name + "'.");
             } else if (object.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
                 auto arr = object.as<std::shared_ptr<std::vector<RuntimeValue>>>();
                 if (name == "append") {
@@ -522,8 +559,7 @@ void VM::execute() {
                     auto sliceMethod = std::make_shared<NativeFunction>(
                         2, [arr](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
                             if (!args[0].is<int>() || !args[1].is<int>()) {
-                                throw RuntimeError(Token{TOK_IDENTIFIER, "slice", 0, 0, 0},
-                                                   "Slice indices must be integers.");
+                                throw TypeError({0, 0, 0}, "Slice indices must be integers.");
                             }
                             int start = args[0].as<int>();
                             int end   = args[1].as<int>();
@@ -544,7 +580,7 @@ void VM::execute() {
                 } else if (name == "length") {
                     push(RuntimeValue{static_cast<int>(arr->size())});
                 } else {
-                    runtimeError("Unknown array property '" + name + "'.");
+                    runtimeError(ErrorType::Name, "Unknown array property '" + name + "'.");
                 }
             } else if (object.is<std::shared_ptr<Dictionary>>()) {
                 auto dict = object.as<std::shared_ptr<Dictionary>>();
@@ -575,13 +611,13 @@ void VM::execute() {
                         VARIADIC_ARITY,
                         [dict](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
                             if (args.size() < 1 || args.size() > 2) {
-                                throw RuntimeError(Token{TOK_IDENTIFIER, "get", 0, 0, 0},
-                                                   "Expected 1 or 2 arguments but got " +
-                                                       std::to_string(args.size()) + ".");
+                                throw ArgumentError({0, 0, 0},
+                                                    "Expected 1 or 2 arguments but got " +
+                                                        std::to_string(args.size()) + ".");
                             }
                             if (!isValidDictKey(args[0])) {
-                                throw RuntimeError(
-                                    Token{TOK_IDENTIFIER, "get", 0, 0, 0},
+                                throw TypeError(
+                                    {0, 0, 0},
                                     "Dictionary keys must be strings, integers, or booleans.");
                             }
                             DictKey key = toDictKey(args[0]);
@@ -601,8 +637,8 @@ void VM::execute() {
                     auto removeMethod = std::make_shared<NativeFunction>(
                         1, [dict](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
                             if (!isValidDictKey(args[0])) {
-                                throw RuntimeError(
-                                    Token{TOK_IDENTIFIER, "remove", 0, 0, 0},
+                                throw TypeError(
+                                    {0, 0, 0},
                                     "Dictionary keys must be strings, integers, or booleans.");
                             }
                             DictKey key = toDictKey(args[0]);
@@ -618,7 +654,8 @@ void VM::execute() {
                 } else if (name == "length") {
                     push(RuntimeValue{static_cast<int>(dict->keys.size())});
                 } else {
-                    runtimeError("This is not a valid dictionary property or method.");
+                    runtimeError(ErrorType::Name,
+                                 "This is not a valid dictionary property or method.");
                 }
             } else if (object.is<std::string>()) {
                 std::string s = object.as<std::string>();
@@ -628,8 +665,7 @@ void VM::execute() {
                     auto sliceMethod = std::make_shared<NativeFunction>(
                         2, [s](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
                             if (!args[0].is<int>() || !args[1].is<int>()) {
-                                throw RuntimeError(Token{TOK_IDENTIFIER, "slice", 0, 0, 0},
-                                                   "Slice indices must be integers.");
+                                throw TypeError({0, 0, 0}, "Slice indices must be integers.");
                             }
                             int start = args[0].as<int>();
                             int end   = args[1].as<int>();
@@ -646,10 +682,10 @@ void VM::execute() {
                         });
                     push(RuntimeValue{std::static_pointer_cast<Callable>(sliceMethod)});
                 } else {
-                    runtimeError("Unknown string property '" + name + "'.");
+                    runtimeError(ErrorType::Name, "Unknown string property '" + name + "'.");
                 }
             } else {
-                runtimeError("Only instances have properties.");
+                runtimeError(ErrorType::Type, "Only instances have properties.");
             }
             break;
         }
@@ -659,9 +695,10 @@ void VM::execute() {
             RuntimeValue val    = pop();
             RuntimeValue object = pop();
             if (!object.is<std::shared_ptr<Instance>>()) {
-                runtimeError("Only instances have fields.");
+                runtimeError(ErrorType::Type, "Only instances have fields.");
             }
-            object.as<std::shared_ptr<Instance>>()->set(Token{TOK_IDENTIFIER, name, 0, 0, 0}, val);
+            object.as<std::shared_ptr<Instance>>()->set(Token{TOK_IDENTIFIER, name, {0, 0, 0}},
+                                                        val);
             push(val);
             break;
         }
@@ -672,36 +709,37 @@ void VM::execute() {
 
             if (container.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
                 if (!idxVal.is<int>()) {
-                    runtimeError("Array index must be an integer.");
+                    runtimeError(ErrorType::Type, "Array index must be an integer.");
                 }
                 auto arr = container.as<std::shared_ptr<std::vector<RuntimeValue>>>();
                 int idx  = idxVal.as<int>();
                 if (idx < 0 || idx >= static_cast<int>(arr->size())) {
-                    runtimeError("Array index out of bounds.");
+                    runtimeError(ErrorType::Index, "Array index out of bounds.");
                 }
                 push((*arr)[idx]);
             } else if (container.is<std::shared_ptr<Dictionary>>()) {
                 auto dict = container.as<std::shared_ptr<Dictionary>>();
                 if (!isValidDictKey(idxVal)) {
-                    runtimeError("Dictionary keys must be strings, integers, or booleans.");
+                    runtimeError(ErrorType::Type,
+                                 "Dictionary keys must be strings, integers, or booleans.");
                 }
                 DictKey key = toDictKey(idxVal);
                 if (dict->entries.count(key) == 0) {
-                    runtimeError("Dictionary key not found.");
+                    runtimeError(ErrorType::Name, "Dictionary key not found.");
                 }
                 push(dict->entries.at(key));
             } else if (container.is<std::string>()) {
                 if (!idxVal.is<int>()) {
-                    runtimeError("String index must be an integer.");
+                    runtimeError(ErrorType::Type, "String index must be an integer.");
                 }
                 std::string s = container.as<std::string>();
                 int idx       = idxVal.as<int>();
                 if (idx < 0 || idx >= static_cast<int>(s.length())) {
-                    runtimeError("String index out of bounds.");
+                    runtimeError(ErrorType::Index, "String index out of bounds.");
                 }
                 push(RuntimeValue{std::string(1, s[idx])});
             } else {
-                runtimeError("Can only index arrays, strings, or dictionaries.");
+                runtimeError(ErrorType::Type, "Can only index arrays, strings, or dictionaries.");
             }
             break;
         }
@@ -713,22 +751,23 @@ void VM::execute() {
 
             if (container.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
                 if (!idxVal.is<int>()) {
-                    runtimeError("Array index must be an integer.");
+                    runtimeError(ErrorType::Type, "Array index must be an integer.");
                 }
                 auto arr = container.as<std::shared_ptr<std::vector<RuntimeValue>>>();
                 int idx  = idxVal.as<int>();
                 if (idx < 0 || idx >= static_cast<int>(arr->size())) {
-                    runtimeError("Array index out of bounds.");
+                    runtimeError(ErrorType::Index, "Array index out of bounds.");
                 }
                 (*arr)[idx] = val;
             } else if (container.is<std::shared_ptr<Dictionary>>()) {
                 auto dict = container.as<std::shared_ptr<Dictionary>>();
                 if (!isValidDictKey(idxVal)) {
-                    runtimeError("Dictionary keys must be strings, integers, or booleans.");
+                    runtimeError(ErrorType::Type,
+                                 "Dictionary keys must be strings, integers, or booleans.");
                 }
                 setDictEntry(*dict, idxVal, val);
             } else {
-                runtimeError("Can only assign index to arrays or dictionaries.");
+                runtimeError(ErrorType::Type, "Can only assign index to arrays or dictionaries.");
             }
             push(val);
             break;
@@ -757,7 +796,8 @@ void VM::execute() {
             }
             for (const auto &p : temp) {
                 if (!isValidDictKey(p.first)) {
-                    runtimeError("Dictionary keys must be strings, integers, or booleans.");
+                    runtimeError(ErrorType::Type,
+                                 "Dictionary keys must be strings, integers, or booleans.");
                 }
                 setDictEntry(*dict, p.first, p.second);
             }
@@ -771,21 +811,22 @@ void VM::execute() {
 
             RuntimeValue classVal;
             try {
-                classVal = globals->get(Token{TOK_IDENTIFIER, className, 0, 0, 0});
+                classVal = globals->get(Token{TOK_IDENTIFIER, className, {0, 0, 0}});
             } catch (...) {
-                runtimeError("Undefined class '" + className + "'.");
+                runtimeError(ErrorType::Name, "Undefined class '" + className + "'.");
             }
 
             if (!classVal.is<std::shared_ptr<Callable>>()) {
-                runtimeError("Can only instantiate classes.");
+                runtimeError(ErrorType::Type, "Can only instantiate classes.");
             }
 
             auto klass = classVal.as<std::shared_ptr<Callable>>();
 
             // Validate constructor arity
             if (klass->arity() != VARIADIC_ARITY && klass->arity() != argCount) {
-                runtimeError("Expected " + std::to_string(klass->arity()) + " arguments but got " +
-                             std::to_string(argCount) + ".");
+                runtimeError(ErrorType::Argument, "Expected " + std::to_string(klass->arity()) +
+                                                      " arguments but got " +
+                                                      std::to_string(argCount) + ".");
             }
 
             std::vector<RuntimeValue> args(argCount);
@@ -802,15 +843,16 @@ void VM::execute() {
             RuntimeValue callee = peek(argCount);
 
             if (!callee.is<std::shared_ptr<Callable>>()) {
-                runtimeError("Can only call functions and classes.");
+                runtimeError(ErrorType::Type, "Can only call functions and classes.");
             }
 
             std::shared_ptr<Callable> callable = callee.as<std::shared_ptr<Callable>>();
 
             // Validate arity
             if (callable->arity() != VARIADIC_ARITY && callable->arity() != argCount) {
-                runtimeError("Expected " + std::to_string(callable->arity()) +
-                             " arguments but got " + std::to_string(argCount) + ".");
+                runtimeError(ErrorType::Argument, "Expected " + std::to_string(callable->arity()) +
+                                                      " arguments but got " +
+                                                      std::to_string(argCount) + ".");
             }
 
             // Check if it's a UserFunction (bytecode function)
@@ -818,7 +860,7 @@ void VM::execute() {
             if (userFunc) {
                 auto compiled = userFunc->getCompiledFunction();
                 if (frameCount >= FRAMES_MAX) {
-                    runtimeError("Stack overflow (too many call frames).");
+                    runtimeError(ErrorType::VM, "Stack overflow (too many call frames).");
                 }
 
                 CallFrame nextFrame;
@@ -898,7 +940,7 @@ void VM::execute() {
             RuntimeValue loopVarVal = stack[frame->slotsBase + slot];
 
             if (!loopVarVal.is<int>() || !limitVal.is<int>()) {
-                runtimeError("Start and end values in FOR loop must be integers.");
+                runtimeError(ErrorType::Type, "Start and end values in FOR loop must be integers.");
             }
 
             int loopVar = loopVarVal.as<int>();
@@ -949,7 +991,8 @@ void VM::execute() {
                     flatArray->push_back(RuntimeValue{std::string(1, c)});
                 }
             } else {
-                runtimeError("Can only iterate over arrays, strings, or dictionaries.");
+                runtimeError(ErrorType::Type,
+                             "Can only iterate over arrays, strings, or dictionaries.");
             }
 
             stack[frame->slotsBase + slot + 1] = RuntimeValue{flatArray};
@@ -996,12 +1039,12 @@ void VM::execute() {
             RuntimeValue subclassVal   = peek(0);
 
             if (!superclassVal.is<std::shared_ptr<Callable>>()) {
-                runtimeError("Superclass must be a class.");
+                runtimeError(ErrorType::Type, "Superclass must be a class.");
             }
             auto superclass =
                 std::dynamic_pointer_cast<UserClass>(superclassVal.as<std::shared_ptr<Callable>>());
             if (!superclass) {
-                runtimeError("Superclass must be a user-defined class.");
+                runtimeError(ErrorType::Type, "Superclass must be a user-defined class.");
             }
             auto subclass =
                 std::dynamic_pointer_cast<UserClass>(subclassVal.as<std::shared_ptr<Callable>>());
@@ -1010,7 +1053,7 @@ void VM::execute() {
             std::shared_ptr<UserClass> tracer = superclass;
             while (tracer != nullptr) {
                 if (tracer->getName() == subclass->getName()) {
-                    runtimeError("Cycle detected in inheritance chain.");
+                    runtimeError(ErrorType::Type, "Cycle detected in inheritance chain.");
                 }
                 tracer = tracer->getSuperclass();
             }
@@ -1045,7 +1088,8 @@ void VM::execute() {
         }
 
         default:
-            runtimeError("Unknown instruction opcode: " + std::to_string(instruction));
+            runtimeError(ErrorType::VM,
+                         "Unknown instruction opcode: " + std::to_string(instruction));
         }
     }
 

@@ -37,7 +37,7 @@ private:
 
     bool isTruthy(const RuntimeValue &value) const;
     bool isEqual(const RuntimeValue &a, const RuntimeValue &b) const;
-    void runtimeError(const std::string &message);
+    void runtimeError(ErrorType type, const std::string &message);
 
     void execute();
 
