@@ -88,6 +88,7 @@ public:
     RuntimeValue visitGetExpr(GetExpr *expr) override;
     RuntimeValue visitArrayAccessExpr(ArrayAccessExpr *expr) override;
     RuntimeValue visitArrayLitExpr(ArrayLitExpr *expr) override;
+    RuntimeValue visitDictLitExpr(DictLitExpr *expr) override;
     RuntimeValue visitNewExpr(NewExpr *expr) override;
 
     // --- StmtVisitor Implementation ---

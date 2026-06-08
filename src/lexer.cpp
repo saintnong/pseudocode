@@ -277,6 +277,12 @@ void Lexer::scanToken() {
     case ')':
         addToken(TOK_RPAREN);
         break;
+    case '{':
+        addToken(TOK_LBRACE);
+        break;
+    case '}':
+        addToken(TOK_RBRACE);
+        break;
     case '[':
         addToken(TOK_LBRACKET);
         break;

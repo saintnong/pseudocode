@@ -1,0 +1,3 @@
+my_dict = {"a": 1}
+PRINT(my_dict.badproperty)
+# EXPECT ERROR: This is not a valid dictionary property or method.

@@ -4,12 +4,14 @@
 #include <map>
 #include <memory>
 #include <stdexcept>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 
 // --- Forward Declarations ---
 struct Callable;
 struct Instance;
+struct Dictionary;
 class Interpreter;
 
 /**
@@ -32,6 +34,7 @@ using Value = std::variant<Null,                                              //
                            bool,                                              // boolean
                            std::string,                                       // string
                            std::shared_ptr<std::vector<struct RuntimeValue>>, // Array (shared)
+                           std::shared_ptr<Dictionary>,                       // Dictionary (shared)
                            std::shared_ptr<Callable>,                         // Function/Class
                            std::shared_ptr<Instance>                          // Object Instance
                            >;
@@ -71,6 +74,41 @@ struct RuntimeValue {
         return std::get<T>(value);
     }
 };
+
+using DictKey = std::variant<int, bool, std::string>;
+
+inline DictKey toDictKey(const RuntimeValue &val) {
+    if (val.is<int>())
+        return val.as<int>();
+    if (val.is<bool>())
+        return val.as<bool>();
+    if (val.is<std::string>())
+        return val.as<std::string>();
+    throw std::logic_error("Internal error: invalid dictionary key type in toDictKey");
+}
+
+inline RuntimeValue fromDictKey(const DictKey &key) {
+    RuntimeValue rv;
+    if (std::holds_alternative<int>(key)) {
+        rv.value = std::get<int>(key);
+    } else if (std::holds_alternative<bool>(key)) {
+        rv.value = std::get<bool>(key);
+    } else {
+        rv.value = std::get<std::string>(key);
+    }
+    return rv;
+}
+
+/**
+ * Dictionary Type
+ * An ordered collection of key-value pairs. Keys must be strings, integers, or booleans.
+ */
+struct Dictionary {
+    std::vector<DictKey> keys;
+    std::unordered_map<DictKey, RuntimeValue> entries;
+};
+
+using DictPtr = std::shared_ptr<Dictionary>;
 
 // --- Execution Exceptions ---
 
@@ -273,6 +311,22 @@ inline std::string stringify(const RuntimeValue &v) {
                 result += ", ";
         }
         result += "]";
+        return result;
+    }
+
+    // Handle Dictionaries (Recursive)
+    if (v.is<std::shared_ptr<Dictionary>>()) {
+        auto dict          = v.as<std::shared_ptr<Dictionary>>();
+        std::string result = "{";
+        for (size_t i = 0; i < dict->keys.size(); ++i) {
+            DictKey k = dict->keys[i];
+            result += stringify(fromDictKey(k));
+            result += ": ";
+            result += stringify(dict->entries.at(k));
+            if (i < dict->keys.size() - 1)
+                result += ", ";
+        }
+        result += "}";
         return result;
     }
 

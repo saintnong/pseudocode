@@ -66,6 +66,8 @@ enum TokenKind {
     // Parentheses
     TOK_LPAREN,   // (
     TOK_RPAREN,   // )
+    TOK_LBRACE,   // {
+    TOK_RBRACE,   // }
     TOK_LBRACKET, // [
     TOK_RBRACKET  // ]
 };
@@ -192,6 +194,10 @@ struct Token {
             return "LPAREN";
         case TOK_RPAREN:
             return "RPAREN";
+        case TOK_LBRACE:
+            return "LBRACE";
+        case TOK_RBRACE:
+            return "RBRACE";
         case TOK_LBRACKET:
             return "LBRACKET";
         case TOK_RBRACKET:

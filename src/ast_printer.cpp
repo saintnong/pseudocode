@@ -393,6 +393,30 @@ RuntimeValue ASTPrinter::visitArrayLitExpr(ArrayLitExpr *expr) {
 }
 
 /**
+ * Visit a Dictionary Literal
+ * Prints the dictionary definition and recursively prints all key-value pairs.
+ * @param expr Pointer to the dictionary literal expression node
+ */
+RuntimeValue ASTPrinter::visitDictLitExpr(DictLitExpr *expr) {
+    std::cout << indent << "Dictionary Literal {}" << std::endl;
+    IndentScope scope(*this);
+    for (const auto &entry : expr->entries) {
+        std::cout << indent << "Key:" << std::endl;
+        {
+            IndentScope keyScope(*this);
+            accept(entry.key.get());
+        }
+        std::cout << indent << "Value:" << std::endl;
+        {
+            IndentScope valScope(*this);
+            accept(entry.value.get());
+        }
+    }
+
+    return {Null{}};
+}
+
+/**
  * Visit a New Instance Expression
  * Prints the class instantiation and the constructor arguments.
  * @param expr Pointer to the new expression node

@@ -1,0 +1,5 @@
+var1 = 12345
+var2 = 8
+lookup = {"a": 1}
+PRINT(var2 IN var1)
+# EXPECT ERROR: 'IN' operator requires right hand side to be an array or dictionary.

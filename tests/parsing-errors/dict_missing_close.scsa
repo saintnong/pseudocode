@@ -1,0 +1,3 @@
+my_dict = {"a": 1, "b": 2
+PRINT(my_dict)
+# EXPECT ERROR: Expected '}' after dictionary entries.

@@ -1,0 +1,10 @@
+# Reference equality for dictionaries
+a = {"x": 1}
+b = a
+PRINT(a == b)
+# EXPECT: true
+
+# Different dictionaries with same entries should not be equal
+c = {"x": 1}
+PRINT(a == c)
+# EXPECT: false

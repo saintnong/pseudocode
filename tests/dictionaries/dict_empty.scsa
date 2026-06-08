@@ -1,0 +1,6 @@
+empty = {}
+PRINT(empty)
+# EXPECT: {}
+
+PRINT(empty.length)
+# EXPECT: 0

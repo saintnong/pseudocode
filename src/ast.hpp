@@ -18,6 +18,7 @@ struct CallExpr;
 struct GetExpr;
 struct ArrayAccessExpr;
 struct ArrayLitExpr;
+struct DictLitExpr;
 struct NewExpr;
 
 // Statements
@@ -51,6 +52,7 @@ struct ExprVisitor {
     virtual RuntimeValue visitGetExpr(GetExpr *expr)                 = 0;
     virtual RuntimeValue visitArrayAccessExpr(ArrayAccessExpr *expr) = 0;
     virtual RuntimeValue visitArrayLitExpr(ArrayLitExpr *expr)       = 0;
+    virtual RuntimeValue visitDictLitExpr(DictLitExpr *expr)         = 0;
     virtual RuntimeValue visitNewExpr(NewExpr *expr)                 = 0;
 };
 
@@ -236,6 +238,25 @@ struct ArrayLitExpr : Expr {
     }
     void accept(ExprVisitor &visitor) override {
         visitor.visitArrayLitExpr(this);
+    }
+};
+
+/**
+ * Dictionary Literal Expression
+ * Represents the creation of a new dictionary with inline key-value pairs (e.g., {a: 1, b: 2}).
+ */
+struct DictEntry {
+    ExprPtr key;
+    ExprPtr value;
+};
+
+struct DictLitExpr : Expr {
+    Token anchor;
+    std::vector<DictEntry> entries;
+    DictLitExpr(Token a, std::vector<DictEntry> e) : anchor(a), entries(std::move(e)) {
+    }
+    void accept(ExprVisitor &visitor) override {
+        visitor.visitDictLitExpr(this);
     }
 };
 

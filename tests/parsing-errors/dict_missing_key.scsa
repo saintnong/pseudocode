@@ -1,0 +1,3 @@
+my_dict = {: 1}
+PRINT(my_dict)
+# EXPECT ERROR: Expected expression.

@@ -79,6 +79,9 @@ ExprPtr Parser::parseExpression(Precedence precedence) {
     case TOK_LBRACKET:
         left = arrayLiteral();
         break;
+    case TOK_LBRACE:
+        left = dictLiteral();
+        break;
     case TOK_NEW:
         left = newObject();
         break;
@@ -217,6 +220,25 @@ ExprPtr Parser::arrayLiteral() {
     }
     consume(TOK_RBRACKET, "Expected ']' after array elements.");
     return std::make_unique<ArrayLitExpr>(anchor, std::move(elements));
+}
+
+/**
+ * Prefix: dictLiteral
+ * Parses dictionary literal syntax: {key: value, key2: value2, ...}
+ */
+ExprPtr Parser::dictLiteral() {
+    Token anchor = previous();
+    std::vector<DictEntry> entries;
+    if (!check(TOK_RBRACE)) {
+        do {
+            ExprPtr key = parseExpression(PREC_NONE);
+            consume(TOK_COLON, "Expected ':' after dictionary key.");
+            ExprPtr value = parseExpression(PREC_NONE);
+            entries.push_back({std::move(key), std::move(value)});
+        } while (match(TOK_COMMA));
+    }
+    consume(TOK_RBRACE, "Expected '}' after dictionary entries.");
+    return std::make_unique<DictLitExpr>(anchor, std::move(entries));
 }
 
 /**

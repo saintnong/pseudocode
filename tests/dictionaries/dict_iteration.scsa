@@ -1,0 +1,9 @@
+counts = {"apple": 3, "banana": 5, "cherry": 2}
+
+total = 0
+FOR key IN counts
+    total = total + counts[key]
+END FOR
+
+PRINT(total)
+# EXPECT: 10

@@ -1,0 +1,23 @@
+data = {"a": 1, "b": 2, "c": 3}
+
+# Test length property
+PRINT(data.length)
+# EXPECT: 3
+
+# Test keys method
+keys = data.keys()
+PRINT(keys)
+# EXPECT: [a, b, c]
+
+# Test values method
+vals = data.values()
+PRINT(vals)
+# EXPECT: [1, 2, 3]
+
+# Test get with existing key
+PRINT(data.get("b"))
+# EXPECT: 2
+
+# Test get with missing key and default
+PRINT(data.get("missing", 99))
+# EXPECT: 99
