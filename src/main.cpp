@@ -69,8 +69,7 @@ int Pseudocode::runFile(const std::string &path) {
         std::string source = readFile(path);
 
         // === Lexing ===
-        InterpreterStage stage = InterpreterStage::Lexing;
-        ErrorReporter reporter(stage, path, source);
+        ErrorReporter reporter(path, source);
         Lexer lexer(source, reporter);
 
         std::vector<Token> tokens = lexer.scanTokens();
@@ -81,7 +80,6 @@ int Pseudocode::runFile(const std::string &path) {
             return 1;
 
         // === Parsing ===
-        stage = InterpreterStage::Parsing;
         Parser parser(tokens, reporter);
         std::vector<StmtPtr> statements = parser.parse();
 
@@ -94,7 +92,6 @@ int Pseudocode::runFile(const std::string &path) {
             return 1;
 
         // === Execution ===
-        stage = InterpreterStage::Runtime;
         Interpreter interpreter(reporter);
         interpreter.interpret(statements);
     } catch (const std::runtime_error &) {
@@ -111,7 +108,6 @@ int Pseudocode::runFile(const std::string &path) {
  * Supports multi-line input for functions, classes, and control structures.
  */
 int Pseudocode::runRepl() {
-    InterpreterStage stage = InterpreterStage::Lexing;
     std::cout << C_CYAN << "  +-----------------------------------------------+" << C_RESET
               << std::endl;
     std::cout << C_CYAN << "  | " << C_RESET << "SCSA Pseudocode Interpreter [" << C_BLUE
@@ -123,7 +119,7 @@ int Pseudocode::runRepl() {
     std::cout << "  ~ Type 'exit' or use Ctrl+D to quit" << std::endl << std::endl;
 
     // Persist interpreter and reporter to maintain state between lines
-    ErrorReporter reporter(stage, "", "");
+    ErrorReporter reporter("", "");
     reporter.setReplMode(true);
     Interpreter interpreter(reporter);
 
@@ -176,7 +172,6 @@ int Pseudocode::runRepl() {
 
         try {
             // === Lexing ===
-            stage = InterpreterStage::Lexing;
             Lexer lexer(buffer, reporter, startingLine);
             std::vector<Token> tokens = lexer.scanTokens();
             if (debugTokens)
@@ -188,7 +183,6 @@ int Pseudocode::runRepl() {
             }
 
             // === Parsing ===
-            stage = InterpreterStage::Parsing;
             Parser parser(tokens, reporter);
             std::vector<StmtPtr> parsed = parser.parse();
 
@@ -203,7 +197,6 @@ int Pseudocode::runRepl() {
             }
 
             // === Execution ===
-            stage = InterpreterStage::Runtime;
 
             // Special Case: Standalone Expression Evaluation
             if (parsed.size() == 1) {

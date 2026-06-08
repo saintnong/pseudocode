@@ -6,9 +6,6 @@
 
 #include "token.hpp"
 
-// Forward declaration to break circular dependency
-enum InterpreterStage { Lexing, Parsing, Runtime };
-
 // Every type of error we'll need
 enum class ErrorType {
     Syntax,   // Syntax errors (invalid token sequences)
@@ -125,8 +122,6 @@ void printAtarMessage();
  */
 class ErrorReporter {
 private:
-    // Reference to current interpreter stage
-    InterpreterStage &stage;
     // Current source file being processed
     std::string filename;
     // Source code split by lines
@@ -152,13 +147,11 @@ private:
 
 public:
     /**
-     * Construct error reporter with reference to current stage, filename, and source code
-     * @param stageRef Reference to the interpreter stage
+     * Construct error reporter with filename and source code for context generation
      * @param file The source filename for error context
      * @param source The full source code for context generation
      */
-    ErrorReporter(InterpreterStage &stageRef, const std::string &file = "",
-                  const std::string &source = "");
+    ErrorReporter(const std::string &file = "", const std::string &source = "");
 
     /**
      * Appends new source code lines to the existing source.

@@ -60,15 +60,11 @@ void printAtarMessage() {
 
 /**
  * ErrorReporter Constructor
- * Stores a reference to the current interpreter stage, filename, and source code for error
- * reporting
- * @param stageRef Reference to the current InterpreterStage
+ * Stores filename and source code for error reporting
  * @param file The source filename being processed
  * @param source The full source code for context generation
  */
-ErrorReporter::ErrorReporter(InterpreterStage &stageRef, const std::string &file,
-                             const std::string &source)
-    : stage(stageRef), filename(file) {
+ErrorReporter::ErrorReporter(const std::string &file, const std::string &source) : filename(file) {
     if (source.empty())
         return;
 
