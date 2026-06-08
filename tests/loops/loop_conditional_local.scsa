@@ -1,0 +1,21 @@
+# Test conditional local variables inside a loop
+# This verifies that stack balance is maintained even when a new local
+# is created on a branch that is only conditionally executed during iterations.
+
+FUNCTION test_conditional()
+    results = []
+    is_even = TRUE
+    FOR i = 0 TO 5
+        # Conditionally define 'temp' inside IF
+        IF is_even THEN
+            temp = i * 10
+            results.append(temp)
+        END IF
+        is_even = NOT is_even
+        # 'temp' should be out of scope here, and the stack should be clean
+    END FOR
+    RETURN results
+END test_conditional
+
+PRINT(test_conditional())
+# EXPECT: [0, 20, 40]
