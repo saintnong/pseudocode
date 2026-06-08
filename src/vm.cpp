@@ -450,14 +450,14 @@ void VM::execute() {
             bool found = false;
             if (frame->closure) {
                 try {
-                    val   = frame->closure->get(Token{TOK_IDENTIFIER, name, 0, 0, 0});
+                    val   = frame->closure->get(Token{TOK_IDENTIFIER, name, {0, 0, 0}});
                     found = true;
                 } catch (...) {
                 }
             }
             if (!found) {
                 try {
-                    val   = globals->get(Token{TOK_IDENTIFIER, name, 0, 0, 0});
+                    val   = globals->get(Token{TOK_IDENTIFIER, name, {0, 0, 0}});
                     found = true;
                 } catch (...) {
                     runtimeError(ErrorType::Name, "Undefined variable '" + name + "'.");
@@ -473,7 +473,7 @@ void VM::execute() {
             bool assigned    = false;
             if (frame->closure) {
                 try {
-                    frame->closure->get(Token{TOK_IDENTIFIER, name, 0, 0, 0});
+                    frame->closure->get(Token{TOK_IDENTIFIER, name, {0, 0, 0}});
                     frame->closure->define(name, val);
                     assigned = true;
                 } catch (...) {
@@ -697,7 +697,8 @@ void VM::execute() {
             if (!object.is<std::shared_ptr<Instance>>()) {
                 runtimeError(ErrorType::Type, "Only instances have fields.");
             }
-            object.as<std::shared_ptr<Instance>>()->set(Token{TOK_IDENTIFIER, name, 0, 0, 0}, val);
+            object.as<std::shared_ptr<Instance>>()->set(Token{TOK_IDENTIFIER, name, {0, 0, 0}},
+                                                        val);
             push(val);
             break;
         }
@@ -810,7 +811,7 @@ void VM::execute() {
 
             RuntimeValue classVal;
             try {
-                classVal = globals->get(Token{TOK_IDENTIFIER, className, 0, 0, 0});
+                classVal = globals->get(Token{TOK_IDENTIFIER, className, {0, 0, 0}});
             } catch (...) {
                 runtimeError(ErrorType::Name, "Undefined class '" + className + "'.");
             }
