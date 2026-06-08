@@ -1,9 +1,9 @@
 #pragma once
 
-#include <vector>
-#include <cstdint>
-#include <cstddef>
 #include "runtime.hpp"
+#include <cstddef>
+#include <cstdint>
+#include <vector>
 
 struct Chunk {
     std::vector<uint8_t> code;

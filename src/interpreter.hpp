@@ -21,5 +21,7 @@ public:
     void interpret(const std::vector<StmtPtr> &statements);
     RuntimeValue evaluate(Expr *expr);
 
-    RuntimeValue runFunction(std::shared_ptr<CompiledFunction> compiledFn, const std::vector<RuntimeValue> &args, std::shared_ptr<Environment> closure);
+    RuntimeValue runFunction(std::shared_ptr<CompiledFunction> compiledFn,
+                             const std::vector<RuntimeValue> &args,
+                             std::shared_ptr<Environment> closure);
 };

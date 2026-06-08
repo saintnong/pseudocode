@@ -1,11 +1,11 @@
 #pragma once
 
-#include <vector>
-#include <string>
-#include <memory>
 #include "ast.hpp"
 #include "chunk.hpp"
 #include "errors.hpp"
+#include <memory>
+#include <string>
+#include <vector>
 
 struct Local {
     std::string name;
@@ -17,8 +17,8 @@ class Compiler {
 private:
     ErrorReporter &reporter;
     std::vector<Local> locals;
-    int scopeDepth = 0;
-    int nextLocalSlot = 0;
+    int scopeDepth             = 0;
+    int nextLocalSlot          = 0;
     bool lastAssignWasNewLocal = false;
 
     Compiler *enclosing = nullptr;

@@ -5,10 +5,10 @@
 
 Compiler::Compiler(ErrorReporter &reporter, Compiler *enclosing, std::string fnName)
     : reporter(reporter), enclosing(enclosing) {
-    currentFn = std::make_shared<CompiledFunction>();
+    currentFn        = std::make_shared<CompiledFunction>();
     currentFn->chunk = std::make_shared<Chunk>();
     currentFn->arity = 0;
-    currentFn->name = fnName;
+    currentFn->name  = fnName;
 }
 
 std::shared_ptr<CompiledFunction> Compiler::compile(const std::vector<StmtPtr> &statements) {
@@ -58,7 +58,7 @@ void Compiler::patchJump(size_t offset, size_t line) {
     if (jump > 65535) {
         errorAt(line, "Too much code to jump over.");
     }
-    currentChunk().code[offset] = (jump >> 8) & 0xff;
+    currentChunk().code[offset]     = (jump >> 8) & 0xff;
     currentChunk().code[offset + 1] = jump & 0xff;
 }
 
@@ -90,11 +90,11 @@ int Compiler::addLocal(const std::string &name, size_t line, bool reserveSlot) {
             return locals[i].slot;
         }
     }
-    
+
     Local local;
-    local.name = name;
+    local.name  = name;
     local.depth = scopeDepth;
-    local.slot = nextLocalSlot++;
+    local.slot  = nextLocalSlot++;
     locals.push_back(local);
     if (reserveSlot) {
         emitByte(OP_NULL, line);
@@ -120,7 +120,8 @@ void Compiler::errorAt(size_t line, const std::string &message) {
 // =================================================================================================
 
 void Compiler::compileExpression(Expr *expr) {
-    if (!expr) return;
+    if (!expr)
+        return;
     if (auto *e = dynamic_cast<LiteralExpr *>(expr)) {
         compileLiteralExpr(e);
     } else if (auto *e = dynamic_cast<VariableExpr *>(expr)) {
@@ -173,7 +174,7 @@ void Compiler::compileLiteralExpr(LiteralExpr *expr) {
 
 void Compiler::compileVariableExpr(VariableExpr *expr) {
     std::string name = expr->name.lexeme;
-    size_t line = expr->name.line;
+    size_t line      = expr->name.line;
 
     int slot = resolveLocal(name);
     if (slot != -1) {
@@ -181,7 +182,7 @@ void Compiler::compileVariableExpr(VariableExpr *expr) {
         emitShort(static_cast<uint16_t>(slot), line);
     } else {
         RuntimeValue val;
-        val.value = name;
+        val.value      = name;
         size_t nameIdx = currentChunk().addConstant(val);
         emitByte(OP_GET_GLOBAL, line);
         emitShort(static_cast<uint16_t>(nameIdx), line);
@@ -190,7 +191,7 @@ void Compiler::compileVariableExpr(VariableExpr *expr) {
 
 void Compiler::compileAssignExpr(AssignExpr *expr) {
     size_t line = expr->anchor.line;
-    
+
     if (auto *varExpr = dynamic_cast<VariableExpr *>(expr->target.get())) {
         std::string name = varExpr->name.lexeme;
 
@@ -213,7 +214,7 @@ void Compiler::compileAssignExpr(AssignExpr *expr) {
             emitShort(static_cast<uint16_t>(slot), line);
         } else {
             RuntimeValue val;
-            val.value = name;
+            val.value      = name;
             size_t nameIdx = currentChunk().addConstant(val);
             emitByte(OP_SET_GLOBAL, line);
             emitShort(static_cast<uint16_t>(nameIdx), line);
@@ -223,7 +224,7 @@ void Compiler::compileAssignExpr(AssignExpr *expr) {
         compileExpression(expr->value.get());
 
         RuntimeValue val;
-        val.value = getExpr->name.lexeme;
+        val.value      = getExpr->name.lexeme;
         size_t nameIdx = currentChunk().addConstant(val);
         emitByte(OP_SET_PROPERTY, line);
         emitShort(static_cast<uint16_t>(nameIdx), line);
@@ -259,17 +260,39 @@ void Compiler::compileBinaryExpr(BinaryExpr *expr) {
     compileExpression(expr->right.get());
 
     switch (expr->op.type) {
-    case TOK_PLUS:          emitByte(OP_ADD, line); break;
-    case TOK_MINUS:         emitByte(OP_SUBTRACT, line); break;
-    case TOK_MULTIPLY:      emitByte(OP_MULTIPLY, line); break;
-    case TOK_DIVIDE:        emitByte(OP_DIVIDE, line); break;
-    case TOK_EQUAL:         emitByte(OP_EQUAL, line); break;
-    case TOK_NOT_EQUAL:     emitByte(OP_NOT_EQUAL, line); break;
-    case TOK_GREATER_THAN:  emitByte(OP_GREATER, line); break;
-    case TOK_GT_OR_EQ:      emitByte(OP_GREATER_EQUAL, line); break;
-    case TOK_LESS_THAN:     emitByte(OP_LESS, line); break;
-    case TOK_LT_OR_EQ:      emitByte(OP_LESS_EQUAL, line); break;
-    case TOK_IN:            emitByte(OP_IN, line); break;
+    case TOK_PLUS:
+        emitByte(OP_ADD, line);
+        break;
+    case TOK_MINUS:
+        emitByte(OP_SUBTRACT, line);
+        break;
+    case TOK_MULTIPLY:
+        emitByte(OP_MULTIPLY, line);
+        break;
+    case TOK_DIVIDE:
+        emitByte(OP_DIVIDE, line);
+        break;
+    case TOK_EQUAL:
+        emitByte(OP_EQUAL, line);
+        break;
+    case TOK_NOT_EQUAL:
+        emitByte(OP_NOT_EQUAL, line);
+        break;
+    case TOK_GREATER_THAN:
+        emitByte(OP_GREATER, line);
+        break;
+    case TOK_GT_OR_EQ:
+        emitByte(OP_GREATER_EQUAL, line);
+        break;
+    case TOK_LESS_THAN:
+        emitByte(OP_LESS, line);
+        break;
+    case TOK_LT_OR_EQ:
+        emitByte(OP_LESS_EQUAL, line);
+        break;
+    case TOK_IN:
+        emitByte(OP_IN, line);
+        break;
     default:
         errorAt(line, "Unknown binary operator.");
     }
@@ -280,8 +303,12 @@ void Compiler::compileUnaryExpr(UnaryExpr *expr) {
     compileExpression(expr->right.get());
 
     switch (expr->op.type) {
-    case TOK_MINUS: emitByte(OP_NEGATE, line); break;
-    case TOK_NOT:   emitByte(OP_NOT, line); break;
+    case TOK_MINUS:
+        emitByte(OP_NEGATE, line);
+        break;
+    case TOK_NOT:
+        emitByte(OP_NOT, line);
+        break;
     default:
         errorAt(line, "Unknown unary operator.");
     }
@@ -304,7 +331,7 @@ void Compiler::compileGetExpr(GetExpr *expr) {
     compileExpression(expr->object.get());
 
     RuntimeValue val;
-    val.value = expr->name.lexeme;
+    val.value      = expr->name.lexeme;
     size_t nameIdx = currentChunk().addConstant(val);
     emitByte(OP_GET_PROPERTY, line);
     emitShort(static_cast<uint16_t>(nameIdx), line);
@@ -342,7 +369,7 @@ void Compiler::compileNewExpr(NewExpr *expr) {
         compileExpression(arg.get());
     }
     RuntimeValue val;
-    val.value = expr->className.lexeme;
+    val.value      = expr->className.lexeme;
     size_t nameIdx = currentChunk().addConstant(val);
     emitByte(OP_NEW_INSTANCE, line);
     emitShort(static_cast<uint16_t>(nameIdx), line);
@@ -354,7 +381,8 @@ void Compiler::compileNewExpr(NewExpr *expr) {
 // =================================================================================================
 
 void Compiler::compileStatement(Stmt *stmt) {
-    if (!stmt) return;
+    if (!stmt)
+        return;
     if (auto *s = dynamic_cast<ExpressionStmt *>(stmt)) {
         compileExpressionStmt(s);
     } else if (auto *s = dynamic_cast<ReturnStmt *>(stmt)) {
@@ -454,7 +482,7 @@ void Compiler::compileIfStmt(IfStmt *stmt) {
 }
 
 void Compiler::compileFunctionStmt(FunctionStmt *stmt) {
-    size_t line = stmt->name.line;
+    size_t line      = stmt->name.line;
     std::string name = stmt->name.lexeme;
 
     Compiler subCompiler(reporter, this, name);
@@ -467,11 +495,10 @@ void Compiler::compileFunctionStmt(FunctionStmt *stmt) {
     auto compiled = subCompiler.compile(stmt->body);
 
     RuntimeValue funcVal;
-    funcVal.value = std::static_pointer_cast<Callable>(
-        std::make_shared<UserFunction>(compiled, nullptr)
-    );
+    funcVal.value =
+        std::static_pointer_cast<Callable>(std::make_shared<UserFunction>(compiled, nullptr));
     size_t constIdx = currentChunk().addConstant(funcVal);
-    
+
     if (enclosing != nullptr) {
         emitByte(OP_CLOSURE, line);
         emitShort(static_cast<uint16_t>(constIdx), line);
@@ -479,9 +506,9 @@ void Compiler::compileFunctionStmt(FunctionStmt *stmt) {
     } else {
         emitByte(OP_CLOSURE, line);
         emitShort(static_cast<uint16_t>(constIdx), line);
-        
+
         RuntimeValue nameVal;
-        nameVal.value = name;
+        nameVal.value  = name;
         size_t nameIdx = currentChunk().addConstant(nameVal);
         emitByte(OP_DEFINE_GLOBAL, line);
         emitShort(static_cast<uint16_t>(nameIdx), line);
@@ -489,12 +516,12 @@ void Compiler::compileFunctionStmt(FunctionStmt *stmt) {
 }
 
 void Compiler::compileClassStmt(ClassStmt *stmt) {
-    size_t line = stmt->name.line;
+    size_t line           = stmt->name.line;
     std::string className = stmt->name.lexeme;
 
     RuntimeValue classNameVal;
     classNameVal.value = className;
-    size_t nameIdx = currentChunk().addConstant(classNameVal);
+    size_t nameIdx     = currentChunk().addConstant(classNameVal);
 
     emitByte(OP_CLASS, line);
     emitShort(static_cast<uint16_t>(nameIdx), line);
@@ -509,21 +536,20 @@ void Compiler::compileClassStmt(ClassStmt *stmt) {
         if (auto *assignment = dynamic_cast<AssignExpr *>(attr.get())) {
             if (auto *varExpr = dynamic_cast<VariableExpr *>(assignment->target.get())) {
                 std::string fieldName = varExpr->name.lexeme;
-                
+
                 Compiler subCompiler(reporter, this, className + "::" + fieldName + "_init");
                 auto compiledInit = subCompiler.compileExpressionOnly(assignment->value.get());
 
                 RuntimeValue initVal;
                 initVal.value = std::static_pointer_cast<Callable>(
-                    std::make_shared<UserFunction>(compiledInit, nullptr)
-                );
+                    std::make_shared<UserFunction>(compiledInit, nullptr));
                 size_t initConstIdx = currentChunk().addConstant(initVal);
 
                 emitByte(OP_CLOSURE, line);
                 emitShort(static_cast<uint16_t>(initConstIdx), line);
 
                 RuntimeValue attrNameVal;
-                attrNameVal.value = fieldName;
+                attrNameVal.value  = fieldName;
                 size_t attrNameIdx = currentChunk().addConstant(attrNameVal);
 
                 emitByte(OP_ATTRIBUTE, line);
@@ -547,15 +573,14 @@ void Compiler::compileClassStmt(ClassStmt *stmt) {
 
             RuntimeValue methodVal;
             methodVal.value = std::static_pointer_cast<Callable>(
-                std::make_shared<UserFunction>(compiledMethod, nullptr)
-            );
+                std::make_shared<UserFunction>(compiledMethod, nullptr));
             size_t methodConstIdx = currentChunk().addConstant(methodVal);
 
             emitByte(OP_CLOSURE, line);
             emitShort(static_cast<uint16_t>(methodConstIdx), line);
 
             RuntimeValue methodNameVal;
-            methodNameVal.value = methodName;
+            methodNameVal.value  = methodName;
             size_t methodNameIdx = currentChunk().addConstant(methodNameVal);
 
             emitByte(OP_METHOD, line);
@@ -572,7 +597,7 @@ void Compiler::compileClassStmt(ClassStmt *stmt) {
 }
 
 void Compiler::compileWhileStmt(WhileStmt *stmt) {
-    size_t line = stmt->keyword.line;
+    size_t line      = stmt->keyword.line;
     size_t loopStart = currentChunk().code.size();
 
     compileExpression(stmt->condition.get());
@@ -674,7 +699,7 @@ void Compiler::compileForStmt(ForStmt *stmt) {
         }
     }
 
-    (void)limitSlot;
+    (void) limitSlot;
 }
 
 void Compiler::compileCaseStmt(CaseStmt *stmt) {
@@ -726,7 +751,7 @@ void Compiler::compileCaseStmt(CaseStmt *stmt) {
 }
 
 void Compiler::compileRepeatUntilStmt(RepeatUntilStmt *stmt) {
-    size_t line = stmt->keyword.line;
+    size_t line      = stmt->keyword.line;
     size_t loopStart = currentChunk().code.size();
 
     beginScope();

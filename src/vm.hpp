@@ -1,11 +1,11 @@
 #pragma once
 
-#include <vector>
-#include <array>
-#include <memory>
-#include "runtime.hpp"
 #include "chunk.hpp"
 #include "errors.hpp"
+#include "runtime.hpp"
+#include <array>
+#include <memory>
+#include <vector>
 
 struct CallFrame {
     std::shared_ptr<CompiledFunction> function;
@@ -20,7 +20,7 @@ class VM {
 private:
     Interpreter &interpreter;
     ErrorReporter &reporter;
-    
+
     static constexpr size_t STACK_MAX = 256 * 1024;
     std::array<RuntimeValue, STACK_MAX> stack;
     size_t stackTop = 0;
@@ -45,5 +45,6 @@ private:
 public:
     VM(Interpreter &interpreter, ErrorReporter &reporter, EnvironmentPtr globals);
 
-    RuntimeValue run(std::shared_ptr<CompiledFunction> function, const std::vector<RuntimeValue> &args, EnvironmentPtr closure = nullptr);
+    RuntimeValue run(std::shared_ptr<CompiledFunction> function,
+                     const std::vector<RuntimeValue> &args, EnvironmentPtr closure = nullptr);
 };

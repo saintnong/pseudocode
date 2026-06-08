@@ -1,13 +1,13 @@
 #pragma once
 
 #include "token.hpp"
+#include <functional>
 #include <map>
 #include <memory>
 #include <stdexcept>
 #include <unordered_map>
 #include <variant>
 #include <vector>
-#include <functional>
 
 // --- Forward Declarations ---
 struct Callable;
@@ -304,8 +304,12 @@ public:
     int arity() override;
     RuntimeValue call(Interpreter &interpreter, std::vector<RuntimeValue> arguments) override;
     std::string toString() override;
-    std::shared_ptr<CompiledFunction> getCompiledFunction() const { return compiledFn; }
-    std::shared_ptr<Environment> getClosure() const { return closure; }
+    std::shared_ptr<CompiledFunction> getCompiledFunction() const {
+        return compiledFn;
+    }
+    std::shared_ptr<Environment> getClosure() const {
+        return closure;
+    }
 };
 
 typedef std::function<RuntimeValue(Interpreter &, std::vector<RuntimeValue>)> NativeFn;
@@ -330,7 +334,9 @@ class UserClass : public Callable, public std::enable_shared_from_this<UserClass
 public:
     UserClass(const std::string &n, std::shared_ptr<UserClass> s = nullptr);
     std::shared_ptr<UserClass> getSuperclass() const;
-    void setSuperclass(std::shared_ptr<UserClass> s) { superclass = s; }
+    void setSuperclass(std::shared_ptr<UserClass> s) {
+        superclass = s;
+    }
     std::string getName() const;
     void addMethod(const std::string &methodName, std::shared_ptr<Callable> method);
     void addField(const std::string &fieldName, std::shared_ptr<CompiledFunction> valueFunc);

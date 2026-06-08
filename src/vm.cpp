@@ -1,13 +1,14 @@
 #include "vm.hpp"
-#include "opcodes.hpp"
 #include "interpreter.hpp"
+#include "opcodes.hpp"
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
-#include <cmath>
-#include <algorithm>
 
 VM::VM(Interpreter &interpreter, ErrorReporter &reporter, EnvironmentPtr globals)
-    : interpreter(interpreter), reporter(reporter), globals(globals) {}
+    : interpreter(interpreter), reporter(reporter), globals(globals) {
+}
 
 void VM::push(RuntimeValue value) {
     if (stackTop >= STACK_MAX) {
@@ -31,11 +32,16 @@ RuntimeValue VM::peek(int distance) {
 }
 
 bool VM::isTruthy(const RuntimeValue &value) const {
-    if (value.is<Null>()) return false;
-    if (value.is<bool>()) return value.as<bool>();
-    if (value.is<int>()) return value.as<int>() != 0;
-    if (value.is<double>()) return value.as<double>() != 0.0;
-    if (value.is<std::string>()) return !value.as<std::string>().empty();
+    if (value.is<Null>())
+        return false;
+    if (value.is<bool>())
+        return value.as<bool>();
+    if (value.is<int>())
+        return value.as<int>() != 0;
+    if (value.is<double>())
+        return value.as<double>() != 0.0;
+    if (value.is<std::string>())
+        return !value.as<std::string>().empty();
     return true;
 }
 
@@ -50,13 +56,19 @@ bool VM::isEqual(const RuntimeValue &a, const RuntimeValue &b) const {
         }
         return false;
     }
-    if (a.is<Null>()) return true;
-    if (a.is<int>()) return a.as<int>() == b.as<int>();
-    if (a.is<double>()) return a.as<double>() == b.as<double>();
-    if (a.is<bool>()) return a.as<bool>() == b.as<bool>();
-    if (a.is<std::string>()) return a.as<std::string>() == b.as<std::string>();
+    if (a.is<Null>())
+        return true;
+    if (a.is<int>())
+        return a.as<int>() == b.as<int>();
+    if (a.is<double>())
+        return a.as<double>() == b.as<double>();
+    if (a.is<bool>())
+        return a.as<bool>() == b.as<bool>();
+    if (a.is<std::string>())
+        return a.as<std::string>() == b.as<std::string>();
     if (a.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
-        return a.as<std::shared_ptr<std::vector<RuntimeValue>>>() == b.as<std::shared_ptr<std::vector<RuntimeValue>>>();
+        return a.as<std::shared_ptr<std::vector<RuntimeValue>>>() ==
+               b.as<std::shared_ptr<std::vector<RuntimeValue>>>();
     }
     if (a.is<std::shared_ptr<Dictionary>>()) {
         return a.as<std::shared_ptr<Dictionary>>() == b.as<std::shared_ptr<Dictionary>>();
@@ -74,18 +86,19 @@ void VM::runtimeError(const std::string &message) {
     size_t line = 1;
     if (frameCount > 0) {
         CallFrame *frame = &frames[frameCount - 1];
-        size_t offset = frame->ip - frame->function->chunk->code.data() - 1;
-        line = frame->function->chunk->getLine(offset);
+        size_t offset    = frame->ip - frame->function->chunk->code.data() - 1;
+        line             = frame->function->chunk->getLine(offset);
     }
     // Report syntax error? No, runtime error.
     // SCSA has a RuntimeError exception that main.cpp catches
     throw RuntimeError(Token{TOK_EOF, "", line, 0, 0}, message);
 }
 
-RuntimeValue VM::run(std::shared_ptr<CompiledFunction> function, const std::vector<RuntimeValue> &args, EnvironmentPtr closure) {
+RuntimeValue VM::run(std::shared_ptr<CompiledFunction> function,
+                     const std::vector<RuntimeValue> &args, EnvironmentPtr closure) {
     size_t savedInitialFrameCount = runInitialFrameCount;
-    size_t initialFrameCount = frameCount;
-    runInitialFrameCount = frameCount;
+    size_t initialFrameCount      = frameCount;
+    runInitialFrameCount          = frameCount;
 
     // Push dummy callee for function callframe setup consistency
     push(RuntimeValue{Null{}});
@@ -94,22 +107,22 @@ RuntimeValue VM::run(std::shared_ptr<CompiledFunction> function, const std::vect
     }
 
     CallFrame callFrame;
-    callFrame.function = function;
-    callFrame.ip = function->chunk->code.data();
-    callFrame.slotsBase = stackTop - args.size();
-    callFrame.closure = closure;
+    callFrame.function   = function;
+    callFrame.ip         = function->chunk->code.data();
+    callFrame.slotsBase  = stackTop - args.size();
+    callFrame.closure    = closure;
     frames[frameCount++] = callFrame;
 
     try {
         execute();
     } catch (...) {
         // Reset frame count and stack on exception to prevent VM corruptions
-        frameCount = initialFrameCount;
+        frameCount           = initialFrameCount;
         runInitialFrameCount = savedInitialFrameCount;
         throw;
     }
 
-    frameCount = initialFrameCount;
+    frameCount           = initialFrameCount;
     runInitialFrameCount = savedInitialFrameCount;
     return pop();
 }
@@ -118,7 +131,7 @@ void VM::execute() {
     CallFrame *frame = &frames[frameCount - 1];
 
 #define READ_BYTE() (*frame->ip++)
-#define READ_SHORT() (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
+#define READ_SHORT() (frame->ip += 2, (uint16_t) ((frame->ip[-2] << 8) | frame->ip[-1]))
 #define READ_CONSTANT() (frame->function->chunk->constants[READ_SHORT()])
 
     while (true) {
@@ -128,20 +141,31 @@ void VM::execute() {
             push(READ_CONSTANT());
             break;
         }
-        case OP_NULL:  push(RuntimeValue{Null{}}); break;
-        case OP_TRUE:  push(RuntimeValue{true}); break;
-        case OP_FALSE: push(RuntimeValue{false}); break;
-        case OP_POP:   pop(); break;
-        case OP_DUP:   push(peek(0)); break;
+        case OP_NULL:
+            push(RuntimeValue{Null{}});
+            break;
+        case OP_TRUE:
+            push(RuntimeValue{true});
+            break;
+        case OP_FALSE:
+            push(RuntimeValue{false});
+            break;
+        case OP_POP:
+            pop();
+            break;
+        case OP_DUP:
+            push(peek(0));
+            break;
 
         case OP_ADD: {
             RuntimeValue b = pop();
             RuntimeValue a = pop();
             if (a.is<std::string>() || b.is<std::string>()) {
                 push(RuntimeValue{stringify(a) + stringify(b)});
-            } else if (a.is<std::shared_ptr<std::vector<RuntimeValue>>>() && b.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
-                auto arrA = a.as<std::shared_ptr<std::vector<RuntimeValue>>>();
-                auto arrB = b.as<std::shared_ptr<std::vector<RuntimeValue>>>();
+            } else if (a.is<std::shared_ptr<std::vector<RuntimeValue>>>() &&
+                       b.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
+                auto arrA   = a.as<std::shared_ptr<std::vector<RuntimeValue>>>();
+                auto arrB   = b.as<std::shared_ptr<std::vector<RuntimeValue>>>();
                 auto newArr = std::make_shared<std::vector<RuntimeValue>>();
                 newArr->insert(newArr->end(), arrA->begin(), arrA->end());
                 newArr->insert(newArr->end(), arrB->begin(), arrB->end());
@@ -177,29 +201,31 @@ void VM::execute() {
             RuntimeValue b = pop();
             RuntimeValue a = pop();
             if (a.is<std::string>() || b.is<std::string>()) {
-                bool validLeft = a.is<std::string>() && b.is<int>();
+                bool validLeft  = a.is<std::string>() && b.is<int>();
                 bool validRight = b.is<std::string>() && a.is<int>();
                 if (!validLeft && !validRight) {
                     runtimeError("A string can only be multiplied by an integer.");
                 }
                 std::string base = a.is<std::string>() ? a.as<std::string>() : b.as<std::string>();
-                int count = a.is<int>() ? a.as<int>() : b.as<int>();
-                std::string res = "";
+                int count        = a.is<int>() ? a.as<int>() : b.as<int>();
+                std::string res  = "";
                 if (count > 0) {
                     res.reserve(base.length() * count);
-                    for (int i = 0; i < count; ++i) res += base;
+                    for (int i = 0; i < count; ++i)
+                        res += base;
                 }
                 push(RuntimeValue{res});
-            } else if (a.is<std::shared_ptr<std::vector<RuntimeValue>>>() || b.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
-                using ArrayPtr = std::shared_ptr<std::vector<RuntimeValue>>;
-                bool validLeft = a.is<ArrayPtr>() && b.is<int>();
+            } else if (a.is<std::shared_ptr<std::vector<RuntimeValue>>>() ||
+                       b.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
+                using ArrayPtr  = std::shared_ptr<std::vector<RuntimeValue>>;
+                bool validLeft  = a.is<ArrayPtr>() && b.is<int>();
                 bool validRight = b.is<ArrayPtr>() && a.is<int>();
                 if (!validLeft && !validRight) {
                     runtimeError("An array can only be multiplied by an integer.");
                 }
                 auto base = a.is<ArrayPtr>() ? a.as<ArrayPtr>() : b.as<ArrayPtr>();
                 int count = a.is<int>() ? a.as<int>() : b.as<int>();
-                auto res = std::make_shared<std::vector<RuntimeValue>>();
+                auto res  = std::make_shared<std::vector<RuntimeValue>>();
                 if (count > 0) {
                     res->reserve(base->size() * count);
                     for (int i = 0; i < count; ++i) {
@@ -222,8 +248,8 @@ void VM::execute() {
         case OP_DIVIDE: {
             RuntimeValue b = pop();
             RuntimeValue a = pop();
-            double valA = a.is<double>() ? a.as<double>() : a.as<int>();
-            double valB = b.is<double>() ? b.as<double>() : b.as<int>();
+            double valA    = a.is<double>() ? a.as<double>() : a.as<int>();
+            double valB    = b.is<double>() ? b.as<double>() : b.as<int>();
             if (valB == 0.0) {
                 runtimeError("Division by zero.");
             }
@@ -318,10 +344,13 @@ void VM::execute() {
             RuntimeValue coll = pop();
             RuntimeValue item = pop();
             if (coll.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
-                auto arr = coll.as<std::shared_ptr<std::vector<RuntimeValue>>>();
+                auto arr   = coll.as<std::shared_ptr<std::vector<RuntimeValue>>>();
                 bool found = false;
                 for (const auto &elem : *arr) {
-                    if (isEqual(item, elem)) { found = true; break; }
+                    if (isEqual(item, elem)) {
+                        found = true;
+                        break;
+                    }
                 }
                 push(RuntimeValue{found});
             } else if (coll.is<std::shared_ptr<Dictionary>>()) {
@@ -335,11 +364,12 @@ void VM::execute() {
                 if (!item.is<std::string>()) {
                     runtimeError("Can only search for substrings inside strings.");
                 }
-                std::string s = coll.as<std::string>();
+                std::string s   = coll.as<std::string>();
                 std::string sub = item.as<std::string>();
                 push(RuntimeValue{s.find(sub) != std::string::npos});
             } else {
-                runtimeError("'IN' operator requires right hand side to be an array or dictionary.");
+                runtimeError(
+                    "'IN' operator requires right hand side to be an array or dictionary.");
             }
             break;
         }
@@ -351,7 +381,7 @@ void VM::execute() {
         }
 
         case OP_SET_LOCAL: {
-            uint16_t slot = READ_SHORT();
+            uint16_t slot                  = READ_SHORT();
             stack[frame->slotsBase + slot] = peek(0);
             break;
         }
@@ -362,13 +392,14 @@ void VM::execute() {
             bool found = false;
             if (frame->closure) {
                 try {
-                    val = frame->closure->get(Token{TOK_IDENTIFIER, name, 0, 0, 0});
+                    val   = frame->closure->get(Token{TOK_IDENTIFIER, name, 0, 0, 0});
                     found = true;
-                } catch (...) {}
+                } catch (...) {
+                }
             }
             if (!found) {
                 try {
-                    val = globals->get(Token{TOK_IDENTIFIER, name, 0, 0, 0});
+                    val   = globals->get(Token{TOK_IDENTIFIER, name, 0, 0, 0});
                     found = true;
                 } catch (...) {
                     runtimeError("Undefined variable '" + name + "'.");
@@ -381,13 +412,14 @@ void VM::execute() {
         case OP_SET_GLOBAL: {
             std::string name = READ_CONSTANT().as<std::string>();
             RuntimeValue val = peek(0);
-            bool assigned = false;
+            bool assigned    = false;
             if (frame->closure) {
                 try {
                     frame->closure->get(Token{TOK_IDENTIFIER, name, 0, 0, 0});
                     frame->closure->define(name, val);
                     assigned = true;
-                } catch (...) {}
+                } catch (...) {
+                }
             }
             if (!assigned) {
                 globals->define(name, val);
@@ -408,7 +440,7 @@ void VM::execute() {
         }
 
         case OP_GET_PROPERTY: {
-            std::string name = READ_CONSTANT().as<std::string>();
+            std::string name    = READ_CONSTANT().as<std::string>();
             RuntimeValue object = pop();
 
             if (object.is<std::shared_ptr<Instance>>()) {
@@ -432,14 +464,16 @@ void VM::execute() {
                     // Special property: super
                     if (name == "super") {
                         if (!lookupClass->getSuperclass()) {
-                            runtimeError("Class '" + lookupClass->toString() + "' has no superclass.");
+                            runtimeError("Class '" + lookupClass->toString() +
+                                         "' has no superclass.");
                         }
                         auto superMethod = std::make_shared<NativeFunction>(
                             0,
-                            [instance, lookupClass](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+                            [instance, lookupClass](
+                                Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
                                 (void) args;
-                                auto superInstance =
-                                    std::make_shared<Instance>(*instance, lookupClass->getSuperclass());
+                                auto superInstance = std::make_shared<Instance>(
+                                    *instance, lookupClass->getSuperclass());
                                 return {superInstance};
                             });
                         push(RuntimeValue{std::static_pointer_cast<Callable>(superMethod)});
@@ -467,13 +501,16 @@ void VM::execute() {
                     auto sliceMethod = std::make_shared<NativeFunction>(
                         2, [arr](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
                             if (!args[0].is<int>() || !args[1].is<int>()) {
-                                throw RuntimeError(Token{TOK_IDENTIFIER, "slice", 0, 0, 0}, "Slice indices must be integers.");
+                                throw RuntimeError(Token{TOK_IDENTIFIER, "slice", 0, 0, 0},
+                                                   "Slice indices must be integers.");
                             }
                             int start = args[0].as<int>();
-                            int end = args[1].as<int>();
-                            int size = static_cast<int>(arr->size());
-                            if (start < 0) start = 0;
-                            if (end >= size) end = size - 1;
+                            int end   = args[1].as<int>();
+                            int size  = static_cast<int>(arr->size());
+                            if (start < 0)
+                                start = 0;
+                            if (end >= size)
+                                end = size - 1;
                             auto res = std::make_shared<std::vector<RuntimeValue>>();
                             if (start <= end && start < size) {
                                 for (int i = start; i <= end; ++i) {
@@ -514,24 +551,28 @@ void VM::execute() {
                     push(RuntimeValue{std::static_pointer_cast<Callable>(valsMethod)});
                 } else if (name == "get") {
                     auto getMethod = std::make_shared<NativeFunction>(
-                        VARIADIC_ARITY, [dict](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+                        VARIADIC_ARITY,
+                        [dict](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
                             if (args.size() < 1 || args.size() > 2) {
                                 throw RuntimeError(Token{TOK_IDENTIFIER, "get", 0, 0, 0},
-                                    "Expected 1 or 2 arguments but got " + std::to_string(args.size()) + ".");
+                                                   "Expected 1 or 2 arguments but got " +
+                                                       std::to_string(args.size()) + ".");
                             }
                             if (!isValidDictKey(args[0])) {
-                                throw RuntimeError(Token{TOK_IDENTIFIER, "get", 0, 0, 0},
+                                throw RuntimeError(
+                                    Token{TOK_IDENTIFIER, "get", 0, 0, 0},
                                     "Dictionary keys must be strings, integers, or booleans.");
                             }
                             DictKey key = toDictKey(args[0]);
-                            auto it = dict->entries.find(key);
+                            auto it     = dict->entries.find(key);
                             if (it != dict->entries.end()) {
                                 return it->second;
                             }
                             if (args.size() == 2) {
                                 return args[1];
                             }
-                            RuntimeValue nullVal; nullVal.value = Null{};
+                            RuntimeValue nullVal;
+                            nullVal.value = Null{};
                             return nullVal;
                         });
                     push(RuntimeValue{std::static_pointer_cast<Callable>(getMethod)});
@@ -539,13 +580,17 @@ void VM::execute() {
                     auto removeMethod = std::make_shared<NativeFunction>(
                         1, [dict](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
                             if (!isValidDictKey(args[0])) {
-                                throw RuntimeError(Token{TOK_IDENTIFIER, "remove", 0, 0, 0}, "Dictionary keys must be strings, integers, or booleans.");
+                                throw RuntimeError(
+                                    Token{TOK_IDENTIFIER, "remove", 0, 0, 0},
+                                    "Dictionary keys must be strings, integers, or booleans.");
                             }
                             DictKey key = toDictKey(args[0]);
                             dict->entries.erase(key);
                             auto it = std::find(dict->keys.begin(), dict->keys.end(), key);
-                            if (it != dict->keys.end()) dict->keys.erase(it);
-                            RuntimeValue nullVal; nullVal.value = Null{};
+                            if (it != dict->keys.end())
+                                dict->keys.erase(it);
+                            RuntimeValue nullVal;
+                            nullVal.value = Null{};
                             return nullVal;
                         });
                     push(RuntimeValue{std::static_pointer_cast<Callable>(removeMethod)});
@@ -562,13 +607,16 @@ void VM::execute() {
                     auto sliceMethod = std::make_shared<NativeFunction>(
                         2, [s](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
                             if (!args[0].is<int>() || !args[1].is<int>()) {
-                                throw RuntimeError(Token{TOK_IDENTIFIER, "slice", 0, 0, 0}, "Slice indices must be integers.");
+                                throw RuntimeError(Token{TOK_IDENTIFIER, "slice", 0, 0, 0},
+                                                   "Slice indices must be integers.");
                             }
                             int start = args[0].as<int>();
-                            int end = args[1].as<int>();
-                            int size = static_cast<int>(s.length());
-                            if (start < 0) start = 0;
-                            if (end >= size) end = size - 1;
+                            int end   = args[1].as<int>();
+                            int size  = static_cast<int>(s.length());
+                            if (start < 0)
+                                start = 0;
+                            if (end >= size)
+                                end = size - 1;
                             std::string res = "";
                             if (start <= end && start < size) {
                                 res = s.substr(start, end - start + 1);
@@ -586,8 +634,8 @@ void VM::execute() {
         }
 
         case OP_SET_PROPERTY: {
-            std::string name = READ_CONSTANT().as<std::string>();
-            RuntimeValue val = pop();
+            std::string name    = READ_CONSTANT().as<std::string>();
+            RuntimeValue val    = pop();
             RuntimeValue object = pop();
             if (!object.is<std::shared_ptr<Instance>>()) {
                 runtimeError("Only instances have fields.");
@@ -598,7 +646,7 @@ void VM::execute() {
         }
 
         case OP_INDEX_GET: {
-            RuntimeValue idxVal = pop();
+            RuntimeValue idxVal    = pop();
             RuntimeValue container = pop();
 
             if (container.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
@@ -606,7 +654,7 @@ void VM::execute() {
                     runtimeError("Array index must be an integer.");
                 }
                 auto arr = container.as<std::shared_ptr<std::vector<RuntimeValue>>>();
-                int idx = idxVal.as<int>();
+                int idx  = idxVal.as<int>();
                 if (idx < 0 || idx >= static_cast<int>(arr->size())) {
                     runtimeError("Array index out of bounds.");
                 }
@@ -626,7 +674,7 @@ void VM::execute() {
                     runtimeError("String index must be an integer.");
                 }
                 std::string s = container.as<std::string>();
-                int idx = idxVal.as<int>();
+                int idx       = idxVal.as<int>();
                 if (idx < 0 || idx >= static_cast<int>(s.length())) {
                     runtimeError("String index out of bounds.");
                 }
@@ -638,8 +686,8 @@ void VM::execute() {
         }
 
         case OP_INDEX_SET: {
-            RuntimeValue val = pop();
-            RuntimeValue idxVal = pop();
+            RuntimeValue val       = pop();
+            RuntimeValue idxVal    = pop();
             RuntimeValue container = pop();
 
             if (container.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
@@ -647,7 +695,7 @@ void VM::execute() {
                     runtimeError("Array index must be an integer.");
                 }
                 auto arr = container.as<std::shared_ptr<std::vector<RuntimeValue>>>();
-                int idx = idxVal.as<int>();
+                int idx  = idxVal.as<int>();
                 if (idx < 0 || idx >= static_cast<int>(arr->size())) {
                     runtimeError("Array index out of bounds.");
                 }
@@ -667,7 +715,7 @@ void VM::execute() {
 
         case OP_ARRAY: {
             uint16_t count = READ_SHORT();
-            auto arr = std::make_shared<std::vector<RuntimeValue>>();
+            auto arr       = std::make_shared<std::vector<RuntimeValue>>();
             arr->resize(count);
             for (int i = count - 1; i >= 0; --i) {
                 (*arr)[i] = pop();
@@ -678,13 +726,13 @@ void VM::execute() {
 
         case OP_DICT: {
             uint16_t count = READ_SHORT();
-            auto dict = std::make_shared<Dictionary>();
+            auto dict      = std::make_shared<Dictionary>();
             // Entries on stack are [key1, val1, key2, val2, ...]
             // So we pop in reverse: pop val, then pop key
             std::vector<std::pair<RuntimeValue, RuntimeValue>> temp(count);
             for (int i = count - 1; i >= 0; --i) {
                 temp[i].second = pop();
-                temp[i].first = pop();
+                temp[i].first  = pop();
             }
             for (const auto &p : temp) {
                 if (!isValidDictKey(p.first)) {
@@ -698,7 +746,7 @@ void VM::execute() {
 
         case OP_NEW_INSTANCE: {
             std::string className = READ_CONSTANT().as<std::string>();
-            uint8_t argCount = READ_BYTE();
+            uint8_t argCount      = READ_BYTE();
 
             RuntimeValue classVal;
             try {
@@ -715,8 +763,8 @@ void VM::execute() {
 
             // Validate constructor arity
             if (klass->arity() != VARIADIC_ARITY && klass->arity() != argCount) {
-                runtimeError("Expected " + std::to_string(klass->arity()) +
-                             " arguments but got " + std::to_string(argCount) + ".");
+                runtimeError("Expected " + std::to_string(klass->arity()) + " arguments but got " +
+                             std::to_string(argCount) + ".");
             }
 
             std::vector<RuntimeValue> args(argCount);
@@ -729,7 +777,7 @@ void VM::execute() {
         }
 
         case OP_CALL: {
-            uint8_t argCount = READ_BYTE();
+            uint8_t argCount    = READ_BYTE();
             RuntimeValue callee = peek(argCount);
 
             if (!callee.is<std::shared_ptr<Callable>>()) {
@@ -751,14 +799,14 @@ void VM::execute() {
                 if (frameCount >= FRAMES_MAX) {
                     runtimeError("Stack overflow (too many call frames).");
                 }
-                
+
                 CallFrame nextFrame;
-                nextFrame.function = compiled;
-                nextFrame.ip = compiled->chunk->code.data();
-                nextFrame.slotsBase = stackTop - argCount;
-                nextFrame.closure = userFunc->getClosure();
+                nextFrame.function   = compiled;
+                nextFrame.ip         = compiled->chunk->code.data();
+                nextFrame.slotsBase  = stackTop - argCount;
+                nextFrame.closure    = userFunc->getClosure();
                 frames[frameCount++] = nextFrame;
-                frame = &frames[frameCount - 1];
+                frame                = &frames[frameCount - 1];
             } else {
                 // Native or Class call
                 std::vector<RuntimeValue> args(argCount);
@@ -824,8 +872,8 @@ void VM::execute() {
         }
 
         case OP_FOR_PREPARE: {
-            uint16_t slot = READ_SHORT();
-            RuntimeValue limitVal = stack[frame->slotsBase + slot + 1];
+            uint16_t slot           = READ_SHORT();
+            RuntimeValue limitVal   = stack[frame->slotsBase + slot + 1];
             RuntimeValue loopVarVal = stack[frame->slotsBase + slot];
 
             if (!loopVarVal.is<int>() || !limitVal.is<int>()) {
@@ -833,8 +881,8 @@ void VM::execute() {
             }
 
             int loopVar = loopVarVal.as<int>();
-            int limit = limitVal.as<int>();
-            int step = (loopVar <= limit) ? 1 : -1;
+            int limit   = limitVal.as<int>();
+            int step    = (loopVar <= limit) ? 1 : -1;
 
             stack[frame->slotsBase + slot + 2] = RuntimeValue{step};
 
@@ -844,25 +892,25 @@ void VM::execute() {
         }
 
         case OP_FOR_LOOP: {
-            uint16_t slot = READ_SHORT();
+            uint16_t slot       = READ_SHORT();
             uint16_t jumpOffset = READ_SHORT();
 
             int loopVar = stack[frame->slotsBase + slot].as<int>();
-            int limit = stack[frame->slotsBase + slot + 1].as<int>();
-            int step = stack[frame->slotsBase + slot + 2].as<int>();
+            int limit   = stack[frame->slotsBase + slot + 1].as<int>();
+            int step    = stack[frame->slotsBase + slot + 2].as<int>();
 
-            int nextVal = loopVar + step;
+            int nextVal    = loopVar + step;
             bool keepGoing = (step > 0 && nextVal <= limit) || (step < 0 && nextVal >= limit);
 
             if (keepGoing) {
                 stack[frame->slotsBase + slot] = RuntimeValue{nextVal};
-                frame->ip = frame->function->chunk->code.data() + jumpOffset;
+                frame->ip                      = frame->function->chunk->code.data() + jumpOffset;
             }
             break;
         }
 
         case OP_FOR_IN_PREPARE: {
-            uint16_t slot = READ_SHORT();
+            uint16_t slot         = READ_SHORT();
             RuntimeValue iterable = pop();
 
             auto flatArray = std::make_shared<std::vector<RuntimeValue>>();
@@ -885,7 +933,8 @@ void VM::execute() {
 
             stack[frame->slotsBase + slot + 1] = RuntimeValue{flatArray};
             stack[frame->slotsBase + slot + 2] = RuntimeValue{0}; // index
-            stack[frame->slotsBase + slot + 3] = RuntimeValue{static_cast<int>(flatArray->size())}; // size
+            stack[frame->slotsBase + slot + 3] =
+                RuntimeValue{static_cast<int>(flatArray->size())}; // size
 
             int size = static_cast<int>(flatArray->size());
             if (0 < size) {
@@ -897,17 +946,18 @@ void VM::execute() {
         }
 
         case OP_FOR_IN_LOOP: {
-            uint16_t slot = READ_SHORT();
+            uint16_t slot       = READ_SHORT();
             uint16_t jumpOffset = READ_SHORT();
 
-            auto flatArray = stack[frame->slotsBase + slot + 1].as<std::shared_ptr<std::vector<RuntimeValue>>>();
+            auto flatArray =
+                stack[frame->slotsBase + slot + 1].as<std::shared_ptr<std::vector<RuntimeValue>>>();
             int index = stack[frame->slotsBase + slot + 2].as<int>();
-            int size = stack[frame->slotsBase + slot + 3].as<int>();
+            int size  = stack[frame->slotsBase + slot + 3].as<int>();
 
             int nextIndex = index + 1;
             if (nextIndex < size) {
                 stack[frame->slotsBase + slot + 2] = RuntimeValue{nextIndex};
-                stack[frame->slotsBase + slot] = (*flatArray)[nextIndex];
+                stack[frame->slotsBase + slot]     = (*flatArray)[nextIndex];
                 frame->ip = frame->function->chunk->code.data() + jumpOffset;
             }
             break;
@@ -915,23 +965,25 @@ void VM::execute() {
 
         case OP_CLASS: {
             std::string className = READ_CONSTANT().as<std::string>();
-            auto klass = std::make_shared<UserClass>(className, nullptr);
+            auto klass            = std::make_shared<UserClass>(className, nullptr);
             push(RuntimeValue{std::static_pointer_cast<Callable>(klass)});
             break;
         }
 
         case OP_INHERIT: {
             RuntimeValue superclassVal = pop();
-            RuntimeValue subclassVal = peek(0);
+            RuntimeValue subclassVal   = peek(0);
 
             if (!superclassVal.is<std::shared_ptr<Callable>>()) {
                 runtimeError("Superclass must be a class.");
             }
-            auto superclass = std::dynamic_pointer_cast<UserClass>(superclassVal.as<std::shared_ptr<Callable>>());
+            auto superclass =
+                std::dynamic_pointer_cast<UserClass>(superclassVal.as<std::shared_ptr<Callable>>());
             if (!superclass) {
                 runtimeError("Superclass must be a user-defined class.");
             }
-            auto subclass = std::dynamic_pointer_cast<UserClass>(subclassVal.as<std::shared_ptr<Callable>>());
+            auto subclass =
+                std::dynamic_pointer_cast<UserClass>(subclassVal.as<std::shared_ptr<Callable>>());
 
             // Cyclic inheritance check
             std::shared_ptr<UserClass> tracer = superclass;
@@ -950,24 +1002,27 @@ void VM::execute() {
         case OP_METHOD: {
             std::string methodName = READ_CONSTANT().as<std::string>();
             RuntimeValue methodVal = pop();
-            RuntimeValue classVal = peek(0);
+            RuntimeValue classVal  = peek(0);
 
-            auto klass = std::dynamic_pointer_cast<UserClass>(classVal.as<std::shared_ptr<Callable>>());
+            auto klass =
+                std::dynamic_pointer_cast<UserClass>(classVal.as<std::shared_ptr<Callable>>());
             klass->addMethod(methodName, methodVal.as<std::shared_ptr<Callable>>());
             break;
         }
 
         case OP_ATTRIBUTE: {
-            std::string attrName = READ_CONSTANT().as<std::string>();
-            RuntimeValue initVal = pop();
+            std::string attrName  = READ_CONSTANT().as<std::string>();
+            RuntimeValue initVal  = pop();
             RuntimeValue classVal = peek(0);
 
-            auto klass = std::dynamic_pointer_cast<UserClass>(classVal.as<std::shared_ptr<Callable>>());
+            auto klass =
+                std::dynamic_pointer_cast<UserClass>(classVal.as<std::shared_ptr<Callable>>());
             // Wait! initVal contains the compiled function wrapping the initializer expression.
             // Under UserClass:
             // `std::map<std::string, std::shared_ptr<CompiledFunction>> defaultFields;`
             // We need to cast initVal to a UserFunction, get its CompiledFunction, and add it!
-            auto userFunc = std::dynamic_pointer_cast<UserFunction>(initVal.as<std::shared_ptr<Callable>>());
+            auto userFunc =
+                std::dynamic_pointer_cast<UserFunction>(initVal.as<std::shared_ptr<Callable>>());
             klass->addField(attrName, userFunc->getCompiledFunction());
             break;
         }

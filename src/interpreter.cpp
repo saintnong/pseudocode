@@ -60,7 +60,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
             if (args.empty())
                 return {Null{}};
             const auto &val = args[0];
-            int result = 0;
+            int result      = 0;
             if (val.is<int>()) {
                 result = val.as<int>();
             } else if (val.is<double>()) {
@@ -85,7 +85,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
             if (args.empty())
                 return {Null{}};
             const auto &val = args[0];
-            double result = 0.0;
+            double result   = 0.0;
             if (val.is<double>()) {
                 result = val.as<double>();
             } else if (val.is<int>()) {
@@ -121,7 +121,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
             if (args.empty())
                 return {Null{}};
             const auto &val = args[0];
-            bool result = false;
+            bool result     = false;
             if (val.is<bool>()) {
                 result = val.as<bool>();
             } else if (val.is<int>()) {
@@ -173,7 +173,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
         1, [](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
             if (args.empty())
                 return {"NULL"};
-            const auto &val = args[0];
+            const auto &val     = args[0];
             std::string typeStr = "UNKNOWN";
             if (val.is<int>())
                 typeStr = "INT";
@@ -208,7 +208,7 @@ void Interpreter::interpret(const std::vector<StmtPtr> &statements) {
         auto compiled = compiler.compile(statements);
         vm->run(compiled, {});
     } catch (const RuntimeError &error) {
-        Token token = error.token;
+        Token token     = error.token;
         std::string msg = error.what();
         reporter.report(ErrorType::Runtime, token.line, token.column, msg, token.lexeme.length());
     }
@@ -220,6 +220,8 @@ RuntimeValue Interpreter::evaluate(Expr *expr) {
     return vm->run(compiled, {});
 }
 
-RuntimeValue Interpreter::runFunction(std::shared_ptr<CompiledFunction> compiledFn, const std::vector<RuntimeValue> &args, std::shared_ptr<Environment> closure) {
+RuntimeValue Interpreter::runFunction(std::shared_ptr<CompiledFunction> compiledFn,
+                                      const std::vector<RuntimeValue> &args,
+                                      std::shared_ptr<Environment> closure) {
     return vm->run(compiledFn, args, closure);
 }
