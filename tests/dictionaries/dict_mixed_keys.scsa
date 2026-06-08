@@ -1,0 +1,10 @@
+# Integer and string keys (Python-style)
+mixed = {1: "one", "two": 2, 3: "three"}
+PRINT(mixed[1])
+# EXPECT: one
+
+PRINT(mixed["two"])
+# EXPECT: 2
+
+PRINT(mixed[3])
+# EXPECT: three

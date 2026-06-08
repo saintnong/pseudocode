@@ -1,0 +1,23 @@
+
+# Dictionary creation and simple access
+scores = {"alice": 95, "bob": 87, "charlie": 92}
+PRINT(scores["alice"])
+# EXPECT: 95
+
+# Mutation via key
+PRINT(scores["bob"])
+# EXPECT: 87
+scores["bob"] = 90
+PRINT(scores["bob"])
+# EXPECT: 90
+
+# Insert new key
+scores["diana"] = 88
+PRINT(scores["diana"])
+# EXPECT: 88
+
+PRINT(scores)
+# EXPECT: {alice: 95, bob: 90, charlie: 92, diana: 88}
+
+PRINT(TYPE(scores))
+# EXPECT: DICTIONARY

@@ -21,6 +21,40 @@ struct ReturnSignal {
     }
 };
 
+namespace {
+
+bool isValidDictKey(const RuntimeValue &key) {
+    return key.is<int>() || key.is<std::string>() || key.is<bool>();
+}
+
+bool dictKeysEqual(const RuntimeValue &a, const RuntimeValue &b) {
+    if (a.is<int>() && b.is<int>())
+        return a.as<int>() == b.as<int>();
+    if (a.is<bool>() && b.is<bool>())
+        return a.as<bool>() == b.as<bool>();
+    if (a.is<std::string>() && b.is<std::string>())
+        return a.as<std::string>() == b.as<std::string>();
+    return false;
+}
+
+RuntimeValue *findDictEntry(Dictionary &dict, const RuntimeValue &key) {
+    for (auto &entry : dict.entries) {
+        if (dictKeysEqual(entry.first, key))
+            return &entry.second;
+    }
+    return nullptr;
+}
+
+void setDictEntry(Dictionary &dict, const RuntimeValue &key, const RuntimeValue &value) {
+    if (RuntimeValue *existing = findDictEntry(dict, key)) {
+        *existing = value;
+        return;
+    }
+    dict.entries.push_back({key, value});
+}
+
+} // namespace
+
 // =================================================================================================
 //           Forward Declarations
 // =================================================================================================
@@ -610,6 +644,8 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
                 typeStr = "NULL";
             else if (val.is<std::shared_ptr<std::vector<RuntimeValue>>>())
                 typeStr = "ARRAY";
+            else if (val.is<std::shared_ptr<Dictionary>>())
+                typeStr = "DICTIONARY";
             else if (val.is<std::shared_ptr<Callable>>())
                 typeStr = "CALLABLE";
             else if (val.is<std::shared_ptr<Instance>>())
@@ -659,6 +695,8 @@ RuntimeValue Interpreter::evaluate(Expr *expr) {
         return visitArrayAccessExpr(e);
     if (auto *e = dynamic_cast<ArrayLitExpr *>(expr))
         return visitArrayLitExpr(e);
+    if (auto *e = dynamic_cast<DictLitExpr *>(expr))
+        return visitDictLitExpr(e);
     if (auto *e = dynamic_cast<NewExpr *>(expr))
         return visitNewExpr(e);
 
@@ -739,6 +777,9 @@ bool Interpreter::isEqual(const RuntimeValue &a, const RuntimeValue &b) {
         b.is<std::shared_ptr<std::vector<RuntimeValue>>>())
         return a.as<std::shared_ptr<std::vector<RuntimeValue>>>() ==
                b.as<std::shared_ptr<std::vector<RuntimeValue>>>();
+
+    if (a.is<std::shared_ptr<Dictionary>>() && b.is<std::shared_ptr<Dictionary>>())
+        return a.as<std::shared_ptr<Dictionary>>() == b.as<std::shared_ptr<Dictionary>>();
 
     if (a.is<std::shared_ptr<Instance>>() && b.is<std::shared_ptr<Instance>>())
         return a.as<std::shared_ptr<Instance>>() == b.as<std::shared_ptr<Instance>>();
@@ -831,25 +872,32 @@ RuntimeValue Interpreter::visitAssignExpr(AssignExpr *expr) {
         }
         object.as<std::shared_ptr<Instance>>()->set(getExpr->name, value);
     } else if (auto *arrayAccess = dynamic_cast<ArrayAccessExpr *>(expr->target.get())) {
-        // Array element assignment (array[index] = value)
-        RuntimeValue arrayVal = evaluate(arrayAccess->array.get());
-        RuntimeValue indexVal = evaluate(arrayAccess->index.get());
+        RuntimeValue containerVal = evaluate(arrayAccess->array.get());
+        RuntimeValue indexVal     = evaluate(arrayAccess->index.get());
 
-        if (!arrayVal.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
-            throw RuntimeError(expr->anchor, "Can only index arrays.");
+        if (containerVal.is<std::shared_ptr<Dictionary>>()) {
+            if (!isValidDictKey(indexVal)) {
+                throw RuntimeError(expr->anchor,
+                                   "Dictionary keys must be strings, integers, or booleans.");
+            }
+            auto dict = containerVal.as<std::shared_ptr<Dictionary>>();
+            setDictEntry(*dict, indexVal, value);
+        } else if (containerVal.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
+            if (!indexVal.is<int>()) {
+                throw RuntimeError(expr->anchor, "Array index must be an integer.");
+            }
+
+            auto arr = containerVal.as<std::shared_ptr<std::vector<RuntimeValue>>>();
+            int idx  = indexVal.as<int>();
+
+            if (idx < 0 || idx >= static_cast<int>(arr->size())) {
+                throw RuntimeError(expr->anchor, "Array index out of bounds.");
+            }
+
+            (*arr)[idx] = value;
+        } else {
+            throw RuntimeError(expr->anchor, "Can only assign to array or dictionary elements.");
         }
-        if (!indexVal.is<int>()) {
-            throw RuntimeError(expr->anchor, "Array index must be an integer.");
-        }
-
-        auto arr = arrayVal.as<std::shared_ptr<std::vector<RuntimeValue>>>();
-        int idx  = indexVal.as<int>();
-
-        if (idx < 0 || idx >= static_cast<int>(arr->size())) {
-            throw RuntimeError(expr->anchor, "Array index out of bounds.");
-        }
-
-        (*arr)[idx] = value;
     }
 
     return value;
@@ -1049,18 +1097,31 @@ RuntimeValue Interpreter::visitBinaryExpr(BinaryExpr *expr) {
     }
     case TOK_IN: {
         // Collection Membership
-        if (!right.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
-            throw RuntimeError(expr->op, "'IN' operator requires right hand side to be an array.");
-        }
+        if (right.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
+            auto arr     = right.as<std::shared_ptr<std::vector<RuntimeValue>>>();
+            result.value = false;
 
-        auto arr     = right.as<std::shared_ptr<std::vector<RuntimeValue>>>();
-        result.value = false;
-
-        for (const auto &item : *arr) {
-            if (isEqual(left, item)) {
-                result.value = true;
-                break;
+            for (const auto &item : *arr) {
+                if (isEqual(left, item)) {
+                    result.value = true;
+                    break;
+                }
             }
+        } else if (right.is<std::shared_ptr<Dictionary>>()) {
+            auto dict    = right.as<std::shared_ptr<Dictionary>>();
+            result.value = false;
+
+            if (isValidDictKey(left)) {
+                for (const auto &entry : dict->entries) {
+                    if (dictKeysEqual(entry.first, left)) {
+                        result.value = true;
+                        break;
+                    }
+                }
+            }
+        } else {
+            throw RuntimeError(expr->op, "'IN' operator requires right hand side to be an array or "
+                                         "dictionary.");
         }
         break;
     }
@@ -1204,6 +1265,85 @@ RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
     }
 
     /**
+     * Special case: Dictionaries are objects
+     */
+    if (object.is<std::shared_ptr<Dictionary>>()) {
+        Token anchor     = expr->name;
+        auto dict        = object.as<std::shared_ptr<Dictionary>>();
+        std::string name = expr->name.lexeme;
+
+        if (name == "keys") {
+            auto keysMethod = std::make_shared<NativeFunction>(
+                0, [dict](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+                    (void) args;
+                    auto keys = std::make_shared<std::vector<RuntimeValue>>();
+                    for (const auto &entry : dict->entries) {
+                        keys->push_back(entry.first);
+                    }
+                    RuntimeValue result;
+                    result.value = keys;
+                    return result;
+                });
+
+            RuntimeValue method;
+            method.value = std::static_pointer_cast<Callable>(keysMethod);
+            return method;
+        }
+
+        if (name == "values") {
+            auto valuesMethod = std::make_shared<NativeFunction>(
+                0, [dict](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+                    (void) args;
+                    auto values = std::make_shared<std::vector<RuntimeValue>>();
+                    for (const auto &entry : dict->entries) {
+                        values->push_back(entry.second);
+                    }
+                    RuntimeValue result;
+                    result.value = values;
+                    return result;
+                });
+
+            RuntimeValue method;
+            method.value = std::static_pointer_cast<Callable>(valuesMethod);
+            return method;
+        }
+
+        if (name == "get") {
+            auto getMethod = std::make_shared<NativeFunction>(
+                VARIADIC_ARITY,
+                [dict, anchor](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
+                    if (args.size() < 1 || args.size() > 2) {
+                        throw RuntimeError(anchor, "Expected 1 or 2 arguments but got " +
+                                                       std::to_string(args.size()) + ".");
+                    }
+                    if (!isValidDictKey(args[0])) {
+                        throw RuntimeError(anchor, "Dictionary keys must be strings, integers, or "
+                                                   "booleans.");
+                    }
+                    if (RuntimeValue *found = findDictEntry(*dict, args[0])) {
+                        return *found;
+                    }
+                    if (args.size() == 2) {
+                        return args[1];
+                    }
+                    return RuntimeValue{Null{}};
+                });
+
+            RuntimeValue method;
+            method.value = std::static_pointer_cast<Callable>(getMethod);
+            return method;
+        }
+
+        if (name == "length") {
+            RuntimeValue len;
+            len.value = static_cast<int>(dict->entries.size());
+            return len;
+        }
+
+        throw RuntimeError(expr->name, "This is not a valid dictionary property or method.");
+    }
+
+    /**
      * Special case: String properties
      */
     if (object.is<std::string>()) {
@@ -1317,17 +1457,31 @@ RuntimeValue Interpreter::visitGetExpr(GetExpr *expr) {
  * @return The value at the specified position
  */
 RuntimeValue Interpreter::visitArrayAccessExpr(ArrayAccessExpr *expr) {
-    // Resolve both the and right
     RuntimeValue containerVal = evaluate(expr->array.get());
     RuntimeValue indexVal     = evaluate(expr->index.get());
 
-    // Ensure index is an integer
+    if (containerVal.is<std::shared_ptr<Dictionary>>()) {
+        if (!isValidDictKey(indexVal)) {
+            throw RuntimeError(expr->anchor,
+                               "Dictionary keys must be strings, integers, or booleans.");
+        }
+        auto dict = containerVal.as<std::shared_ptr<Dictionary>>();
+        if (RuntimeValue *found = findDictEntry(*dict, indexVal)) {
+            return *found;
+        }
+        throw RuntimeError(expr->anchor, "Dictionary key not found.");
+    }
+
+    if (!containerVal.is<std::shared_ptr<std::vector<RuntimeValue>>>() &&
+        !containerVal.is<std::string>()) {
+        throw RuntimeError(expr->anchor, "Can only index arrays, strings, or dictionaries.");
+    }
+
     if (!indexVal.is<int>()) {
         throw RuntimeError(expr->anchor, "Array index must be an integer.");
     }
     int idx = indexVal.as<int>();
 
-    // Case: Array indexing
     if (containerVal.is<std::shared_ptr<std::vector<RuntimeValue>>>()) {
         auto arr = containerVal.as<std::shared_ptr<std::vector<RuntimeValue>>>();
 
@@ -1337,19 +1491,13 @@ RuntimeValue Interpreter::visitArrayAccessExpr(ArrayAccessExpr *expr) {
         return (*arr)[idx];
     }
 
-    // Case: String indexing
-    if (containerVal.is<std::string>()) {
-        std::string str = containerVal.as<std::string>();
+    std::string str = containerVal.as<std::string>();
 
-        if (idx < 0 || idx >= static_cast<int>(str.length())) {
-            throw RuntimeError(expr->anchor, "String index out of bounds.");
-        }
-
-        return RuntimeValue{std::string(1, str[idx])};
+    if (idx < 0 || idx >= static_cast<int>(str.length())) {
+        throw RuntimeError(expr->anchor, "String index out of bounds.");
     }
 
-    // Neither array nor string
-    throw RuntimeError(expr->anchor, "Can only index arrays or strings.");
+    return RuntimeValue{std::string(1, str[idx])};
 }
 
 /**
@@ -1367,6 +1515,31 @@ RuntimeValue Interpreter::visitArrayLitExpr(ArrayLitExpr *expr) {
 
     RuntimeValue result;
     result.value = arr;
+    return result;
+}
+
+/**
+ * Visit: Dictionary Literal
+ * Creates a new heap-allocated dictionary holding the evaluated key-value pairs.
+ * @param expr List of key-value pairs {k1: v1, k2: v2, ...}
+ * @return A shared pointer to the new dictionary
+ */
+RuntimeValue Interpreter::visitDictLitExpr(DictLitExpr *expr) {
+    auto dict = std::make_shared<Dictionary>();
+
+    for (const auto &entry : expr->entries) {
+        RuntimeValue key   = evaluate(entry.key.get());
+        RuntimeValue value = evaluate(entry.value.get());
+
+        if (!isValidDictKey(key)) {
+            throw RuntimeError(expr->anchor,
+                               "Dictionary keys must be strings, integers, or booleans.");
+        }
+        setDictEntry(*dict, key, value);
+    }
+
+    RuntimeValue result;
+    result.value = dict;
     return result;
 }
 
@@ -1574,9 +1747,19 @@ void Interpreter::visitForInStmt(ForInStmt *stmt) {
                 execute(s.get());
             }
         }
+    }
+    // Dictionaries (iterate over keys)
+    else if (iterable.is<std::shared_ptr<Dictionary>>()) {
+        auto dict = iterable.as<std::shared_ptr<Dictionary>>();
+        for (const auto &entry : dict->entries) {
+            environment->define(stmt->variable.lexeme, entry.first);
+            for (const auto &s : stmt->body) {
+                execute(s.get());
+            }
+        }
     } else {
-        // Neither string/array
-        throw RuntimeError(stmt->variable, "Can only iterate over arrays or strings.");
+        throw RuntimeError(stmt->variable,
+                           "Can only iterate over arrays, strings, or dictionaries.");
     }
 }
 

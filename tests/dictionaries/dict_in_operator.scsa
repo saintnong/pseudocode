@@ -1,0 +1,6 @@
+lookup = {"found": True, "missing": False}
+PRINT("found" IN lookup)
+# EXPECT: true
+
+PRINT("gone" IN lookup)
+# EXPECT: false

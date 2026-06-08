@@ -1,0 +1,5 @@
+my_int = 42
+FOR item IN my_int
+    PRINT(item)
+END FOR
+# EXPECT ERROR: Can only iterate over arrays, strings, or dictionaries.

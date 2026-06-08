@@ -187,6 +187,11 @@ private:
     ExprPtr arrayLiteral();
 
     /**
+     * Parse a dictionary literal {key: value, ...}
+     */
+    ExprPtr dictLiteral();
+
+    /**
      * Parse object instantiation (new ClassName(...))
      */
     ExprPtr newObject();

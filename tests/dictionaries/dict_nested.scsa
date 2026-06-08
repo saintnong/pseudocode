@@ -1,0 +1,7 @@
+nested = {"outer": {"inner": 42}}
+PRINT(nested["outer"]["inner"])
+# EXPECT: 42
+
+nested["outer"]["inner"] = 100
+PRINT(nested["outer"]["inner"])
+# EXPECT: 100

@@ -1,0 +1,4 @@
+my_dict = {"a": 1}
+bad_key = [1, 2]
+my_dict[bad_key] = 99
+# EXPECT ERROR: Dictionary keys must be strings, integers, or booleans.

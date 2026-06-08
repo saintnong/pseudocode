@@ -83,6 +83,15 @@ This repository contains a full toolchain for Pseudocode development, including 
     - `array.append(x)` Appends value to the end of the array
     - `array.length` Returns length of the array as an integer
     - Multiplication is supported (0 and negative return empty array)
+- Dictionaries
+    - `{key: value, key2: value2}` Creates a dictionary literal
+    - `dict[key]` Indexes into a dictionary by key (strings, integers, or booleans)
+    - `dict.length` Returns the number of entries
+    - `dict.keys()` Returns an array of all keys
+    - `dict.values()` Returns an array of all values
+    - `dict.get(key, default?)` Returns a value or optional default
+    - `key IN dict` Checks dictionary membership
+    - `FOR key IN dict` Iterates over dictionary keys
 - Object Oriented Programming✨✨
     - Syntax requires 'this' to reference object attributes/methods which is technicaly not SCSA standard
     - this.super() is used to call parent constructor/methods/fields (it can be chained)
@@ -108,7 +117,7 @@ The interpreter supports the following environment variables:
 
 # Other stuff
 ## Currently WIP Features
-- Dictionary datatype
+- (none)
 
 ## Future Plans
 - Integrated file IO in standard library

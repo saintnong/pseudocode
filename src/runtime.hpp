@@ -10,6 +10,7 @@
 // --- Forward Declarations ---
 struct Callable;
 struct Instance;
+struct Dictionary;
 class Interpreter;
 
 /**
@@ -32,6 +33,7 @@ using Value = std::variant<Null,                                              //
                            bool,                                              // boolean
                            std::string,                                       // string
                            std::shared_ptr<std::vector<struct RuntimeValue>>, // Array (shared)
+                           std::shared_ptr<Dictionary>,                       // Dictionary (shared)
                            std::shared_ptr<Callable>,                         // Function/Class
                            std::shared_ptr<Instance>                          // Object Instance
                            >;
@@ -71,6 +73,16 @@ struct RuntimeValue {
         return std::get<T>(value);
     }
 };
+
+/**
+ * Dictionary Type
+ * An ordered collection of key-value pairs. Keys must be strings, integers, or booleans.
+ */
+struct Dictionary {
+    std::vector<std::pair<RuntimeValue, RuntimeValue>> entries;
+};
+
+using DictPtr = std::shared_ptr<Dictionary>;
 
 // --- Execution Exceptions ---
 
@@ -273,6 +285,21 @@ inline std::string stringify(const RuntimeValue &v) {
                 result += ", ";
         }
         result += "]";
+        return result;
+    }
+
+    // Handle Dictionaries (Recursive)
+    if (v.is<std::shared_ptr<Dictionary>>()) {
+        auto dict          = v.as<std::shared_ptr<Dictionary>>();
+        std::string result = "{";
+        for (size_t i = 0; i < dict->entries.size(); ++i) {
+            result += stringify(dict->entries[i].first);
+            result += ": ";
+            result += stringify(dict->entries[i].second);
+            if (i < dict->entries.size() - 1)
+                result += ", ";
+        }
+        result += "}";
         return result;
     }
 

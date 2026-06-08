@@ -1,0 +1,6 @@
+flags = {True: "yes", False: "no"}
+PRINT(flags[True])
+# EXPECT: yes
+
+PRINT(flags[False])
+# EXPECT: no
