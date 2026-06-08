@@ -28,9 +28,10 @@ bool isValidDictKey(const RuntimeValue &key) {
 }
 
 RuntimeValue *findDictEntry(Dictionary &dict, const RuntimeValue &key) {
-    if (!isValidDictKey(key)) return nullptr;
+    if (!isValidDictKey(key))
+        return nullptr;
     DictKey dk = toDictKey(key);
-    auto it = dict.entries.find(dk);
+    auto it    = dict.entries.find(dk);
     if (it != dict.entries.end()) {
         return &(it->second);
     }

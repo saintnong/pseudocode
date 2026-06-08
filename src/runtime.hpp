@@ -2,9 +2,9 @@
 
 #include "token.hpp"
 #include <map>
-#include <unordered_map>
 #include <memory>
 #include <stdexcept>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -78,9 +78,12 @@ struct RuntimeValue {
 using DictKey = std::variant<int, bool, std::string>;
 
 inline DictKey toDictKey(const RuntimeValue &val) {
-    if (val.is<int>()) return val.as<int>();
-    if (val.is<bool>()) return val.as<bool>();
-    if (val.is<std::string>()) return val.as<std::string>();
+    if (val.is<int>())
+        return val.as<int>();
+    if (val.is<bool>())
+        return val.as<bool>();
+    if (val.is<std::string>())
+        return val.as<std::string>();
     throw std::logic_error("Internal error: invalid dictionary key type in toDictKey");
 }
 
