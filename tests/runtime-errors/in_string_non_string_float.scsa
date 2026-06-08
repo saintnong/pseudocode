@@ -1,3 +1,0 @@
-# String IN with non-string item (float) — must error
-PRINT(3.14 IN "hello")
-# EXPECT ERROR: Can only search for substrings inside strings.

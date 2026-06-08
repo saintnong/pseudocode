@@ -60,11 +60,15 @@ void printAtarMessage() {
 
 /**
  * ErrorReporter Constructor
- * Stores filename and source code for error reporting
+ * Stores a reference to the current interpreter stage, filename, and source code for error
+ * reporting
+ * @param stageRef Reference to the current InterpreterStage
  * @param file The source filename being processed
  * @param source The full source code for context generation
  */
-ErrorReporter::ErrorReporter(const std::string &file, const std::string &source) : filename(file) {
+ErrorReporter::ErrorReporter(InterpreterStage &stageRef, const std::string &file,
+                             const std::string &source)
+    : stage(stageRef), filename(file) {
     if (source.empty())
         return;
 
@@ -110,19 +114,30 @@ void ErrorReporter::replAddLine(const std::string &sourceSegment) {
 std::string ErrorReporter::getErrorLabel(ErrorType type) {
     switch (type) {
     case ErrorType::Syntax:
-        return "SyntaxError [" + getErrorCode(type) + "]";
+        return "Syntax Error";
     case ErrorType::Type:
-        return "TypeError [" + getErrorCode(type) + "]";
-    case ErrorType::Name:
-        return "NameError [" + getErrorCode(type) + "]";
-    case ErrorType::Argument:
-        return "ArgumentError [" + getErrorCode(type) + "]";
-    case ErrorType::Index:
-        return "IndexError [" + getErrorCode(type) + "]";
-    case ErrorType::VM:
-        return "VMError [" + getErrorCode(type) + "]";
+        return "Type Error";
+    case ErrorType::Runtime:
+        return "Runtime Error";
     default:
         return "Unknown Error";
+    }
+}
+
+/**
+ * Map interpreter stages to human-readable labels
+ * @return String representation of the current stage
+ */
+std::string ErrorReporter::getStageLabel() {
+    switch (stage) {
+    case InterpreterStage::Lexing:
+        return "Lexing";
+    case InterpreterStage::Parsing:
+        return "Parsing";
+    case InterpreterStage::Runtime:
+        return "Runtime";
+    default:
+        return "Unknown";
     }
 }
 
@@ -144,22 +159,25 @@ std::string ErrorReporter::getSourceLine(size_t lineNum) {
  * Format and display a complete error message with context
  * Shows the error stage, location, line content, and error pointer
  * @param type The type of error (Syntax, Type, etc.)
- * @param span The source span where the error occurred
+ * @param line The line number where the error occurred
+ * @param column The column position where the error occurred
  * @param message The error message to display
+ * @param lineSource The actual source code line containing the error
+ * @param length The length of the erroneous token (for underlining)
  */
-void ErrorReporter::report(ErrorType type, Span span, const std::string &message) {
+void ErrorReporter::report(ErrorType type, size_t line, size_t column, const std::string &message,
+                           size_t length) {
     hadError = true;
-
-    size_t line   = span.line;
-    size_t column = span.start;
-    size_t length = span.end - span.start;
-    if (length == 0)
-        length = 1;
 
     // In silent mode, record the error but don't output anything
     if (isSilent) {
         return;
     }
+
+    // Print which stage the interpreter is in
+    std::string stageLabel = getStageLabel();
+    std::cerr << C_RED << "[An error has occurred during the stage: '" << stageLabel << "']"
+              << std::endl;
 
     // Get the error line
     std::string errorLine = getSourceLine(line);
@@ -206,7 +224,7 @@ void ErrorReporter::report(ErrorType type, Span span, const std::string &message
     column = std::min(column, errorLine.length()); // Crash prevention
     std::cerr << errorLine.substr(0, column);
 
-    // Print the erroneous span in red
+    // Print the erroneous token in red
     std::cerr << C_RED << errorLine.substr(column, length) << C_RESET;
 
     // Print the rest of the line

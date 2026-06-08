@@ -1,2 +1,2 @@
 PRINT([1, 2] * 2.5)
-# EXPECT ERROR: unsupported operand types for *: 'array' and 'float'
+# EXPECT ERROR: An array can only be multiplied by an integer.

@@ -54,7 +54,7 @@ void Pseudocode::printTokenTable(const std::vector<Token> &tokens) {
         if (token.type == TOK_EOF)
             break; // Don't display EOF token
         std::cout << std::left << std::setw(20) << token.typeToString() << std::setw(25)
-                  << (token.lexeme.empty() ? "N/A" : token.lexeme) << token.span.line << std::endl;
+                  << (token.lexeme.empty() ? "N/A" : token.lexeme) << token.line << std::endl;
     }
 }
 
@@ -69,7 +69,8 @@ int Pseudocode::runFile(const std::string &path) {
         std::string source = readFile(path);
 
         // === Lexing ===
-        ErrorReporter reporter(path, source);
+        InterpreterStage stage = InterpreterStage::Lexing;
+        ErrorReporter reporter(stage, path, source);
         Lexer lexer(source, reporter);
 
         std::vector<Token> tokens = lexer.scanTokens();
@@ -80,6 +81,7 @@ int Pseudocode::runFile(const std::string &path) {
             return 1;
 
         // === Parsing ===
+        stage = InterpreterStage::Parsing;
         Parser parser(tokens, reporter);
         std::vector<StmtPtr> statements = parser.parse();
 
@@ -92,6 +94,7 @@ int Pseudocode::runFile(const std::string &path) {
             return 1;
 
         // === Execution ===
+        stage = InterpreterStage::Runtime;
         Interpreter interpreter(reporter);
         interpreter.interpret(statements);
     } catch (const std::runtime_error &) {
@@ -108,6 +111,7 @@ int Pseudocode::runFile(const std::string &path) {
  * Supports multi-line input for functions, classes, and control structures.
  */
 int Pseudocode::runRepl() {
+    InterpreterStage stage = InterpreterStage::Lexing;
     std::cout << C_CYAN << "  +-----------------------------------------------+" << C_RESET
               << std::endl;
     std::cout << C_CYAN << "  | " << C_RESET << "SCSA Pseudocode Interpreter [" << C_BLUE
@@ -119,7 +123,7 @@ int Pseudocode::runRepl() {
     std::cout << "  ~ Type 'exit' or use Ctrl+D to quit" << std::endl << std::endl;
 
     // Persist interpreter and reporter to maintain state between lines
-    ErrorReporter reporter("", "");
+    ErrorReporter reporter(stage, "", "");
     reporter.setReplMode(true);
     Interpreter interpreter(reporter);
 
@@ -172,6 +176,7 @@ int Pseudocode::runRepl() {
 
         try {
             // === Lexing ===
+            stage = InterpreterStage::Lexing;
             Lexer lexer(buffer, reporter, startingLine);
             std::vector<Token> tokens = lexer.scanTokens();
             if (debugTokens)
@@ -183,6 +188,7 @@ int Pseudocode::runRepl() {
             }
 
             // === Parsing ===
+            stage = InterpreterStage::Parsing;
             Parser parser(tokens, reporter);
             std::vector<StmtPtr> parsed = parser.parse();
 
@@ -197,6 +203,7 @@ int Pseudocode::runRepl() {
             }
 
             // === Execution ===
+            stage = InterpreterStage::Runtime;
 
             // Special Case: Standalone Expression Evaluation
             if (parsed.size() == 1) {
@@ -207,16 +214,14 @@ int Pseudocode::runRepl() {
                         std::cout << C_GREEN << " ==  " << C_CYAN << stringify(value) << C_RESET
                                   << std::endl;
                         sessionHistory.push_back(std::move(parsed[0]));
-                    } catch (const TypeError &error) {
-                        reporter.report(ErrorType::Type, error.span, error.what());
-                    } catch (const NameError &error) {
-                        reporter.report(ErrorType::Name, error.span, error.what());
-                    } catch (const ArgumentError &error) {
-                        reporter.report(ErrorType::Argument, error.span, error.what());
-                    } catch (const IndexError &error) {
-                        reporter.report(ErrorType::Index, error.span, error.what());
-                    } catch (const VMError &error) {
-                        reporter.report(ErrorType::VM, error.span, error.what());
+                    } catch (const RuntimeError &error) {
+                        // We need to manually report the runtime error
+                        // The interpreter usually reports runtime errors in the interpret function
+                        // But here we're evaluating an expression directly
+                        Token token     = error.token;
+                        std::string msg = error.what();
+                        reporter.report(ErrorType::Runtime, token.line, token.column, msg,
+                                        token.lexeme.length());
                     }
                     buffer.clear();
                     continue;

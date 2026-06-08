@@ -8,9 +8,9 @@
 struct Chunk {
     std::vector<uint8_t> code;
     std::vector<RuntimeValue> constants;
-    std::vector<Span> spans; // maps each byte in code to its source span
+    std::vector<size_t> lines; // maps each byte in code to its source line number
 
-    void write(uint8_t byte, Span span);
+    void write(uint8_t byte, size_t line);
     size_t addConstant(RuntimeValue value);
-    Span getSpan(size_t offset) const;
+    size_t getLine(size_t offset) const;
 };

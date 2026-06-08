@@ -1,8 +1,8 @@
 #include "chunk.hpp"
 
-void Chunk::write(uint8_t byte, Span span) {
+void Chunk::write(uint8_t byte, size_t line) {
     code.push_back(byte);
-    spans.push_back(span);
+    lines.push_back(line);
 }
 
 size_t Chunk::addConstant(RuntimeValue value) {
@@ -10,9 +10,9 @@ size_t Chunk::addConstant(RuntimeValue value) {
     return constants.size() - 1;
 }
 
-Span Chunk::getSpan(size_t offset) const {
-    if (offset < spans.size()) {
-        return spans[offset];
+size_t Chunk::getLine(size_t offset) const {
+    if (offset < lines.size()) {
+        return lines[offset];
     }
-    return {0, 0, 0};
+    return 0;
 }

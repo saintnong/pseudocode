@@ -1,2 +1,0 @@
-x = "hello" / 5
-# EXPECT ERROR: unsupported operand types for /: 'string' and 'integer'

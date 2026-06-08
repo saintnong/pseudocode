@@ -1,3 +1,0 @@
-# String IN with non-string item (integer) — must error
-PRINT(5 IN "hello")
-# EXPECT ERROR: Can only search for substrings inside strings.

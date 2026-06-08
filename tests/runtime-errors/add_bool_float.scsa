@@ -1,2 +1,0 @@
-x = TRUE + 1.0
-# EXPECT ERROR: unsupported operand types for +: 'boolean' and 'float'

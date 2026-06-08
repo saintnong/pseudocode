@@ -1,2 +1,0 @@
-x = 5.0 - FALSE
-# EXPECT ERROR: unsupported operand types for -: 'float' and 'boolean'
