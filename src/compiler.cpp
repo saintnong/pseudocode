@@ -11,80 +11,137 @@ Compiler::Compiler(ErrorReporter &reporter, Compiler *enclosing, std::string fnN
     currentFn->name  = fnName;
 }
 
+static Span defaultSpan() {
+    return {1, 0, 1};
+}
+
+static Span getExprSpan(Expr *expr) {
+    if (auto *lit = dynamic_cast<LiteralExpr *>(expr)) {
+        return lit->token.span;
+    }
+    if (auto *var = dynamic_cast<VariableExpr *>(expr)) {
+        return var->name.span;
+    }
+    if (auto *assign = dynamic_cast<AssignExpr *>(expr)) {
+        Span lhs = getExprSpan(assign->target.get());
+        Span rhs = getExprSpan(assign->value.get());
+        return {lhs.line, lhs.start, rhs.end};
+    }
+    if (auto *bin = dynamic_cast<BinaryExpr *>(expr)) {
+        Span lhs = getExprSpan(bin->left.get());
+        Span rhs = getExprSpan(bin->right.get());
+        return {lhs.line, lhs.start, rhs.end};
+    }
+    if (auto *un = dynamic_cast<UnaryExpr *>(expr)) {
+        Span operand = getExprSpan(un->right.get());
+        return {un->op.span.line, un->op.span.start, operand.end};
+    }
+    if (auto *call = dynamic_cast<CallExpr *>(expr)) {
+        Span span = getExprSpan(call->callee.get());
+        if (!call->args.empty()) {
+            span.end = getExprSpan(call->args.back().get()).end;
+        }
+        return span;
+    }
+    if (auto *get = dynamic_cast<GetExpr *>(expr)) {
+        Span obj = getExprSpan(get->object.get());
+        return {obj.line, obj.start, get->name.span.end};
+    }
+    if (auto *arr = dynamic_cast<ArrayAccessExpr *>(expr)) {
+        Span obj = getExprSpan(arr->array.get());
+        return {obj.line, obj.start, arr->anchor.span.end};
+    }
+    if (auto *arrLit = dynamic_cast<ArrayLitExpr *>(expr)) {
+        return arrLit->anchor.span;
+    }
+    if (auto *dictLit = dynamic_cast<DictLitExpr *>(expr)) {
+        return dictLit->anchor.span;
+    }
+    if (auto *newExpr = dynamic_cast<NewExpr *>(expr)) {
+        Span span = newExpr->className.span;
+        if (!newExpr->args.empty()) {
+            span.end = getExprSpan(newExpr->args.back().get()).end;
+        }
+        return span;
+    }
+    return {1, 0, 1};
+}
+
 std::shared_ptr<CompiledFunction> Compiler::compile(const std::vector<StmtPtr> &statements) {
     for (const auto &stmt : statements) {
         if (stmt) {
             compileStatement(stmt.get());
         }
     }
-    emitByte(OP_NULL, currentChunk().lines.empty() ? 1 : currentChunk().lines.back());
-    emitByte(OP_RETURN, currentChunk().lines.empty() ? 1 : currentChunk().lines.back());
+    Span last = currentChunk().spans.empty() ? defaultSpan() : currentChunk().spans.back();
+    emitByte(OP_NULL, last);
+    emitByte(OP_RETURN, last);
     return currentFn;
 }
 
 std::shared_ptr<CompiledFunction> Compiler::compileExpressionOnly(Expr *expr) {
     compileExpression(expr);
-    emitByte(OP_RETURN, 1);
+    emitByte(OP_RETURN, defaultSpan());
     return currentFn;
 }
 
-void Compiler::emitByte(uint8_t byte, size_t line) {
-    currentChunk().write(byte, line);
+void Compiler::emitByte(uint8_t byte, Span span) {
+    currentChunk().write(byte, span);
 }
 
-void Compiler::emitShort(uint16_t value, size_t line) {
-    emitByte((value >> 8) & 0xff, line);
-    emitByte(value & 0xff, line);
+void Compiler::emitShort(uint16_t value, Span span) {
+    emitByte((value >> 8) & 0xff, span);
+    emitByte(value & 0xff, span);
 }
 
-void Compiler::emitConstant(RuntimeValue value, size_t line) {
+void Compiler::emitConstant(RuntimeValue value, Span span) {
     size_t index = currentChunk().addConstant(value);
     if (index > 65535) {
-        errorAt(line, "Too many constants in one chunk.");
+        errorAt(span, "Too many constants in one chunk.");
     }
-    emitByte(OP_CONSTANT, line);
-    emitShort(static_cast<uint16_t>(index), line);
+    emitByte(OP_CONSTANT, span);
+    emitShort(static_cast<uint16_t>(index), span);
 }
 
-size_t Compiler::emitJump(uint8_t instruction, size_t line) {
-    emitByte(instruction, line);
-    emitByte(0xff, line);
-    emitByte(0xff, line);
+size_t Compiler::emitJump(uint8_t instruction, Span span) {
+    emitByte(instruction, span);
+    emitByte(0xff, span);
+    emitByte(0xff, span);
     return currentChunk().code.size() - 2;
 }
 
-void Compiler::patchJump(size_t offset, size_t line) {
+void Compiler::patchJump(size_t offset, Span span) {
     size_t jump = currentChunk().code.size() - offset - 2;
     if (jump > 65535) {
-        errorAt(line, "Too much code to jump over.");
+        errorAt(span, "Too much code to jump over.");
     }
     currentChunk().code[offset]     = (jump >> 8) & 0xff;
     currentChunk().code[offset + 1] = jump & 0xff;
 }
 
-void Compiler::emitLoop(size_t loopStart, size_t line) {
-    emitByte(OP_LOOP, line);
+void Compiler::emitLoop(size_t loopStart, Span span) {
+    emitByte(OP_LOOP, span);
     size_t offset = currentChunk().code.size() - loopStart + 2;
     if (offset > 65535) {
-        errorAt(line, "Loop body too large.");
+        errorAt(span, "Loop body too large.");
     }
-    emitShort(static_cast<uint16_t>(offset), line);
+    emitShort(static_cast<uint16_t>(offset), span);
 }
 
 void Compiler::beginScope() {
     scopeDepth++;
 }
 
-void Compiler::endScope(size_t line) {
+void Compiler::endScope(Span span) {
     scopeDepth--;
     while (!locals.empty() && locals.back().depth > scopeDepth) {
-        emitByte(OP_POP, line);
+        emitByte(OP_POP, span);
         locals.pop_back();
         nextLocalSlot--;
     }
 }
 
-int Compiler::addLocal(const std::string &name, size_t line, bool reserveSlot) {
+int Compiler::addLocal(const std::string &name, Span span, bool reserveSlot) {
     for (int i = static_cast<int>(locals.size()) - 1; i >= 0; i--) {
         if (locals[i].name == name) {
             return locals[i].slot;
@@ -97,7 +154,7 @@ int Compiler::addLocal(const std::string &name, size_t line, bool reserveSlot) {
     local.slot  = nextLocalSlot++;
     locals.push_back(local);
     if (reserveSlot) {
-        emitByte(OP_NULL, line);
+        emitByte(OP_NULL, span);
     }
     return local.slot;
 }
@@ -111,8 +168,8 @@ int Compiler::resolveLocal(const std::string &name) {
     return -1;
 }
 
-void Compiler::errorAt(size_t line, const std::string &message) {
-    reporter.report(ErrorType::Syntax, line, 0, message, 1);
+void Compiler::errorAt(Span span, const std::string &message) {
+    reporter.report(ErrorType::Syntax, span, message);
 }
 
 // =================================================================================================
@@ -149,48 +206,48 @@ void Compiler::compileExpression(Expr *expr) {
 
 void Compiler::compileLiteralExpr(LiteralExpr *expr) {
     Token token = expr->token;
-    size_t line = token.line;
+    Span span   = token.span;
 
     if (token.type == TOK_INTEGER) {
         RuntimeValue val;
         val.value = std::stoi(token.lexeme);
-        emitConstant(val, line);
+        emitConstant(val, span);
     } else if (token.type == TOK_FLOAT) {
         RuntimeValue val;
         val.value = std::stod(token.lexeme);
-        emitConstant(val, line);
+        emitConstant(val, span);
     } else if (token.type == TOK_STRING) {
         RuntimeValue val;
         val.value = token.lexeme;
-        emitConstant(val, line);
+        emitConstant(val, span);
     } else if (token.type == TOK_TRUE) {
-        emitByte(OP_TRUE, line);
+        emitByte(OP_TRUE, span);
     } else if (token.type == TOK_FALSE) {
-        emitByte(OP_FALSE, line);
+        emitByte(OP_FALSE, span);
     } else {
-        emitByte(OP_NULL, line);
+        emitByte(OP_NULL, span);
     }
 }
 
 void Compiler::compileVariableExpr(VariableExpr *expr) {
     std::string name = expr->name.lexeme;
-    size_t line      = expr->name.line;
+    Span span        = expr->name.span;
 
     int slot = resolveLocal(name);
     if (slot != -1) {
-        emitByte(OP_GET_LOCAL, line);
-        emitShort(static_cast<uint16_t>(slot), line);
+        emitByte(OP_GET_LOCAL, span);
+        emitShort(static_cast<uint16_t>(slot), span);
     } else {
         RuntimeValue val;
         val.value      = name;
         size_t nameIdx = currentChunk().addConstant(val);
-        emitByte(OP_GET_GLOBAL, line);
-        emitShort(static_cast<uint16_t>(nameIdx), line);
+        emitByte(OP_GET_GLOBAL, span);
+        emitShort(static_cast<uint16_t>(nameIdx), span);
     }
 }
 
 void Compiler::compileAssignExpr(AssignExpr *expr) {
-    size_t line = expr->anchor.line;
+    Span span = expr->anchor.span;
 
     if (auto *varExpr = dynamic_cast<VariableExpr *>(expr->target.get())) {
         std::string name = varExpr->name.lexeme;
@@ -202,7 +259,7 @@ void Compiler::compileAssignExpr(AssignExpr *expr) {
             // New local variable inside a function — the compiled value
             // becomes the local's stack slot directly (no OP_SET_LOCAL needed)
             compileExpression(expr->value.get());
-            addLocal(name, line);
+            addLocal(name, span);
             lastAssignWasNewLocal = true;
             return;
         }
@@ -210,14 +267,14 @@ void Compiler::compileAssignExpr(AssignExpr *expr) {
         compileExpression(expr->value.get());
 
         if (slot != -1) {
-            emitByte(OP_SET_LOCAL, line);
-            emitShort(static_cast<uint16_t>(slot), line);
+            emitByte(OP_SET_LOCAL, span);
+            emitShort(static_cast<uint16_t>(slot), span);
         } else {
             RuntimeValue val;
             val.value      = name;
             size_t nameIdx = currentChunk().addConstant(val);
-            emitByte(OP_SET_GLOBAL, line);
-            emitShort(static_cast<uint16_t>(nameIdx), line);
+            emitByte(OP_SET_GLOBAL, span);
+            emitShort(static_cast<uint16_t>(nameIdx), span);
         }
     } else if (auto *getExpr = dynamic_cast<GetExpr *>(expr->target.get())) {
         compileExpression(getExpr->object.get());
@@ -226,33 +283,33 @@ void Compiler::compileAssignExpr(AssignExpr *expr) {
         RuntimeValue val;
         val.value      = getExpr->name.lexeme;
         size_t nameIdx = currentChunk().addConstant(val);
-        emitByte(OP_SET_PROPERTY, line);
-        emitShort(static_cast<uint16_t>(nameIdx), line);
+        emitByte(OP_SET_PROPERTY, span);
+        emitShort(static_cast<uint16_t>(nameIdx), span);
     } else if (auto *arrayAccess = dynamic_cast<ArrayAccessExpr *>(expr->target.get())) {
         compileExpression(arrayAccess->array.get());
         compileExpression(arrayAccess->index.get());
         compileExpression(expr->value.get());
-        emitByte(OP_INDEX_SET, line);
+        emitByte(OP_INDEX_SET, span);
     }
 }
 
 void Compiler::compileBinaryExpr(BinaryExpr *expr) {
-    size_t line = expr->op.line;
+    Span span = getExprSpan(expr);
 
     if (expr->op.type == TOK_AND) {
         compileExpression(expr->left.get());
-        size_t endJump = emitJump(OP_AND_JUMP, line);
-        emitByte(OP_POP, line);
+        size_t endJump = emitJump(OP_AND_JUMP, span);
+        emitByte(OP_POP, span);
         compileExpression(expr->right.get());
-        patchJump(endJump, line);
+        patchJump(endJump, span);
         return;
     }
     if (expr->op.type == TOK_OR) {
         compileExpression(expr->left.get());
-        size_t endJump = emitJump(OP_OR_JUMP, line);
-        emitByte(OP_POP, line);
+        size_t endJump = emitJump(OP_OR_JUMP, span);
+        emitByte(OP_POP, span);
         compileExpression(expr->right.get());
-        patchJump(endJump, line);
+        patchJump(endJump, span);
         return;
     }
 
@@ -261,122 +318,122 @@ void Compiler::compileBinaryExpr(BinaryExpr *expr) {
 
     switch (expr->op.type) {
     case TOK_PLUS:
-        emitByte(OP_ADD, line);
+        emitByte(OP_ADD, span);
         break;
     case TOK_MINUS:
-        emitByte(OP_SUBTRACT, line);
+        emitByte(OP_SUBTRACT, span);
         break;
     case TOK_MULTIPLY:
-        emitByte(OP_MULTIPLY, line);
+        emitByte(OP_MULTIPLY, span);
         break;
     case TOK_DIVIDE:
-        emitByte(OP_DIVIDE, line);
+        emitByte(OP_DIVIDE, span);
         break;
     case TOK_MOD:
-        emitByte(OP_MOD, line);
+        emitByte(OP_MOD, span);
         break;
     case TOK_EQUAL:
-        emitByte(OP_EQUAL, line);
+        emitByte(OP_EQUAL, span);
         break;
     case TOK_NOT_EQUAL:
-        emitByte(OP_NOT_EQUAL, line);
+        emitByte(OP_NOT_EQUAL, span);
         break;
     case TOK_GREATER_THAN:
-        emitByte(OP_GREATER, line);
+        emitByte(OP_GREATER, span);
         break;
     case TOK_GT_OR_EQ:
-        emitByte(OP_GREATER_EQUAL, line);
+        emitByte(OP_GREATER_EQUAL, span);
         break;
     case TOK_LESS_THAN:
-        emitByte(OP_LESS, line);
+        emitByte(OP_LESS, span);
         break;
     case TOK_LT_OR_EQ:
-        emitByte(OP_LESS_EQUAL, line);
+        emitByte(OP_LESS_EQUAL, span);
         break;
     case TOK_IN:
-        emitByte(OP_IN, line);
+        emitByte(OP_IN, span);
         break;
     default:
-        errorAt(line, "Unknown binary operator.");
+        errorAt(expr->op.span, "Unknown binary operator.");
     }
 }
 
 void Compiler::compileUnaryExpr(UnaryExpr *expr) {
-    size_t line = expr->op.line;
+    Span span = getExprSpan(expr);
     compileExpression(expr->right.get());
 
     switch (expr->op.type) {
     case TOK_MINUS:
-        emitByte(OP_NEGATE, line);
+        emitByte(OP_NEGATE, span);
         break;
     case TOK_NOT:
-        emitByte(OP_NOT, line);
+        emitByte(OP_NOT, span);
         break;
     default:
-        errorAt(line, "Unknown unary operator.");
+        errorAt(expr->op.span, "Unknown unary operator.");
     }
 }
 
 void Compiler::compileCallExpr(CallExpr *expr) {
-    size_t line = expr->anchor.line;
+    Span span = getExprSpan(expr);
     compileExpression(expr->callee.get());
 
     for (const auto &arg : expr->args) {
         compileExpression(arg.get());
     }
 
-    emitByte(OP_CALL, line);
-    emitByte(static_cast<uint8_t>(expr->args.size()), line);
+    emitByte(OP_CALL, span);
+    emitByte(static_cast<uint8_t>(expr->args.size()), span);
 }
 
 void Compiler::compileGetExpr(GetExpr *expr) {
-    size_t line = expr->name.line;
+    Span span = getExprSpan(expr);
     compileExpression(expr->object.get());
 
     RuntimeValue val;
     val.value      = expr->name.lexeme;
     size_t nameIdx = currentChunk().addConstant(val);
-    emitByte(OP_GET_PROPERTY, line);
-    emitShort(static_cast<uint16_t>(nameIdx), line);
+    emitByte(OP_GET_PROPERTY, span);
+    emitShort(static_cast<uint16_t>(nameIdx), span);
 }
 
 void Compiler::compileArrayAccessExpr(ArrayAccessExpr *expr) {
-    size_t line = expr->anchor.line;
+    Span span = getExprSpan(expr);
     compileExpression(expr->array.get());
     compileExpression(expr->index.get());
-    emitByte(OP_INDEX_GET, line);
+    emitByte(OP_INDEX_GET, span);
 }
 
 void Compiler::compileArrayLitExpr(ArrayLitExpr *expr) {
-    size_t line = expr->anchor.line;
+    Span span = getExprSpan(expr);
     for (const auto &elem : expr->elements) {
         compileExpression(elem.get());
     }
-    emitByte(OP_ARRAY, line);
-    emitShort(static_cast<uint16_t>(expr->elements.size()), line);
+    emitByte(OP_ARRAY, span);
+    emitShort(static_cast<uint16_t>(expr->elements.size()), span);
 }
 
 void Compiler::compileDictLitExpr(DictLitExpr *expr) {
-    size_t line = expr->anchor.line;
+    Span span = getExprSpan(expr);
     for (const auto &entry : expr->entries) {
         compileExpression(entry.key.get());
         compileExpression(entry.value.get());
     }
-    emitByte(OP_DICT, line);
-    emitShort(static_cast<uint16_t>(expr->entries.size()), line);
+    emitByte(OP_DICT, span);
+    emitShort(static_cast<uint16_t>(expr->entries.size()), span);
 }
 
 void Compiler::compileNewExpr(NewExpr *expr) {
-    size_t line = expr->className.line;
+    Span span = getExprSpan(expr);
     for (const auto &arg : expr->args) {
         compileExpression(arg.get());
     }
     RuntimeValue val;
     val.value      = expr->className.lexeme;
     size_t nameIdx = currentChunk().addConstant(val);
-    emitByte(OP_NEW_INSTANCE, line);
-    emitShort(static_cast<uint16_t>(nameIdx), line);
-    emitByte(static_cast<uint8_t>(expr->args.size()), line);
+    emitByte(OP_NEW_INSTANCE, span);
+    emitShort(static_cast<uint16_t>(nameIdx), span);
+    emitByte(static_cast<uint8_t>(expr->args.size()), span);
 }
 
 // =================================================================================================
@@ -419,18 +476,19 @@ void Compiler::compileExpressionStmt(ExpressionStmt *stmt) {
         // IS the local's stack slot, so don't pop it
         lastAssignWasNewLocal = false;
     } else {
-        emitByte(OP_POP, currentChunk().lines.empty() ? 1 : currentChunk().lines.back());
+        Span last = currentChunk().spans.empty() ? defaultSpan() : currentChunk().spans.back();
+        emitByte(OP_POP, last);
     }
 }
 
 void Compiler::compileReturnStmt(ReturnStmt *stmt) {
-    size_t line = currentChunk().lines.empty() ? 1 : currentChunk().lines.back();
+    Span last = currentChunk().spans.empty() ? defaultSpan() : currentChunk().spans.back();
     if (stmt->value) {
         compileExpression(stmt->value.get());
     } else {
-        emitByte(OP_NULL, line);
+        emitByte(OP_NULL, last);
     }
-    emitByte(OP_RETURN, line);
+    emitByte(OP_RETURN, last);
 }
 
 void Compiler::compileBlockStmt(BlockStmt *stmt) {
@@ -440,59 +498,59 @@ void Compiler::compileBlockStmt(BlockStmt *stmt) {
 }
 
 void Compiler::compileIfStmt(IfStmt *stmt) {
-    size_t line = stmt->keyword.line;
+    Span span = stmt->keyword.span;
 
     compileExpression(stmt->condition.get());
-    size_t thenJump = emitJump(OP_JUMP_IF_FALSE, line);
+    size_t thenJump = emitJump(OP_JUMP_IF_FALSE, span);
 
     beginScope();
     for (const auto &s : stmt->thenBranch) {
         compileStatement(s.get());
     }
-    endScope(line);
+    endScope(span);
 
     std::vector<size_t> endJumps;
-    size_t endJump = emitJump(OP_JUMP, line);
+    size_t endJump = emitJump(OP_JUMP, span);
     endJumps.push_back(endJump);
 
-    patchJump(thenJump, line);
+    patchJump(thenJump, span);
 
     for (const auto &elseIf : stmt->elseIfBranches) {
         compileExpression(elseIf.condition.get());
-        size_t nextJump = emitJump(OP_JUMP_IF_FALSE, line);
+        size_t nextJump = emitJump(OP_JUMP_IF_FALSE, span);
 
         beginScope();
         for (const auto &s : elseIf.body) {
             compileStatement(s.get());
         }
-        endScope(line);
+        endScope(span);
 
-        size_t skipJump = emitJump(OP_JUMP, line);
+        size_t skipJump = emitJump(OP_JUMP, span);
         endJumps.push_back(skipJump);
 
-        patchJump(nextJump, line);
+        patchJump(nextJump, span);
     }
 
     beginScope();
     for (const auto &s : stmt->elseBranch) {
         compileStatement(s.get());
     }
-    endScope(line);
+    endScope(span);
 
     for (size_t jump : endJumps) {
-        patchJump(jump, line);
+        patchJump(jump, span);
     }
 }
 
 void Compiler::compileFunctionStmt(FunctionStmt *stmt) {
-    size_t line      = stmt->name.line;
-    std::string name = stmt->name.lexeme;
+    Span span         = stmt->name.span;
+    std::string name  = stmt->name.lexeme;
 
     Compiler subCompiler(reporter, this, name);
     subCompiler.currentFn->arity = static_cast<int>(stmt->params.size());
 
     for (const auto &param : stmt->params) {
-        subCompiler.addLocal(param.lexeme, line, false);
+        subCompiler.addLocal(param.lexeme, span, false);
     }
 
     auto compiled = subCompiler.compile(stmt->body);
@@ -503,36 +561,36 @@ void Compiler::compileFunctionStmt(FunctionStmt *stmt) {
     size_t constIdx = currentChunk().addConstant(funcVal);
 
     if (enclosing != nullptr) {
-        emitByte(OP_CLOSURE, line);
-        emitShort(static_cast<uint16_t>(constIdx), line);
-        addLocal(name, line);
+        emitByte(OP_CLOSURE, span);
+        emitShort(static_cast<uint16_t>(constIdx), span);
+        addLocal(name, span);
     } else {
-        emitByte(OP_CLOSURE, line);
-        emitShort(static_cast<uint16_t>(constIdx), line);
+        emitByte(OP_CLOSURE, span);
+        emitShort(static_cast<uint16_t>(constIdx), span);
 
         RuntimeValue nameVal;
         nameVal.value  = name;
         size_t nameIdx = currentChunk().addConstant(nameVal);
-        emitByte(OP_DEFINE_GLOBAL, line);
-        emitShort(static_cast<uint16_t>(nameIdx), line);
+        emitByte(OP_DEFINE_GLOBAL, span);
+        emitShort(static_cast<uint16_t>(nameIdx), span);
     }
 }
 
 void Compiler::compileClassStmt(ClassStmt *stmt) {
-    size_t line           = stmt->name.line;
+    Span span           = stmt->name.span;
     std::string className = stmt->name.lexeme;
 
     RuntimeValue classNameVal;
     classNameVal.value = className;
     size_t nameIdx     = currentChunk().addConstant(classNameVal);
 
-    emitByte(OP_CLASS, line);
-    emitShort(static_cast<uint16_t>(nameIdx), line);
+    emitByte(OP_CLASS, span);
+    emitShort(static_cast<uint16_t>(nameIdx), span);
 
     if (stmt->superclass.type != TOK_EOF) {
         VariableExpr superVar(stmt->superclass);
         compileVariableExpr(&superVar);
-        emitByte(OP_INHERIT, line);
+        emitByte(OP_INHERIT, span);
     }
 
     for (const auto &attr : stmt->attributes) {
@@ -548,15 +606,15 @@ void Compiler::compileClassStmt(ClassStmt *stmt) {
                     std::make_shared<UserFunction>(compiledInit, nullptr));
                 size_t initConstIdx = currentChunk().addConstant(initVal);
 
-                emitByte(OP_CLOSURE, line);
-                emitShort(static_cast<uint16_t>(initConstIdx), line);
+                emitByte(OP_CLOSURE, span);
+                emitShort(static_cast<uint16_t>(initConstIdx), span);
 
                 RuntimeValue attrNameVal;
                 attrNameVal.value  = fieldName;
                 size_t attrNameIdx = currentChunk().addConstant(attrNameVal);
 
-                emitByte(OP_ATTRIBUTE, line);
-                emitShort(static_cast<uint16_t>(attrNameIdx), line);
+                emitByte(OP_ATTRIBUTE, span);
+                emitShort(static_cast<uint16_t>(attrNameIdx), span);
             }
         }
     }
@@ -569,7 +627,7 @@ void Compiler::compileClassStmt(ClassStmt *stmt) {
             subCompiler.currentFn->arity = static_cast<int>(funcStmt->params.size());
 
             for (const auto &param : funcStmt->params) {
-                subCompiler.addLocal(param.lexeme, line, false);
+                subCompiler.addLocal(param.lexeme, span, false);
             }
 
             auto compiledMethod = subCompiler.compile(funcStmt->body);
@@ -579,58 +637,58 @@ void Compiler::compileClassStmt(ClassStmt *stmt) {
                 std::make_shared<UserFunction>(compiledMethod, nullptr));
             size_t methodConstIdx = currentChunk().addConstant(methodVal);
 
-            emitByte(OP_CLOSURE, line);
-            emitShort(static_cast<uint16_t>(methodConstIdx), line);
+            emitByte(OP_CLOSURE, span);
+            emitShort(static_cast<uint16_t>(methodConstIdx), span);
 
             RuntimeValue methodNameVal;
             methodNameVal.value  = methodName;
             size_t methodNameIdx = currentChunk().addConstant(methodNameVal);
 
-            emitByte(OP_METHOD, line);
-            emitShort(static_cast<uint16_t>(methodNameIdx), line);
+            emitByte(OP_METHOD, span);
+            emitShort(static_cast<uint16_t>(methodNameIdx), span);
         }
     }
 
     if (enclosing != nullptr) {
-        addLocal(className, line);
+        addLocal(className, span);
     } else {
-        emitByte(OP_DEFINE_GLOBAL, line);
-        emitShort(static_cast<uint16_t>(nameIdx), line);
+        emitByte(OP_DEFINE_GLOBAL, span);
+        emitShort(static_cast<uint16_t>(nameIdx), span);
     }
 }
 
 void Compiler::compileWhileStmt(WhileStmt *stmt) {
-    size_t line      = stmt->keyword.line;
+    Span span       = stmt->keyword.span;
     size_t loopStart = currentChunk().code.size();
 
     compileExpression(stmt->condition.get());
-    size_t exitJump = emitJump(OP_JUMP_IF_FALSE, line);
+    size_t exitJump = emitJump(OP_JUMP_IF_FALSE, span);
 
     beginScope();
     for (const auto &s : stmt->body) {
         compileStatement(s.get());
     }
-    endScope(line);
+    endScope(span);
 
-    emitLoop(loopStart, line);
-    patchJump(exitJump, line);
+    emitLoop(loopStart, span);
+    patchJump(exitJump, span);
 }
 
 void Compiler::compileForInStmt(ForInStmt *stmt) {
-    size_t line = stmt->keyword.line;
+    Span span = stmt->keyword.span;
 
     // Reserve 4 stack slots for loop variables (var, arr copy, index, size)
-    int varSlot = addLocal(stmt->variable.lexeme, line, true);
-    addLocal("__arr_" + stmt->variable.lexeme, line, true);
-    addLocal("__idx_" + stmt->variable.lexeme, line, true);
-    addLocal("__size_" + stmt->variable.lexeme, line, true);
+    int varSlot = addLocal(stmt->variable.lexeme, span, true);
+    addLocal("__arr_" + stmt->variable.lexeme, span, true);
+    addLocal("__idx_" + stmt->variable.lexeme, span, true);
+    addLocal("__size_" + stmt->variable.lexeme, span, true);
 
     // Push iterable value on top of reserved slots
     compileExpression(stmt->iterable.get());
 
     // OP_FOR_IN_PREPARE pops the iterable and fills the 4 reserved slots
-    emitByte(OP_FOR_IN_PREPARE, line);
-    emitShort(static_cast<uint16_t>(varSlot), line);
+    emitByte(OP_FOR_IN_PREPARE, span);
+    emitShort(static_cast<uint16_t>(varSlot), span);
 
     size_t loopStart = currentChunk().code.size();
 
@@ -638,17 +696,17 @@ void Compiler::compileForInStmt(ForInStmt *stmt) {
     for (const auto &s : stmt->body) {
         compileStatement(s.get());
     }
-    endScope(line);
+    endScope(span);
 
-    emitByte(OP_FOR_IN_LOOP, line);
-    emitShort(static_cast<uint16_t>(varSlot), line);
-    emitShort(static_cast<uint16_t>(loopStart), line);
+    emitByte(OP_FOR_IN_LOOP, span);
+    emitShort(static_cast<uint16_t>(varSlot), span);
+    emitShort(static_cast<uint16_t>(loopStart), span);
 
     // Clean up the 4 local slots
-    emitByte(OP_POP, line);
-    emitByte(OP_POP, line);
-    emitByte(OP_POP, line);
-    emitByte(OP_POP, line);
+    emitByte(OP_POP, span);
+    emitByte(OP_POP, span);
+    emitByte(OP_POP, span);
+    emitByte(OP_POP, span);
     for (int i = 0; i < 4; i++) {
         if (!locals.empty()) {
             locals.pop_back();
@@ -658,23 +716,23 @@ void Compiler::compileForInStmt(ForInStmt *stmt) {
 }
 
 void Compiler::compileForStmt(ForStmt *stmt) {
-    size_t line = stmt->keyword.line;
+    Span span = stmt->keyword.span;
 
     // Push start value onto stack → becomes the loop variable's slot
     compileExpression(stmt->start.get());
-    int varSlot = addLocal(stmt->variable.lexeme, line);
+    int varSlot = addLocal(stmt->variable.lexeme, span);
 
     // Push end value onto stack → becomes the limit slot
     compileExpression(stmt->end.get());
-    int limitSlot = addLocal("__limit_" + stmt->variable.lexeme, line);
+    int limitSlot = addLocal("__limit_" + stmt->variable.lexeme, span);
 
     // Push placeholder for step → becomes the step slot
-    emitByte(OP_NULL, line);
-    addLocal("__step_" + stmt->variable.lexeme, line);
+    emitByte(OP_NULL, span);
+    addLocal("__step_" + stmt->variable.lexeme, span);
 
-    emitByte(OP_FOR_PREPARE, line);
-    emitShort(static_cast<uint16_t>(varSlot), line);
-    size_t exitJump = emitJump(OP_JUMP_IF_FALSE, line);
+    emitByte(OP_FOR_PREPARE, span);
+    emitShort(static_cast<uint16_t>(varSlot), span);
+    size_t exitJump = emitJump(OP_JUMP_IF_FALSE, span);
 
     size_t loopStart = currentChunk().code.size();
 
@@ -682,18 +740,18 @@ void Compiler::compileForStmt(ForStmt *stmt) {
     for (const auto &s : stmt->body) {
         compileStatement(s.get());
     }
-    endScope(line);
+    endScope(span);
 
-    emitByte(OP_FOR_LOOP, line);
-    emitShort(static_cast<uint16_t>(varSlot), line);
-    emitShort(static_cast<uint16_t>(loopStart), line);
+    emitByte(OP_FOR_LOOP, span);
+    emitShort(static_cast<uint16_t>(varSlot), span);
+    emitShort(static_cast<uint16_t>(loopStart), span);
 
-    patchJump(exitJump, line);
+    patchJump(exitJump, span);
 
     // Clean up the 3 local slots (var, limit, step)
-    emitByte(OP_POP, line);
-    emitByte(OP_POP, line);
-    emitByte(OP_POP, line);
+    emitByte(OP_POP, span);
+    emitByte(OP_POP, span);
+    emitByte(OP_POP, span);
     // Remove locals from compiler tracking
     for (int i = 0; i < 3; i++) {
         if (!locals.empty()) {
@@ -706,7 +764,7 @@ void Compiler::compileForStmt(ForStmt *stmt) {
 }
 
 void Compiler::compileCaseStmt(CaseStmt *stmt) {
-    size_t line = stmt->keyword.line;
+    Span span = stmt->keyword.span;
 
     compileExpression(stmt->condition.get());
 
@@ -717,55 +775,55 @@ void Compiler::compileCaseStmt(CaseStmt *stmt) {
         size_t nextArmJump = 0;
 
         for (size_t i = 0; i < arm.values.size(); ++i) {
-            emitByte(OP_DUP, line);
+            emitByte(OP_DUP, span);
             compileExpression(arm.values[i].get());
-            emitByte(OP_EQUAL, line);
+            emitByte(OP_EQUAL, span);
 
             if (i < arm.values.size() - 1) {
-                size_t nextValJump = emitJump(OP_JUMP_IF_FALSE, line);
-                bodyJumps.push_back(emitJump(OP_JUMP, line));
-                patchJump(nextValJump, line);
+                size_t nextValJump = emitJump(OP_JUMP_IF_FALSE, span);
+                bodyJumps.push_back(emitJump(OP_JUMP, span));
+                patchJump(nextValJump, span);
             } else {
-                nextArmJump = emitJump(OP_JUMP_IF_FALSE, line);
+                nextArmJump = emitJump(OP_JUMP_IF_FALSE, span);
             }
         }
 
         for (size_t jump : bodyJumps) {
-            patchJump(jump, line);
+            patchJump(jump, span);
         }
 
-        emitByte(OP_POP, line);
+        emitByte(OP_POP, span);
         for (const auto &s : arm.body) {
             compileStatement(s.get());
         }
 
-        endJumps.push_back(emitJump(OP_JUMP, line));
-        patchJump(nextArmJump, line);
+        endJumps.push_back(emitJump(OP_JUMP, span));
+        patchJump(nextArmJump, span);
     }
 
-    emitByte(OP_POP, line);
+    emitByte(OP_POP, span);
     for (const auto &s : stmt->defaultBranch) {
         compileStatement(s.get());
     }
 
     for (size_t jump : endJumps) {
-        patchJump(jump, line);
+        patchJump(jump, span);
     }
 }
 
 void Compiler::compileRepeatUntilStmt(RepeatUntilStmt *stmt) {
-    size_t line      = stmt->keyword.line;
+    Span span       = stmt->keyword.span;
     size_t loopStart = currentChunk().code.size();
 
     beginScope();
     for (const auto &s : stmt->body) {
         compileStatement(s.get());
     }
-    endScope(line);
+    endScope(span);
 
     compileExpression(stmt->condition.get());
-    emitByte(OP_NOT, line);
-    size_t exitJump = emitJump(OP_JUMP_IF_FALSE, line);
-    emitLoop(loopStart, line);
-    patchJump(exitJump, line);
+    emitByte(OP_NOT, span);
+    size_t exitJump = emitJump(OP_JUMP_IF_FALSE, span);
+    emitLoop(loopStart, span);
+    patchJump(exitJump, span);
 }

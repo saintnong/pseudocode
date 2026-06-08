@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include "token.hpp"
+
 // Forward declaration to break circular dependency
 enum InterpreterStage { Lexing, Parsing, Runtime };
 
@@ -93,13 +95,10 @@ public:
     /**
      * Report an error with full context including surrounding lines
      * @param type The error type (Syntax, Type, etc.)
-     * @param line The line number where error occurred
-     * @param column The column position where error occurred
+     * @param span The source span where the error occurred
      * @param message The error message to display
-     * @param length The length of the erroneous token (for underlining)
      */
-    void report(ErrorType type, size_t line, size_t column, const std::string &message,
-                size_t length = 1);
+    void report(ErrorType type, Span span, const std::string &message);
 
     /**
      * Sets the reporter into REPL mode so it only reports last line.

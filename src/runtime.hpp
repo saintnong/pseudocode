@@ -137,20 +137,20 @@ inline void setDictEntry(Dictionary &dict, const RuntimeValue &key, const Runtim
 /**
  * RuntimeError
  * Exception thrown when a terminal error occurs during script execution.
- * Captures the problematic token for high-quality error reporting.
+ * Captures the problematic source span for high-quality error reporting.
  */
 class RuntimeError : public std::runtime_error {
 public:
-    // The token where the error occurred (stored by value to avoid dangling references)
-    const Token token;
+    // The source span where the error occurred (stored by value to avoid dangling references)
+    const Span span;
 
     /**
      * Create a new runtime error
-     * @param token The token associated with the error
+     * @param span The source span associated with the error
      * @param message Descriptive error message
      */
-    RuntimeError(const Token &token, const std::string &message)
-        : std::runtime_error(message), token(token) {
+    RuntimeError(Span span, const std::string &message)
+        : std::runtime_error(message), span(span) {
     }
 };
 
@@ -203,7 +203,7 @@ public:
         if (enclosing)
             return enclosing->get(name);
 
-        throw RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
+        throw RuntimeError(name.span, "Undefined variable '" + name.lexeme + "'.");
     }
 };
 
@@ -278,7 +278,7 @@ struct Instance {
         if (fields->count(name.lexeme)) {
             return fields->at(name.lexeme);
         }
-        throw RuntimeError(name, "Undefined property '" + name.lexeme + "'.");
+        throw RuntimeError(name.span, "Undefined property '" + name.lexeme + "'.");
     }
 
     /**

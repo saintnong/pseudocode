@@ -54,7 +54,7 @@ void Pseudocode::printTokenTable(const std::vector<Token> &tokens) {
         if (token.type == TOK_EOF)
             break; // Don't display EOF token
         std::cout << std::left << std::setw(20) << token.typeToString() << std::setw(25)
-                  << (token.lexeme.empty() ? "N/A" : token.lexeme) << token.line << std::endl;
+                  << (token.lexeme.empty() ? "N/A" : token.lexeme) << token.span.line << std::endl;
     }
 }
 
@@ -218,10 +218,9 @@ int Pseudocode::runRepl() {
                         // We need to manually report the runtime error
                         // The interpreter usually reports runtime errors in the interpret function
                         // But here we're evaluating an expression directly
-                        Token token     = error.token;
+                        Span span      = error.span;
                         std::string msg = error.what();
-                        reporter.report(ErrorType::Runtime, token.line, token.column, msg,
-                                        token.lexeme.length());
+                        reporter.report(ErrorType::Runtime, span, msg);
                     }
                     buffer.clear();
                     continue;

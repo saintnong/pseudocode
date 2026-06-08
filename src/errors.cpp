@@ -159,15 +159,17 @@ std::string ErrorReporter::getSourceLine(size_t lineNum) {
  * Format and display a complete error message with context
  * Shows the error stage, location, line content, and error pointer
  * @param type The type of error (Syntax, Type, etc.)
- * @param line The line number where the error occurred
- * @param column The column position where the error occurred
+ * @param span The source span where the error occurred
  * @param message The error message to display
- * @param lineSource The actual source code line containing the error
- * @param length The length of the erroneous token (for underlining)
  */
-void ErrorReporter::report(ErrorType type, size_t line, size_t column, const std::string &message,
-                           size_t length) {
+void ErrorReporter::report(ErrorType type, Span span, const std::string &message) {
     hadError = true;
+
+    size_t line   = span.line;
+    size_t column = span.start;
+    size_t length = span.end - span.start;
+    if (length == 0)
+        length = 1;
 
     // In silent mode, record the error but don't output anything
     if (isSilent) {
@@ -224,7 +226,7 @@ void ErrorReporter::report(ErrorType type, size_t line, size_t column, const std
     column = std::min(column, errorLine.length()); // Crash prevention
     std::cerr << errorLine.substr(0, column);
 
-    // Print the erroneous token in red
+    // Print the erroneous span in red
     std::cerr << C_RED << errorLine.substr(column, length) << C_RESET;
 
     // Print the rest of the line

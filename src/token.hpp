@@ -1,6 +1,18 @@
 #pragma once
 
+#include <cstddef>
 #include <string>
+
+/**
+ * Span
+ * Represents a region of source code identified by line number and
+ * character offsets (0-indexed). end is exclusive, so length = end - start.
+ */
+struct Span {
+    size_t line;
+    size_t start;
+    size_t end;
+};
 
 // Every type of token the program can encounter
 enum TokenKind {
@@ -80,15 +92,7 @@ enum TokenKind {
 struct Token {
     TokenKind type;
     std::string lexeme;
-
-    /**
-     * Token Locators
-     * These help our program print more helpful error messages by
-     * telling it where the token was that caused it to crash.
-     */
-    size_t line;   // Line number
-    size_t column; // Column position (0-indexed)
-    size_t length; // Length of the token in characters
+    Span span;
 
     /**
      * Converts a token type to human-readable string

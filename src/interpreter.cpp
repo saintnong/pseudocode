@@ -208,9 +208,9 @@ void Interpreter::interpret(const std::vector<StmtPtr> &statements) {
         auto compiled = compiler.compile(statements);
         vm->run(compiled, {});
     } catch (const RuntimeError &error) {
-        Token token     = error.token;
+        Span span      = error.span;
         std::string msg = error.what();
-        reporter.report(ErrorType::Runtime, token.line, token.column, msg, token.lexeme.length());
+        reporter.report(ErrorType::Runtime, span, msg);
     }
 }
 

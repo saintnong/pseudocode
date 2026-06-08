@@ -81,13 +81,13 @@ bool VM::isEqual(const RuntimeValue &a, const RuntimeValue &b) const {
 }
 
 void VM::runtimeError(const std::string &message) {
-    size_t line = 1;
+    Span span = {1, 0, 1};
     if (frameCount > 0) {
         CallFrame *frame = &frames[frameCount - 1];
         size_t offset    = frame->ip - frame->function->chunk->code.data() - 1;
-        line             = frame->function->chunk->getLine(offset);
+        span             = frame->function->chunk->getSpan(offset);
     }
-    throw RuntimeError(Token{TOK_EOF, "", line, 0, 0}, message);
+    throw RuntimeError(span, message);
 }
 
 RuntimeValue VM::run(std::shared_ptr<CompiledFunction> function,
@@ -543,8 +543,8 @@ void VM::execute() {
                     auto sliceMethod = std::make_shared<NativeFunction>(
                         2, [arr](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
                             if (!args[0].is<int>() || !args[1].is<int>()) {
-                                throw RuntimeError(Token{TOK_IDENTIFIER, "slice", 0, 0, 0},
-                                                   "Slice indices must be integers.");
+                                throw RuntimeError({0, 0, 0},
+                                                    "Slice indices must be integers.");
                             }
                             int start = args[0].as<int>();
                             int end   = args[1].as<int>();
@@ -596,13 +596,13 @@ void VM::execute() {
                         VARIADIC_ARITY,
                         [dict](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
                             if (args.size() < 1 || args.size() > 2) {
-                                throw RuntimeError(Token{TOK_IDENTIFIER, "get", 0, 0, 0},
+                                throw RuntimeError({0, 0, 0},
                                                    "Expected 1 or 2 arguments but got " +
                                                        std::to_string(args.size()) + ".");
                             }
                             if (!isValidDictKey(args[0])) {
                                 throw RuntimeError(
-                                    Token{TOK_IDENTIFIER, "get", 0, 0, 0},
+                                    {0, 0, 0},
                                     "Dictionary keys must be strings, integers, or booleans.");
                             }
                             DictKey key = toDictKey(args[0]);
@@ -623,7 +623,7 @@ void VM::execute() {
                         1, [dict](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
                             if (!isValidDictKey(args[0])) {
                                 throw RuntimeError(
-                                    Token{TOK_IDENTIFIER, "remove", 0, 0, 0},
+                                    {0, 0, 0},
                                     "Dictionary keys must be strings, integers, or booleans.");
                             }
                             DictKey key = toDictKey(args[0]);
@@ -649,7 +649,7 @@ void VM::execute() {
                     auto sliceMethod = std::make_shared<NativeFunction>(
                         2, [s](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
                             if (!args[0].is<int>() || !args[1].is<int>()) {
-                                throw RuntimeError(Token{TOK_IDENTIFIER, "slice", 0, 0, 0},
+                                throw RuntimeError({0, 0, 0},
                                                    "Slice indices must be integers.");
                             }
                             int start = args[0].as<int>();

@@ -61,7 +61,7 @@ std::vector<Token> Lexer::scanTokens() {
         startColumn = column;
         scanToken();
     }
-    tokens.push_back({TOK_EOF, "", line, column, 0});
+    tokens.push_back({TOK_EOF, "", {line, column, column}});
     return tokens;
 }
 
@@ -118,7 +118,7 @@ bool Lexer::match(char expected) {
 void Lexer::addToken(TokenKind type) {
     std::string text = source.substr(start, current - start);
     size_t length    = current - start;
-    tokens.push_back({type, text, line, startColumn, length});
+    tokens.push_back({type, text, {line, startColumn, startColumn + length}});
 }
 
 /**
@@ -128,7 +128,7 @@ void Lexer::addToken(TokenKind type) {
  */
 void Lexer::addToken(TokenKind type, std::string literal) {
     size_t length = current - start;
-    tokens.push_back({type, literal, line, startColumn, length});
+    tokens.push_back({type, literal, {line, startColumn, startColumn + length}});
 }
 
 /**
@@ -160,7 +160,7 @@ void Lexer::reportError(ErrorType type, const std::string &message) {
 
     // Report error at the line where the token started, not where we are now
     // This is important for multi-line tokens like unterminated strings
-    reporter.report(type, startLine, errorColumn, message, tokenLength);
+    reporter.report(type, {startLine, errorColumn, errorColumn + tokenLength}, message);
 }
 
 /**

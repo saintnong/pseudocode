@@ -376,7 +376,7 @@ StmtPtr Parser::classDeclaration() {
     Token name = consume(TOK_IDENTIFIER, "Expected class name.");
     if (TRACE)
         std::cerr << "[Parse]   class: " << name.lexeme << std::endl;
-    Token superclass{TOK_EOF, "", 0, 0, 0};
+    Token superclass{TOK_EOF, "", {0, 0, 0}};
 
     // Inheritance
     if (match(TOK_COLON)) {
@@ -626,9 +626,9 @@ bool Parser::nextTokenIsCaseArm() {
 
     // Look ahead on the same line for a colon
     size_t lookahead = current;
-    size_t startLine = tokens[lookahead].line;
+    size_t startLine = tokens[lookahead].span.line;
 
-    while (lookahead < tokens.size() && tokens[lookahead].line == startLine) {
+    while (lookahead < tokens.size() && tokens[lookahead].span.line == startLine) {
         if (tokens[lookahead].type == TOK_COLON)
             return true;
         lookahead++;
@@ -808,12 +808,12 @@ Token Parser::consume(TokenKind type, std::string message) {
  */
 void Parser::errorAt(Token token, const std::string &message) {
     if (token.type == TOK_EOF) {
-        reporter.report(ErrorType::Syntax, token.line, 0, message + " At EOF.", 1);
+        reporter.report(ErrorType::Syntax, {token.span.line, 0, 1}, message + " At EOF.");
         return;
     }
 
-    // Use token's stored column position and length directly
-    reporter.report(ErrorType::Syntax, token.line, token.column, message, token.length);
+    // Use token's stored span directly
+    reporter.report(ErrorType::Syntax, token.span, message);
 }
 
 void Parser::synchronize() {
