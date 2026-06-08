@@ -119,3 +119,16 @@ SCSA Pseudocode is a high-level, dynamically typed, object-oriented language. Be
 - **Supercalls**: `this.super()` is used to call parent constructor/methods/fields (can be chained).
 - **Inheritance**: Single inheritance supported via `CLASS Subclass INHERITS Superclass`.
 - **Circular inheritance**: Checked and rejected at compile time.
+
+## Error Handling
+
+Errors are categorized by type, each with a unique error code and a dedicated exception class. Runtime errors include source-location underlines pointing to the relevant expression.
+
+| Error Type | Code  | Exception Class | Thrown When |
+|---|---|---|---|
+| `SyntaxError` | `E001` | — | Invalid token sequences, malformed syntax, missing delimiters |
+| `TypeError` | `E002` | `TypeError` | Type mismatches (e.g. wrong operand type for an operator, division by zero, circular inheritance) |
+| `NameError` | `E003` | `NameError` | Undefined variables, properties, or class names |
+| `ArgumentError` | `E004` | `ArgumentError` | Wrong number of arguments passed to a function or constructor |
+| `IndexError` | `E005` | `IndexError` | Array/string index out of bounds, dictionary key not found |
+| `VMError` | `E006` | `VMError` | Internal VM errors (stack overflow/underflow, unknown opcode) |
