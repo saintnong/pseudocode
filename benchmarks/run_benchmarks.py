@@ -90,24 +90,13 @@ def run_sieve_python(n):
     return sum(i for i, val in enumerate(is_prime) if val)
 
 def parse_output(stdout):
-    checksum = None
-    exec_time = None
-    
-    # Parse Checksum: <number>
     checksum_match = re.search(r"Checksum:\s*(-?\d+)", stdout)
     if checksum_match:
-        checksum = int(checksum_match.group(1))
-        
-    # Parse Execution Time: <number>s
-    time_match = re.search(r"Execution Time:\s*([0-9.]+)\s*s", stdout)
-    if time_match:
-        exec_time = float(time_match.group(1))
-        
-    return checksum, exec_time
+        return int(checksum_match.group(1))
+    return None
 
 def run_benchmark_runs(name, cmd, runs, expected_checksum):
-    alg_times = []
-    proc_times = []
+    times = []
     checksum_ok = True
     
     for r in range(runs):
@@ -121,66 +110,52 @@ def run_benchmark_runs(name, cmd, runs, expected_checksum):
             checksum_ok = False
             continue
             
-        checksum, alg_time = parse_output(res.stdout)
+        checksum = parse_output(res.stdout)
         
         if checksum != expected_checksum:
             print(f"  Run {r+1} Checksum Mismatch! Got {checksum}, expected {expected_checksum}")
             checksum_ok = False
         else:
-            proc_times.append(t1 - t0)
-            if alg_time is not None:
-                alg_times.append(alg_time)
-            else:
-                alg_times.append(t1 - t0)
+            times.append(t1 - t0)
         
-        print(f"  Run {r+1}: Alg Time = {alg_time if alg_time is not None else 'N/A':.4f}s, Proc Time = {t1-t0:.4f}s")
+        print(f"  Run {r+1}: Time = {t1-t0:.4f}s")
         
-    if proc_times:
+    if times:
         return {
-            "alg_min": min(alg_times),
-            "alg_avg": sum(alg_times) / len(alg_times),
-            "proc_min": min(proc_times),
-            "proc_avg": sum(proc_times) / len(proc_times),
+            "min_time": min(times),
+            "avg_time": sum(times) / len(times),
             "checksum_ok": checksum_ok
         }
     else:
         return {
-            "alg_min": 0,
-            "alg_avg": 0,
-            "proc_min": 0,
-            "proc_avg": 0,
+            "min_time": 0,
+            "avg_time": 0,
             "checksum_ok": False
         }
 
 def format_markdown_table(results, run_js):
-    scsa_alg_min = results["SCSA"]["alg_min"]
-    scsa_alg_avg = results["SCSA"]["alg_avg"]
-    scsa_proc_min = results["SCSA"]["proc_min"]
-    scsa_proc_avg = results["SCSA"]["proc_avg"]
+    scsa_min = results["SCSA"]["min_time"]
+    scsa_avg = results["SCSA"]["avg_time"]
     scsa_checksum = "Passed" if results["SCSA"]["checksum_ok"] else "Failed"
     
-    py_alg_min = results["Python"]["alg_min"]
-    py_alg_avg = results["Python"]["alg_avg"]
-    py_proc_min = results["Python"]["proc_min"]
-    py_proc_avg = results["Python"]["proc_avg"]
+    py_min = results["Python"]["min_time"]
+    py_avg = results["Python"]["avg_time"]
     py_checksum = "Passed" if results["Python"]["checksum_ok"] else "Failed"
-    py_speedup = scsa_alg_avg / py_alg_avg if py_alg_avg > 0 else 0
+    py_speedup = scsa_avg / py_avg if py_avg > 0 else 0
     
     if run_js and "NodeJS" in results:
-        js_alg_min = results["NodeJS"]["alg_min"]
-        js_alg_avg = results["NodeJS"]["alg_avg"]
-        js_proc_min = Legacy_js_proc_min = results["NodeJS"]["proc_min"]
-        js_proc_avg = results["NodeJS"]["proc_avg"]
+        js_min = results["NodeJS"]["min_time"]
+        js_avg = results["NodeJS"]["avg_time"]
         js_checksum = "Passed" if results["NodeJS"]["checksum_ok"] else "Failed"
-        js_speedup = scsa_alg_avg / js_alg_avg if js_alg_avg > 0 else 0
-        js_row = f"| Node.js | {js_alg_min:.4f}s | {js_alg_avg:.4f}s | {js_proc_min:.4f}s | {js_proc_avg:.4f}s | {js_checksum} | {js_speedup:.1f}x |"
+        js_speedup = scsa_avg / js_avg if js_avg > 0 else 0
+        js_row = f"| Node.js | {js_min:.4f}s | {js_avg:.4f}s | {js_checksum} | {js_speedup:.1f}x |"
     else:
-        js_row = "| Node.js | N/A | N/A | N/A | N/A | Skipped/Missing | N/A |"
+        js_row = "| Node.js | N/A | N/A | Skipped/Missing | N/A |"
         
-    table = f"""| Language | Min Alg Time | Avg Alg Time | Min Process Time | Avg Process Time | Checksum | Relative Speed (vs SCSA) |
-| --- | --- | --- | --- | --- | --- | --- |
-| SCSA Pseudocode | {scsa_alg_min:.4f}s | {scsa_alg_avg:.4f}s | {scsa_proc_min:.4f}s | {scsa_proc_avg:.4f}s | {scsa_checksum} | 1.0x (Baseline) |
-| Python 3 | {py_alg_min:.4f}s | {py_alg_avg:.4f}s | {py_proc_min:.4f}s | {py_proc_avg:.4f}s | {py_checksum} | {py_speedup:.1f}x |
+    table = f"""| Language | Min Time | Avg Time | Checksum | Relative Speed (vs SCSA) |
+| --- | --- | --- | --- | --- |
+| SCSA Pseudocode | {scsa_min:.4f}s | {scsa_avg:.4f}s | {scsa_checksum} | 1.0x (Baseline) |
+| Python 3 | {py_min:.4f}s | {py_avg:.4f}s | {py_checksum} | {py_speedup:.1f}x |
 {js_row}"""
     return table
 
@@ -529,8 +504,6 @@ System specifications and performance results comparing the SCSA Pseudocode Inte
 
 ## Benchmark 1: Matrix Multiplication
 
-Matrix multiplication ($N \\times N$) benchmark measuring nested loops and element-wise array operations.
-
 - **Matrix Size**: {args.size}x{args.size} ({matrix_iterations:,} inner loop operations)
 
 {format_markdown_table(matrix_results, run_js)}
@@ -539,15 +512,11 @@ Matrix multiplication ($N \\times N$) benchmark measuring nested loops and eleme
 
 ## Benchmark 2: Sieve of Eratosthenes
 
-Prime number generation using the Sieve of Eratosthenes, measuring array allocation, indexing, dynamic resizing/multiplication, and sequential scans.
-
 - **Limit**: {args.sieve_limit:,}
 
 {format_markdown_table(sieve_results, run_js)}
 
 ---
-
-*Note: Alg Time measures pure execution of the algorithm, whereas Process Time includes process startup, bytecode compilation, and AST parsing.*
 """
 
     results_md_path = os.path.join(benchmarks_dir, "README.md")
