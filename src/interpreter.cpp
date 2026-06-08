@@ -199,7 +199,7 @@ Interpreter::Interpreter(ErrorReporter &reporterRef) : reporter(reporterRef) {
         });
     globals->define("TYPE", {std::static_pointer_cast<Callable>(typeNative)});
 
-    vm = std::make_unique<VM>(*this, reporter, globals);
+    vm = std::make_unique<VM>(*this, globals);
 }
 
 void Interpreter::interpret(const std::vector<StmtPtr> &statements) {

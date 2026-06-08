@@ -6,8 +6,8 @@
 #include <iostream>
 #include <stdexcept>
 
-VM::VM(Interpreter &interpreter, ErrorReporter &reporter, EnvironmentPtr globals)
-    : interpreter(interpreter), reporter(reporter), globals(globals) {
+VM::VM(Interpreter &interpreter, EnvironmentPtr globals)
+    : interpreter(interpreter), globals(globals) {
 }
 
 void VM::push(RuntimeValue value) {

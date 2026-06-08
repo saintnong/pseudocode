@@ -122,28 +122,28 @@ void Compiler::errorAt(size_t line, const std::string &message) {
 void Compiler::compileExpression(Expr *expr) {
     if (!expr)
         return;
-    if (auto *e = dynamic_cast<LiteralExpr *>(expr)) {
-        compileLiteralExpr(e);
-    } else if (auto *e = dynamic_cast<VariableExpr *>(expr)) {
-        compileVariableExpr(e);
-    } else if (auto *e = dynamic_cast<AssignExpr *>(expr)) {
-        compileAssignExpr(e);
-    } else if (auto *e = dynamic_cast<BinaryExpr *>(expr)) {
-        compileBinaryExpr(e);
-    } else if (auto *e = dynamic_cast<UnaryExpr *>(expr)) {
-        compileUnaryExpr(e);
-    } else if (auto *e = dynamic_cast<CallExpr *>(expr)) {
-        compileCallExpr(e);
-    } else if (auto *e = dynamic_cast<GetExpr *>(expr)) {
-        compileGetExpr(e);
-    } else if (auto *e = dynamic_cast<ArrayAccessExpr *>(expr)) {
-        compileArrayAccessExpr(e);
-    } else if (auto *e = dynamic_cast<ArrayLitExpr *>(expr)) {
-        compileArrayLitExpr(e);
-    } else if (auto *e = dynamic_cast<DictLitExpr *>(expr)) {
-        compileDictLitExpr(e);
-    } else if (auto *e = dynamic_cast<NewExpr *>(expr)) {
-        compileNewExpr(e);
+    if (auto *litExpr = dynamic_cast<LiteralExpr *>(expr)) {
+        compileLiteralExpr(litExpr);
+    } else if (auto *varExpr = dynamic_cast<VariableExpr *>(expr)) {
+        compileVariableExpr(varExpr);
+    } else if (auto *assignExpr = dynamic_cast<AssignExpr *>(expr)) {
+        compileAssignExpr(assignExpr);
+    } else if (auto *binExpr = dynamic_cast<BinaryExpr *>(expr)) {
+        compileBinaryExpr(binExpr);
+    } else if (auto *unExpr = dynamic_cast<UnaryExpr *>(expr)) {
+        compileUnaryExpr(unExpr);
+    } else if (auto *callExpr = dynamic_cast<CallExpr *>(expr)) {
+        compileCallExpr(callExpr);
+    } else if (auto *getExpr = dynamic_cast<GetExpr *>(expr)) {
+        compileGetExpr(getExpr);
+    } else if (auto *arrAccExpr = dynamic_cast<ArrayAccessExpr *>(expr)) {
+        compileArrayAccessExpr(arrAccExpr);
+    } else if (auto *arrLitExpr = dynamic_cast<ArrayLitExpr *>(expr)) {
+        compileArrayLitExpr(arrLitExpr);
+    } else if (auto *dictLitExpr = dynamic_cast<DictLitExpr *>(expr)) {
+        compileDictLitExpr(dictLitExpr);
+    } else if (auto *newExpr = dynamic_cast<NewExpr *>(expr)) {
+        compileNewExpr(newExpr);
     }
 }
 
@@ -383,28 +383,28 @@ void Compiler::compileNewExpr(NewExpr *expr) {
 void Compiler::compileStatement(Stmt *stmt) {
     if (!stmt)
         return;
-    if (auto *s = dynamic_cast<ExpressionStmt *>(stmt)) {
-        compileExpressionStmt(s);
-    } else if (auto *s = dynamic_cast<ReturnStmt *>(stmt)) {
-        compileReturnStmt(s);
-    } else if (auto *s = dynamic_cast<BlockStmt *>(stmt)) {
-        compileBlockStmt(s);
-    } else if (auto *s = dynamic_cast<IfStmt *>(stmt)) {
-        compileIfStmt(s);
-    } else if (auto *s = dynamic_cast<FunctionStmt *>(stmt)) {
-        compileFunctionStmt(s);
-    } else if (auto *s = dynamic_cast<ClassStmt *>(stmt)) {
-        compileClassStmt(s);
-    } else if (auto *s = dynamic_cast<WhileStmt *>(stmt)) {
-        compileWhileStmt(s);
-    } else if (auto *s = dynamic_cast<ForInStmt *>(stmt)) {
-        compileForInStmt(s);
-    } else if (auto *s = dynamic_cast<ForStmt *>(stmt)) {
-        compileForStmt(s);
-    } else if (auto *s = dynamic_cast<CaseStmt *>(stmt)) {
-        compileCaseStmt(s);
-    } else if (auto *s = dynamic_cast<RepeatUntilStmt *>(stmt)) {
-        compileRepeatUntilStmt(s);
+    if (auto *exprStmt = dynamic_cast<ExpressionStmt *>(stmt)) {
+        compileExpressionStmt(exprStmt);
+    } else if (auto *retStmt = dynamic_cast<ReturnStmt *>(stmt)) {
+        compileReturnStmt(retStmt);
+    } else if (auto *blockStmt = dynamic_cast<BlockStmt *>(stmt)) {
+        compileBlockStmt(blockStmt);
+    } else if (auto *ifStmt = dynamic_cast<IfStmt *>(stmt)) {
+        compileIfStmt(ifStmt);
+    } else if (auto *funcStmt = dynamic_cast<FunctionStmt *>(stmt)) {
+        compileFunctionStmt(funcStmt);
+    } else if (auto *classStmt = dynamic_cast<ClassStmt *>(stmt)) {
+        compileClassStmt(classStmt);
+    } else if (auto *whileStmt = dynamic_cast<WhileStmt *>(stmt)) {
+        compileWhileStmt(whileStmt);
+    } else if (auto *forInStmt = dynamic_cast<ForInStmt *>(stmt)) {
+        compileForInStmt(forInStmt);
+    } else if (auto *forStmt = dynamic_cast<ForStmt *>(stmt)) {
+        compileForStmt(forStmt);
+    } else if (auto *caseStmt = dynamic_cast<CaseStmt *>(stmt)) {
+        compileCaseStmt(caseStmt);
+    } else if (auto *repeatStmt = dynamic_cast<RepeatUntilStmt *>(stmt)) {
+        compileRepeatUntilStmt(repeatStmt);
     }
 }
 

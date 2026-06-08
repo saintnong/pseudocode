@@ -19,7 +19,6 @@ class Interpreter;
 class VM {
 private:
     Interpreter &interpreter;
-    ErrorReporter &reporter;
 
     static constexpr size_t STACK_MAX = 256 * 1024;
     std::array<RuntimeValue, STACK_MAX> stack;
@@ -43,7 +42,7 @@ private:
     void execute();
 
 public:
-    VM(Interpreter &interpreter, ErrorReporter &reporter, EnvironmentPtr globals);
+    VM(Interpreter &interpreter, EnvironmentPtr globals);
 
     RuntimeValue run(std::shared_ptr<CompiledFunction> function,
                      const std::vector<RuntimeValue> &args, EnvironmentPtr closure = nullptr);
