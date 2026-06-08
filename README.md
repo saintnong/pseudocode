@@ -53,19 +53,19 @@ python3 benchmarks/run_benchmarks.py
 
 The language documentation and virtual machine design are split into separate files:
 
-- 📖 **[Supported Language Features](docs/language.md)**: Full list of supported statements, types, loops, arrays, dictionaries, and OOP structures.
-- ⚙️ **[Bytecode VM Architecture](docs/architecture.md)**: Details on compiler pipeline, opcodes, chunk layouts, stack design, and scope cleanup.
+- 📖 [Supported Language Features](docs/language.md): Full list of supported statements, types, loops, arrays, dictionaries, and OOP structures.
+- ⚙️ [Bytecode VM Architecture](docs/architecture.md): Details on compiler pipeline, opcodes, chunk layouts, stack design, and closures.
 
 ## Features
 - Handwritten Lexer with locatable tokens
 - Recursive descent parser for statements/blocks
 - Pratt Parser for parsing expressions with operator precedence
-- **Optimized Stack-Based Bytecode VM & Compiler**
-  - Robust local variable stack management and call frame execution
+- Optimized Stack-Based Bytecode VM & Compiler
+  - Local variable stack management and call frame execution
   - Symmetric scope block cleanup in loops and conditional branches
-  - Shared pointers for automatic memory management
+  - Shared pointers for memory management
 - Native Functions API
-- Good error reporting which is anchored to nearest token for easy debugging
+- Good error reporting anchored to nearest token
 - Visual Studio Code Highlighting Extension
 - Integration tests
 - Circular inheritance check
@@ -92,8 +92,6 @@ The interpreter supports the following environment variables:
 - `NO_COLOR`: If set, suppresses all ANSI escape sequences for color output. Follows the [NO_COLOR](https://no-color.org) informal standard.
 
 # Other stuff
-## Currently WIP Features
-- (none)
 
 ## Future Plans
 - Integrated file IO in standard library
