@@ -1,10 +1,10 @@
 #pragma once
 
+#include "errors.hpp"
 #include "token.hpp"
 #include <functional>
 #include <map>
 #include <memory>
-#include <stdexcept>
 #include <unordered_map>
 #include <variant>
 #include <vector>
@@ -132,28 +132,6 @@ inline void setDictEntry(Dictionary &dict, const RuntimeValue &key, const Runtim
     dict.entries[dk] = value;
 }
 
-// --- Execution Exceptions ---
-
-/**
- * RuntimeError
- * Exception thrown when a terminal error occurs during script execution.
- * Captures the problematic source span for high-quality error reporting.
- */
-class RuntimeError : public std::runtime_error {
-public:
-    // The source span where the error occurred (stored by value to avoid dangling references)
-    const Span span;
-
-    /**
-     * Create a new runtime error
-     * @param span The source span associated with the error
-     * @param message Descriptive error message
-     */
-    RuntimeError(Span span, const std::string &message)
-        : std::runtime_error(message), span(span) {
-    }
-};
-
 // --- Scope Management ---
 
 /**
@@ -194,7 +172,7 @@ public:
      * Retrieve a variable's value, searching up the scope chain
      * @param name The token representing the variable name
      * @return The found RuntimeValue
-     * @throws RuntimeError if the variable is not defined in any accessible scope
+     * @throws NameError if the variable is not defined in any accessible scope
      */
     RuntimeValue get(const Token &name) {
         if (values.count(name.lexeme)) {
@@ -203,7 +181,7 @@ public:
         if (enclosing)
             return enclosing->get(name);
 
-        throw RuntimeError(name.span, "Undefined variable '" + name.lexeme + "'.");
+        throw NameError(name.span, "Undefined variable '" + name.lexeme + "'.");
     }
 };
 
@@ -272,13 +250,13 @@ struct Instance {
      * Access a property on this instance
      * @param name The token representing the property name
      * @return The value of the property
-     * @throws RuntimeError if the property does not exist
+     * @throws NameError if the property does not exist
      */
     RuntimeValue get(const Token &name) {
         if (fields->count(name.lexeme)) {
             return fields->at(name.lexeme);
         }
-        throw RuntimeError(name.span, "Undefined property '" + name.lexeme + "'.");
+        throw NameError(name.span, "Undefined property '" + name.lexeme + "'.");
     }
 
     /**

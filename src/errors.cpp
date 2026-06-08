@@ -114,32 +114,22 @@ void ErrorReporter::replAddLine(const std::string &sourceSegment) {
 std::string ErrorReporter::getErrorLabel(ErrorType type) {
     switch (type) {
     case ErrorType::Syntax:
-        return "Syntax Error";
+        return "SyntaxError [" + getErrorCode(type) + "]";
     case ErrorType::Type:
-        return "Type Error";
-    case ErrorType::Runtime:
-        return "Runtime Error";
+        return "TypeError [" + getErrorCode(type) + "]";
+    case ErrorType::Name:
+        return "NameError [" + getErrorCode(type) + "]";
+    case ErrorType::Argument:
+        return "ArgumentError [" + getErrorCode(type) + "]";
+    case ErrorType::Index:
+        return "IndexError [" + getErrorCode(type) + "]";
+    case ErrorType::VM:
+        return "VMError [" + getErrorCode(type) + "]";
     default:
         return "Unknown Error";
     }
 }
 
-/**
- * Map interpreter stages to human-readable labels
- * @return String representation of the current stage
- */
-std::string ErrorReporter::getStageLabel() {
-    switch (stage) {
-    case InterpreterStage::Lexing:
-        return "Lexing";
-    case InterpreterStage::Parsing:
-        return "Parsing";
-    case InterpreterStage::Runtime:
-        return "Runtime";
-    default:
-        return "Unknown";
-    }
-}
 
 /**
  * Extract a specific line from the source code
@@ -175,11 +165,6 @@ void ErrorReporter::report(ErrorType type, Span span, const std::string &message
     if (isSilent) {
         return;
     }
-
-    // Print which stage the interpreter is in
-    std::string stageLabel = getStageLabel();
-    std::cerr << C_RED << "[An error has occurred during the stage: '" << stageLabel << "']"
-              << std::endl;
 
     // Get the error line
     std::string errorLine = getSourceLine(line);

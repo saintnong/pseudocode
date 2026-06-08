@@ -207,10 +207,16 @@ void Interpreter::interpret(const std::vector<StmtPtr> &statements) {
         Compiler compiler(reporter);
         auto compiled = compiler.compile(statements);
         vm->run(compiled, {});
-    } catch (const RuntimeError &error) {
-        Span span      = error.span;
-        std::string msg = error.what();
-        reporter.report(ErrorType::Runtime, span, msg);
+    } catch (const TypeError &error) {
+        reporter.report(ErrorType::Type, error.span, error.what());
+    } catch (const NameError &error) {
+        reporter.report(ErrorType::Name, error.span, error.what());
+    } catch (const ArgumentError &error) {
+        reporter.report(ErrorType::Argument, error.span, error.what());
+    } catch (const IndexError &error) {
+        reporter.report(ErrorType::Index, error.span, error.what());
+    } catch (const VMError &error) {
+        reporter.report(ErrorType::VM, error.span, error.what());
     }
 }
 

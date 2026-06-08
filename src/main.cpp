@@ -214,13 +214,16 @@ int Pseudocode::runRepl() {
                         std::cout << C_GREEN << " ==  " << C_CYAN << stringify(value) << C_RESET
                                   << std::endl;
                         sessionHistory.push_back(std::move(parsed[0]));
-                    } catch (const RuntimeError &error) {
-                        // We need to manually report the runtime error
-                        // The interpreter usually reports runtime errors in the interpret function
-                        // But here we're evaluating an expression directly
-                        Span span      = error.span;
-                        std::string msg = error.what();
-                        reporter.report(ErrorType::Runtime, span, msg);
+                    } catch (const TypeError &error) {
+                        reporter.report(ErrorType::Type, error.span, error.what());
+                    } catch (const NameError &error) {
+                        reporter.report(ErrorType::Name, error.span, error.what());
+                    } catch (const ArgumentError &error) {
+                        reporter.report(ErrorType::Argument, error.span, error.what());
+                    } catch (const IndexError &error) {
+                        reporter.report(ErrorType::Index, error.span, error.what());
+                    } catch (const VMError &error) {
+                        reporter.report(ErrorType::VM, error.span, error.what());
                     }
                     buffer.clear();
                     continue;

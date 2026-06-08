@@ -286,10 +286,11 @@ void Compiler::compileAssignExpr(AssignExpr *expr) {
         emitByte(OP_SET_PROPERTY, span);
         emitShort(static_cast<uint16_t>(nameIdx), span);
     } else if (auto *arrayAccess = dynamic_cast<ArrayAccessExpr *>(expr->target.get())) {
+        Span indexSpan = getExprSpan(arrayAccess->index.get());
         compileExpression(arrayAccess->array.get());
         compileExpression(arrayAccess->index.get());
         compileExpression(expr->value.get());
-        emitByte(OP_INDEX_SET, span);
+        emitByte(OP_INDEX_SET, indexSpan);
     }
 }
 
@@ -398,7 +399,7 @@ void Compiler::compileGetExpr(GetExpr *expr) {
 }
 
 void Compiler::compileArrayAccessExpr(ArrayAccessExpr *expr) {
-    Span span = getExprSpan(expr);
+    Span span = getExprSpan(expr->index.get());
     compileExpression(expr->array.get());
     compileExpression(expr->index.get());
     emitByte(OP_INDEX_GET, span);

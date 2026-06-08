@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -10,9 +11,99 @@ enum InterpreterStage { Lexing, Parsing, Runtime };
 
 // Every type of error we'll need
 enum class ErrorType {
-    Syntax,  // Syntax errors (invalid token sequences)
-    Type,    // Type errors (type mismatches)
-    Runtime, // Runtime errors (errors during execution)
+    Syntax,   // Syntax errors (invalid token sequences)
+    Type,     // Type errors (type mismatches)
+    Name,     // Name resolution errors (undefined variables, properties, classes)
+    Argument, // Argument count errors
+    Index,    // Index errors (out of bounds, etc.)
+    VM,       // Internal VM errors (stack overflow, unknown opcode, etc.)
+};
+
+/**
+ * Get the error code string for a given error type.
+ */
+inline std::string getErrorCode(ErrorType type) {
+    switch (type) {
+    case ErrorType::Syntax:
+        return "E001";
+    case ErrorType::Type:
+        return "E002";
+    case ErrorType::Name:
+        return "E003";
+    case ErrorType::Argument:
+        return "E004";
+    case ErrorType::Index:
+        return "E005";
+    case ErrorType::VM:
+        return "E006";
+    default:
+        return "E000";
+    }
+}
+
+// ==============================================================
+// Error Exception Classes
+// ==============================================================
+
+/**
+ * TypeError
+ * Thrown when an operation receives operands of incompatible types.
+ */
+class TypeError : public std::runtime_error {
+public:
+    const Span span;
+    TypeError(Span span, const std::string &message)
+        : std::runtime_error(message), span(span) {
+    }
+};
+
+/**
+ * NameError
+ * Thrown when a variable, property, or class name cannot be resolved.
+ */
+class NameError : public std::runtime_error {
+public:
+    const Span span;
+    NameError(Span span, const std::string &message)
+        : std::runtime_error(message), span(span) {
+    }
+};
+
+/**
+ * ArgumentError
+ * Thrown when a function or constructor receives the wrong number of arguments.
+ */
+class ArgumentError : public std::runtime_error {
+public:
+    const Span span;
+    ArgumentError(Span span, const std::string &message)
+        : std::runtime_error(message), span(span) {
+    }
+};
+
+/**
+ * IndexError
+ * Thrown when an index or key is out of bounds, or for related
+ * out-of-range access issues.
+ */
+class IndexError : public std::runtime_error {
+public:
+    const Span span;
+    IndexError(Span span, const std::string &message)
+        : std::runtime_error(message), span(span) {
+    }
+};
+
+/**
+ * VMError
+ * Thrown for internal VM errors such as stack overflows or unknown opcodes.
+ */
+class VMError : public std::runtime_error {
+public:
+    const Span span;
+    VMError(Span span, const std::string &message)
+        : std::runtime_error(message), span(span) {
+    }
 };
 
 // ANSI color codes
@@ -50,11 +141,6 @@ private:
      * Get human-readable error type label
      */
     std::string getErrorLabel(ErrorType type);
-
-    /**
-     * Get human-readable interpreter stage label
-     */
-    std::string getStageLabel();
 
     /**
      * Get a specific line from the source code
