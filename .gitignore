@@ -35,3 +35,7 @@ generated/
 *.swp
 *.swo
 .DS_Store
+
+# Benchmarks generated files
+benchmarks/matrix_multiply.*
+

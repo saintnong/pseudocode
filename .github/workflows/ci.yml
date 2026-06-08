@@ -60,6 +60,10 @@ jobs:
     - name: Run Integration Tests
       run: ctest --test-dir build -C Release --output-on-failure
 
+    - name: Run Benchmarks
+      if: runner.os == 'Linux'
+      run: python3 benchmarks/run_benchmarks.py
+
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
