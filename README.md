@@ -117,8 +117,16 @@ To measure code coverage, you can use the coverage runner helper:
 python3 tests/coverage.py
 ```
 
-Requires `gcov`
+## Performance Benchmarks
+To evaluate interpreter execution speed, there is an automated square matrix multiplication benchmark comparing SCSA Pseudocode against Python 3 and Node.js.
 
+The benchmark results are auto-generated on CI and can be viewed here:
+- [Latest Benchmark Results](benchmarks/README.md)
+
+To run the benchmarks locally:
+```bash
+python3 benchmarks/run_benchmarks.py
+```
 
 ## Environment Variables
 The interpreter supports the following environment variables:
