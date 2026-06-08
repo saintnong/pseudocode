@@ -7,12 +7,22 @@
 #include <unordered_map>
 #include <variant>
 #include <vector>
+#include <functional>
 
 // --- Forward Declarations ---
 struct Callable;
 struct Instance;
 struct Dictionary;
 class Interpreter;
+struct Chunk;
+class UserClass;
+class UserFunction;
+
+struct CompiledFunction {
+    std::shared_ptr<Chunk> chunk;
+    int arity;
+    std::string name;
+};
 
 /**
  * Null Type
@@ -110,6 +120,18 @@ struct Dictionary {
 
 using DictPtr = std::shared_ptr<Dictionary>;
 
+inline bool isValidDictKey(const RuntimeValue &key) {
+    return key.is<int>() || key.is<std::string>() || key.is<bool>();
+}
+
+inline void setDictEntry(Dictionary &dict, const RuntimeValue &key, const RuntimeValue &value) {
+    DictKey dk = toDictKey(key);
+    if (dict.entries.find(dk) == dict.entries.end()) {
+        dict.keys.push_back(dk);
+    }
+    dict.entries[dk] = value;
+}
+
 // --- Execution Exceptions ---
 
 /**
@@ -119,8 +141,8 @@ using DictPtr = std::shared_ptr<Dictionary>;
  */
 class RuntimeError : public std::runtime_error {
 public:
-    // The token where the error occurred
-    const Token &token;
+    // The token where the error occurred (stored by value to avoid dangling references)
+    const Token token;
 
     /**
      * Create a new runtime error
@@ -184,6 +206,8 @@ public:
         throw RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
     }
 };
+
+using EnvironmentPtr = std::shared_ptr<Environment>;
 
 // --- Core Runtime Interfaces ---
 
@@ -265,6 +289,57 @@ struct Instance {
     void set(const Token &name, RuntimeValue value) {
         (*fields)[name.lexeme] = value;
     }
+};
+
+class UserFunction : public Callable {
+    std::shared_ptr<CompiledFunction> compiledFn;
+    std::shared_ptr<Environment> closure;
+    std::shared_ptr<UserClass> definingClass;
+
+public:
+    UserFunction(std::shared_ptr<CompiledFunction> compiledFn, std::shared_ptr<Environment> closure,
+                 std::shared_ptr<UserClass> definingClass = nullptr);
+
+    std::shared_ptr<UserFunction> bind(std::shared_ptr<Instance> instance);
+    int arity() override;
+    RuntimeValue call(Interpreter &interpreter, std::vector<RuntimeValue> arguments) override;
+    std::string toString() override;
+    std::shared_ptr<CompiledFunction> getCompiledFunction() const { return compiledFn; }
+    std::shared_ptr<Environment> getClosure() const { return closure; }
+};
+
+typedef std::function<RuntimeValue(Interpreter &, std::vector<RuntimeValue>)> NativeFn;
+
+class NativeFunction : public Callable {
+    NativeFn function;
+    int _arity;
+
+public:
+    NativeFunction(int arity, NativeFn function);
+    int arity() override;
+    RuntimeValue call(Interpreter &interpreter, std::vector<RuntimeValue> arguments) override;
+    std::string toString() override;
+};
+
+class UserClass : public Callable, public std::enable_shared_from_this<UserClass> {
+    std::string name;
+    std::shared_ptr<UserClass> superclass;
+    std::map<std::string, std::shared_ptr<Callable>> methods;
+    std::map<std::string, std::shared_ptr<CompiledFunction>> defaultFields;
+
+public:
+    UserClass(const std::string &n, std::shared_ptr<UserClass> s = nullptr);
+    std::shared_ptr<UserClass> getSuperclass() const;
+    void setSuperclass(std::shared_ptr<UserClass> s) { superclass = s; }
+    std::string getName() const;
+    void addMethod(const std::string &methodName, std::shared_ptr<Callable> method);
+    void addField(const std::string &fieldName, std::shared_ptr<CompiledFunction> valueFunc);
+    std::shared_ptr<UserFunction> findMethod(const std::string &methodName);
+    std::shared_ptr<UserFunction> findConstructor();
+    int arity() override;
+    RuntimeValue call(Interpreter &interpreter, std::vector<RuntimeValue> arguments) override;
+    void initializeFields(Interpreter &interpreter, std::shared_ptr<Instance> instance);
+    std::string toString() override;
 };
 
 /**
