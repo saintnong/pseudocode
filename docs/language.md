@@ -109,6 +109,7 @@ SCSA Pseudocode is a high-level, dynamically typed, object-oriented language. Be
 - `dict.keys()`: Returns an array of all keys.
 - `dict.values()`: Returns an array of all values.
 - `dict.get(key, default?)`: Returns a value or optional default.
+- `dict.remove(key)`: Removes the entry with the given key. Returns `Null`. Silent if the key doesn't exist. Keys must be strings, integers, or booleans.
 - `key IN dict`: Checks dictionary membership.
 - `FOR key IN dict`: Iterates over dictionary keys.
 

@@ -544,8 +544,8 @@ void Compiler::compileIfStmt(IfStmt *stmt) {
 }
 
 void Compiler::compileFunctionStmt(FunctionStmt *stmt) {
-    Span span         = stmt->name.span;
-    std::string name  = stmt->name.lexeme;
+    Span span        = stmt->name.span;
+    std::string name = stmt->name.lexeme;
 
     Compiler subCompiler(reporter, this, name);
     subCompiler.currentFn->arity = static_cast<int>(stmt->params.size());
@@ -578,7 +578,7 @@ void Compiler::compileFunctionStmt(FunctionStmt *stmt) {
 }
 
 void Compiler::compileClassStmt(ClassStmt *stmt) {
-    Span span           = stmt->name.span;
+    Span span             = stmt->name.span;
     std::string className = stmt->name.lexeme;
 
     RuntimeValue classNameVal;
@@ -659,7 +659,7 @@ void Compiler::compileClassStmt(ClassStmt *stmt) {
 }
 
 void Compiler::compileWhileStmt(WhileStmt *stmt) {
-    Span span       = stmt->keyword.span;
+    Span span        = stmt->keyword.span;
     size_t loopStart = currentChunk().code.size();
 
     compileExpression(stmt->condition.get());
@@ -813,7 +813,7 @@ void Compiler::compileCaseStmt(CaseStmt *stmt) {
 }
 
 void Compiler::compileRepeatUntilStmt(RepeatUntilStmt *stmt) {
-    Span span       = stmt->keyword.span;
+    Span span        = stmt->keyword.span;
     size_t loopStart = currentChunk().code.size();
 
     beginScope();

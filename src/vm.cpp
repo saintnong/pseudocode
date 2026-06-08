@@ -188,8 +188,8 @@ void VM::execute() {
                     push(RuntimeValue{a.as<int>() + b.as<int>()});
                 }
             } else {
-                runtimeError(ErrorType::Type, "unsupported operand types for +: '" + typeName(a) + "' and '" +
-                             typeName(b) + "'");
+                runtimeError(ErrorType::Type, "unsupported operand types for +: '" + typeName(a) +
+                                                  "' and '" + typeName(b) + "'");
             }
             break;
         }
@@ -206,8 +206,8 @@ void VM::execute() {
                     push(RuntimeValue{a.as<int>() - b.as<int>()});
                 }
             } else {
-                runtimeError(ErrorType::Type, "unsupported operand types for -: '" + typeName(a) + "' and '" +
-                             typeName(b) + "'");
+                runtimeError(ErrorType::Type, "unsupported operand types for -: '" + typeName(a) +
+                                                  "' and '" + typeName(b) + "'");
             }
             break;
         }
@@ -219,8 +219,8 @@ void VM::execute() {
                 bool validLeft  = a.is<std::string>() && b.is<int>();
                 bool validRight = b.is<std::string>() && a.is<int>();
                 if (!validLeft && !validRight) {
-                    runtimeError(ErrorType::Type, "unsupported operand types for *: '" + typeName(a) + "' and '" +
-                                 typeName(b) + "'");
+                    runtimeError(ErrorType::Type, "unsupported operand types for *: '" +
+                                                      typeName(a) + "' and '" + typeName(b) + "'");
                 }
                 std::string base = a.is<std::string>() ? a.as<std::string>() : b.as<std::string>();
                 int count        = a.is<int>() ? a.as<int>() : b.as<int>();
@@ -237,8 +237,8 @@ void VM::execute() {
                 bool validLeft  = a.is<ArrayPtr>() && b.is<int>();
                 bool validRight = b.is<ArrayPtr>() && a.is<int>();
                 if (!validLeft && !validRight) {
-                    runtimeError(ErrorType::Type, "unsupported operand types for *: '" + typeName(a) + "' and '" +
-                                 typeName(b) + "'");
+                    runtimeError(ErrorType::Type, "unsupported operand types for *: '" +
+                                                      typeName(a) + "' and '" + typeName(b) + "'");
                 }
                 auto base = a.is<ArrayPtr>() ? a.as<ArrayPtr>() : b.as<ArrayPtr>();
                 int count = a.is<int>() ? a.as<int>() : b.as<int>();
@@ -259,8 +259,8 @@ void VM::execute() {
                     push(RuntimeValue{a.as<int>() * b.as<int>()});
                 }
             } else {
-                runtimeError(ErrorType::Type, "unsupported operand types for *: '" + typeName(a) + "' and '" +
-                             typeName(b) + "'");
+                runtimeError(ErrorType::Type, "unsupported operand types for *: '" + typeName(a) +
+                                                  "' and '" + typeName(b) + "'");
             }
             break;
         }
@@ -276,8 +276,8 @@ void VM::execute() {
                 }
                 push(RuntimeValue{valA / valB});
             } else {
-                runtimeError(ErrorType::Type, "unsupported operand types for /: '" + typeName(a) + "' and '" +
-                             typeName(b) + "'");
+                runtimeError(ErrorType::Type, "unsupported operand types for /: '" + typeName(a) +
+                                                  "' and '" + typeName(b) + "'");
             }
             break;
         }
@@ -302,8 +302,8 @@ void VM::execute() {
                     push(RuntimeValue{std::fmod(valA, valB)});
                 }
             } else {
-                runtimeError(ErrorType::Type, "unsupported operand types for %: '" + typeName(a) + "' and '" +
-                             typeName(b) + "'");
+                runtimeError(ErrorType::Type, "unsupported operand types for %: '" + typeName(a) +
+                                                  "' and '" + typeName(b) + "'");
             }
             break;
         }
@@ -315,7 +315,8 @@ void VM::execute() {
             } else if (a.is<int>()) {
                 push(RuntimeValue{-a.as<int>()});
             } else {
-                runtimeError(ErrorType::Type, "unsupported operand type for unary -: '" + typeName(a) + "'");
+                runtimeError(ErrorType::Type,
+                             "unsupported operand type for unary -: '" + typeName(a) + "'");
             }
             break;
         }
@@ -347,8 +348,8 @@ void VM::execute() {
                 double valB = b.is<double>() ? b.as<double>() : b.as<int>();
                 push(RuntimeValue{valA > valB});
             } else {
-                runtimeError(ErrorType::Type, "unsupported operand types for >: '" + typeName(a) + "' and '" +
-                             typeName(b) + "'");
+                runtimeError(ErrorType::Type, "unsupported operand types for >: '" + typeName(a) +
+                                                  "' and '" + typeName(b) + "'");
             }
             break;
         }
@@ -361,8 +362,8 @@ void VM::execute() {
                 double valB = b.is<double>() ? b.as<double>() : b.as<int>();
                 push(RuntimeValue{valA >= valB});
             } else {
-                runtimeError(ErrorType::Type, "unsupported operand types for >=: '" + typeName(a) + "' and '" +
-                             typeName(b) + "'");
+                runtimeError(ErrorType::Type, "unsupported operand types for >=: '" + typeName(a) +
+                                                  "' and '" + typeName(b) + "'");
             }
             break;
         }
@@ -375,8 +376,8 @@ void VM::execute() {
                 double valB = b.is<double>() ? b.as<double>() : b.as<int>();
                 push(RuntimeValue{valA < valB});
             } else {
-                runtimeError(ErrorType::Type, "unsupported operand types for <: '" + typeName(a) + "' and '" +
-                             typeName(b) + "'");
+                runtimeError(ErrorType::Type, "unsupported operand types for <: '" + typeName(a) +
+                                                  "' and '" + typeName(b) + "'");
             }
             break;
         }
@@ -389,8 +390,8 @@ void VM::execute() {
                 double valB = b.is<double>() ? b.as<double>() : b.as<int>();
                 push(RuntimeValue{valA <= valB});
             } else {
-                runtimeError(ErrorType::Type, "unsupported operand types for <=: '" + typeName(a) + "' and '" +
-                             typeName(b) + "'");
+                runtimeError(ErrorType::Type, "unsupported operand types for <=: '" + typeName(a) +
+                                                  "' and '" + typeName(b) + "'");
             }
             break;
         }
@@ -411,7 +412,8 @@ void VM::execute() {
             } else if (coll.is<std::shared_ptr<Dictionary>>()) {
                 auto dict = coll.as<std::shared_ptr<Dictionary>>();
                 if (!isValidDictKey(item)) {
-                    runtimeError(ErrorType::Type, "Dictionary keys must be strings, integers, or booleans.");
+                    runtimeError(ErrorType::Type,
+                                 "Dictionary keys must be strings, integers, or booleans.");
                 }
                 DictKey key = toDictKey(item);
                 push(RuntimeValue{dict->entries.count(key) > 0});
@@ -423,7 +425,8 @@ void VM::execute() {
                 std::string sub = item.as<std::string>();
                 push(RuntimeValue{s.find(sub) != std::string::npos});
             } else {
-                runtimeError(ErrorType::Type,
+                runtimeError(
+                    ErrorType::Type,
                     "'IN' operator requires right hand side to be an array or dictionary.");
             }
             break;
@@ -520,7 +523,7 @@ void VM::execute() {
                     if (name == "super") {
                         if (!lookupClass->getSuperclass()) {
                             runtimeError(ErrorType::Name, "Class '" + lookupClass->toString() +
-                                         "' has no superclass.");
+                                                              "' has no superclass.");
                         }
                         auto superMethod = std::make_shared<NativeFunction>(
                             0,
@@ -556,8 +559,7 @@ void VM::execute() {
                     auto sliceMethod = std::make_shared<NativeFunction>(
                         2, [arr](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
                             if (!args[0].is<int>() || !args[1].is<int>()) {
-                                throw TypeError({0, 0, 0},
-                                                    "Slice indices must be integers.");
+                                throw TypeError({0, 0, 0}, "Slice indices must be integers.");
                             }
                             int start = args[0].as<int>();
                             int end   = args[1].as<int>();
@@ -652,7 +654,8 @@ void VM::execute() {
                 } else if (name == "length") {
                     push(RuntimeValue{static_cast<int>(dict->keys.size())});
                 } else {
-                    runtimeError(ErrorType::Name, "This is not a valid dictionary property or method.");
+                    runtimeError(ErrorType::Name,
+                                 "This is not a valid dictionary property or method.");
                 }
             } else if (object.is<std::string>()) {
                 std::string s = object.as<std::string>();
@@ -662,8 +665,7 @@ void VM::execute() {
                     auto sliceMethod = std::make_shared<NativeFunction>(
                         2, [s](Interpreter &, std::vector<RuntimeValue> args) -> RuntimeValue {
                             if (!args[0].is<int>() || !args[1].is<int>()) {
-throw TypeError({0, 0, 0},
-                                                    "Slice indices must be integers.");
+                                throw TypeError({0, 0, 0}, "Slice indices must be integers.");
                             }
                             int start = args[0].as<int>();
                             int end   = args[1].as<int>();
@@ -717,7 +719,8 @@ throw TypeError({0, 0, 0},
             } else if (container.is<std::shared_ptr<Dictionary>>()) {
                 auto dict = container.as<std::shared_ptr<Dictionary>>();
                 if (!isValidDictKey(idxVal)) {
-                    runtimeError(ErrorType::Type, "Dictionary keys must be strings, integers, or booleans.");
+                    runtimeError(ErrorType::Type,
+                                 "Dictionary keys must be strings, integers, or booleans.");
                 }
                 DictKey key = toDictKey(idxVal);
                 if (dict->entries.count(key) == 0) {
@@ -758,7 +761,8 @@ throw TypeError({0, 0, 0},
             } else if (container.is<std::shared_ptr<Dictionary>>()) {
                 auto dict = container.as<std::shared_ptr<Dictionary>>();
                 if (!isValidDictKey(idxVal)) {
-                    runtimeError(ErrorType::Type, "Dictionary keys must be strings, integers, or booleans.");
+                    runtimeError(ErrorType::Type,
+                                 "Dictionary keys must be strings, integers, or booleans.");
                 }
                 setDictEntry(*dict, idxVal, val);
             } else {
@@ -791,7 +795,8 @@ throw TypeError({0, 0, 0},
             }
             for (const auto &p : temp) {
                 if (!isValidDictKey(p.first)) {
-                    runtimeError(ErrorType::Type, "Dictionary keys must be strings, integers, or booleans.");
+                    runtimeError(ErrorType::Type,
+                                 "Dictionary keys must be strings, integers, or booleans.");
                 }
                 setDictEntry(*dict, p.first, p.second);
             }
@@ -818,8 +823,9 @@ throw TypeError({0, 0, 0},
 
             // Validate constructor arity
             if (klass->arity() != VARIADIC_ARITY && klass->arity() != argCount) {
-                runtimeError(ErrorType::Argument, "Expected " + std::to_string(klass->arity()) + " arguments but got " +
-                             std::to_string(argCount) + ".");
+                runtimeError(ErrorType::Argument, "Expected " + std::to_string(klass->arity()) +
+                                                      " arguments but got " +
+                                                      std::to_string(argCount) + ".");
             }
 
             std::vector<RuntimeValue> args(argCount);
@@ -844,7 +850,8 @@ throw TypeError({0, 0, 0},
             // Validate arity
             if (callable->arity() != VARIADIC_ARITY && callable->arity() != argCount) {
                 runtimeError(ErrorType::Argument, "Expected " + std::to_string(callable->arity()) +
-                             " arguments but got " + std::to_string(argCount) + ".");
+                                                      " arguments but got " +
+                                                      std::to_string(argCount) + ".");
             }
 
             // Check if it's a UserFunction (bytecode function)
@@ -983,7 +990,8 @@ throw TypeError({0, 0, 0},
                     flatArray->push_back(RuntimeValue{std::string(1, c)});
                 }
             } else {
-                runtimeError(ErrorType::Type, "Can only iterate over arrays, strings, or dictionaries.");
+                runtimeError(ErrorType::Type,
+                             "Can only iterate over arrays, strings, or dictionaries.");
             }
 
             stack[frame->slotsBase + slot + 1] = RuntimeValue{flatArray};
@@ -1079,7 +1087,8 @@ throw TypeError({0, 0, 0},
         }
 
         default:
-            runtimeError(ErrorType::VM, "Unknown instruction opcode: " + std::to_string(instruction));
+            runtimeError(ErrorType::VM,
+                         "Unknown instruction opcode: " + std::to_string(instruction));
         }
     }
 

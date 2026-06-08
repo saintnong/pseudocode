@@ -130,7 +130,6 @@ std::string ErrorReporter::getErrorLabel(ErrorType type) {
     }
 }
 
-
 /**
  * Extract a specific line from the source code
  * @param lineNum The 1-based line number to extract

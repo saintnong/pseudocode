@@ -52,8 +52,7 @@ inline std::string getErrorCode(ErrorType type) {
 class TypeError : public std::runtime_error {
 public:
     const Span span;
-    TypeError(Span span, const std::string &message)
-        : std::runtime_error(message), span(span) {
+    TypeError(Span span, const std::string &message) : std::runtime_error(message), span(span) {
     }
 };
 
@@ -64,8 +63,7 @@ public:
 class NameError : public std::runtime_error {
 public:
     const Span span;
-    NameError(Span span, const std::string &message)
-        : std::runtime_error(message), span(span) {
+    NameError(Span span, const std::string &message) : std::runtime_error(message), span(span) {
     }
 };
 
@@ -76,8 +74,7 @@ public:
 class ArgumentError : public std::runtime_error {
 public:
     const Span span;
-    ArgumentError(Span span, const std::string &message)
-        : std::runtime_error(message), span(span) {
+    ArgumentError(Span span, const std::string &message) : std::runtime_error(message), span(span) {
     }
 };
 
@@ -89,8 +86,7 @@ public:
 class IndexError : public std::runtime_error {
 public:
     const Span span;
-    IndexError(Span span, const std::string &message)
-        : std::runtime_error(message), span(span) {
+    IndexError(Span span, const std::string &message) : std::runtime_error(message), span(span) {
     }
 };
 
@@ -101,8 +97,7 @@ public:
 class VMError : public std::runtime_error {
 public:
     const Span span;
-    VMError(Span span, const std::string &message)
-        : std::runtime_error(message), span(span) {
+    VMError(Span span, const std::string &message) : std::runtime_error(message), span(span) {
     }
 };
 
