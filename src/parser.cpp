@@ -104,6 +104,7 @@ ExprPtr Parser::parseExpression(Precedence precedence) {
         case TOK_MINUS:
         case TOK_MULTIPLY:
         case TOK_DIVIDE:
+        case TOK_MOD:
         case TOK_EQUAL:
         case TOK_NOT_EQUAL:
         case TOK_GREATER_THAN:
@@ -161,6 +162,7 @@ Parser::Precedence Parser::getPrecedence(TokenKind type) {
         return PREC_TERM;
     case TOK_MULTIPLY:
     case TOK_DIVIDE:
+    case TOK_MOD:
         return PREC_FACTOR;
     case TOK_DOT:
     case TOK_LPAREN:

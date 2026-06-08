@@ -1,20 +1,35 @@
 # Performance Benchmark Results
 
-Matrix multiplication benchmark ($N \times N$) comparing the SCSA Pseudocode Interpreter to Python and Node.js.
+System specifications and performance results comparing the SCSA Pseudocode Interpreter to Python and Node.js.
 
 ## System Information
 - **OS**: Linux 6.17.0-35-generic
 - **CPU**: AMD Ryzen 7 5800H with Radeon Graphics
-- **Date**: 2026-06-08 03:48:55 UTC
-- **Matrix Size**: 60x60 (216,000 inner loop operations)
+- **Date**: 2026-06-08 05:01:34 UTC
 - **Runs**: 3
 
-## Results
+---
 
-| Language | Min Alg Time | Avg Alg Time | Min Process Time | Avg Process Time | Checksum | Relative Speed (vs SCSA) |
-| --- | --- | --- | --- | --- | --- | --- |
-| SCSA Pseudocode | 0.0490s | 0.0523s | 0.0636s | 0.0654s | Passed | 1.0x (Baseline) |
-| Python 3 | 0.0087s | 0.0087s | 0.0299s | 0.0307s | Passed | 6.0x |
-| Node.js | 0.0029s | 0.0030s | 0.0275s | 0.0286s | Passed | 17.6x |
+## Benchmark 1: Matrix Multiplication
 
-*Note: Alg Time measures pure execution of the matrix multiplication algorithm, whereas Process Time includes process startup, bytecode compilation, and AST parsing.*
+- **Matrix Size**: 60x60 (216,000 inner loop operations)
+
+| Language | Min Time | Avg Time | Checksum | Relative Speed (vs SCSA) |
+| --- | --- | --- | --- | --- |
+| SCSA Pseudocode | 0.0728s | 0.0739s | Passed | 1.0x (Baseline) |
+| Python 3 | 0.0286s | 0.0289s | Passed | 2.6x |
+| Node.js | 0.0257s | 0.0269s | Passed | 2.8x |
+
+---
+
+## Benchmark 2: Sieve of Eratosthenes
+
+- **Limit**: 12,000
+
+| Language | Min Time | Avg Time | Checksum | Relative Speed (vs SCSA) |
+| --- | --- | --- | --- | --- |
+| SCSA Pseudocode | 0.0138s | 0.0147s | Passed | 1.0x (Baseline) |
+| Python 3 | 0.0112s | 0.0113s | Passed | 1.3x |
+| Node.js | 0.0239s | 0.0249s | Passed | 0.6x |
+
+---

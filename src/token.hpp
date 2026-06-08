@@ -46,6 +46,7 @@ enum TokenKind {
     TOK_MINUS,    // -
     TOK_MULTIPLY, // *
     TOK_DIVIDE,   // /
+    TOK_MOD,      // % or MOD
 
     // Comparison operators
     TOK_EQUAL,        // ==
@@ -170,6 +171,8 @@ struct Token {
             return "OPERATOR(*)";
         case TOK_DIVIDE:
             return "OPERATOR(/)";
+        case TOK_MOD:
+            return "OPERATOR(MOD)";
 
         case TOK_EQUAL:
             return "OPERATOR(==)";

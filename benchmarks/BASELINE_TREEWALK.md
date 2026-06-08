@@ -11,10 +11,8 @@ Matrix multiplication benchmark ($N \times N$) comparing the SCSA Pseudocode Int
 
 ## Results
 
-| Language | Min Alg Time | Avg Alg Time | Min Process Time | Avg Process Time | Checksum | Relative Speed (vs SCSA) |
-| --- | --- | --- | --- | --- | --- | --- |
-| SCSA Pseudocode | 0.2310s | 0.2387s | 0.2403s | 0.2474s | Passed | 1.0x (Baseline) |
-| Python 3 | 0.0085s | 0.0085s | 0.0284s | 0.0288s | Passed | 27.9x |
-| Node.js | 0.0026s | 0.0027s | 0.0254s | 0.0262s | Passed | 89.1x |
-
-*Note: Alg Time measures pure execution of the matrix multiplication algorithm, whereas Process Time includes process startup, bytecode compilation, and AST parsing.*
+| Language | Min Time | Avg Time | Checksum | Relative Speed (vs SCSA) |
+| --- | --- | --- | --- | --- |
+| SCSA Pseudocode | 0.2403s | 0.2474s | Passed | 1.0x (Baseline) |
+| Python 3 | 0.0284s | 0.0288s | Passed | 8.6x |
+| Node.js | 0.0254s | 0.0262s | Passed | 9.4x |

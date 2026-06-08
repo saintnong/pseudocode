@@ -272,6 +272,9 @@ void Compiler::compileBinaryExpr(BinaryExpr *expr) {
     case TOK_DIVIDE:
         emitByte(OP_DIVIDE, line);
         break;
+    case TOK_MOD:
+        emitByte(OP_MOD, line);
+        break;
     case TOK_EQUAL:
         emitByte(OP_EQUAL, line);
         break;

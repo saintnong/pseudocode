@@ -75,25 +75,94 @@ def multiply_matrices(A, B):
 def compute_checksum(C):
     return sum(sum(row) for row in C)
 
+def run_sieve_python(n):
+    is_prime = [True] * (n + 1)
+    is_prime[0] = False
+    is_prime[1] = False
+    p = 2
+    while p * p <= n:
+        if is_prime[p]:
+            i = p * p
+            while i <= n:
+                is_prime[i] = False
+                i += p
+        p += 1
+    return sum(i for i, val in enumerate(is_prime) if val)
+
 def parse_output(stdout):
-    checksum = None
-    exec_time = None
-    
-    # Parse Checksum: <number>
     checksum_match = re.search(r"Checksum:\s*(-?\d+)", stdout)
     if checksum_match:
-        checksum = int(checksum_match.group(1))
+        return int(checksum_match.group(1))
+    return None
+
+def run_benchmark_runs(name, cmd, runs, expected_checksum):
+    times = []
+    checksum_ok = True
+    
+    for r in range(runs):
+        t0 = time.perf_counter()
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        t1 = time.perf_counter()
         
-    # Parse Execution Time: <number>s
-    time_match = re.search(r"Execution Time:\s*([0-9.]+)\s*s", stdout)
-    if time_match:
-        exec_time = float(time_match.group(1))
+        if res.returncode != 0:
+            print(f"  Run {r+1} failed with return code {res.returncode}")
+            print(f"  stderr: {res.stderr}")
+            checksum_ok = False
+            continue
+            
+        checksum = parse_output(res.stdout)
         
-    return checksum, exec_time
+        if checksum != expected_checksum:
+            print(f"  Run {r+1} Checksum Mismatch! Got {checksum}, expected {expected_checksum}")
+            checksum_ok = False
+        else:
+            times.append(t1 - t0)
+        
+        print(f"  Run {r+1}: Time = {t1-t0:.4f}s")
+        
+    if times:
+        return {
+            "min_time": min(times),
+            "avg_time": sum(times) / len(times),
+            "checksum_ok": checksum_ok
+        }
+    else:
+        return {
+            "min_time": 0,
+            "avg_time": 0,
+            "checksum_ok": False
+        }
+
+def format_markdown_table(results, run_js):
+    scsa_min = results["SCSA"]["min_time"]
+    scsa_avg = results["SCSA"]["avg_time"]
+    scsa_checksum = "Passed" if results["SCSA"]["checksum_ok"] else "Failed"
+    
+    py_min = results["Python"]["min_time"]
+    py_avg = results["Python"]["avg_time"]
+    py_checksum = "Passed" if results["Python"]["checksum_ok"] else "Failed"
+    py_speedup = scsa_avg / py_avg if py_avg > 0 else 0
+    
+    if run_js and "NodeJS" in results:
+        js_min = results["NodeJS"]["min_time"]
+        js_avg = results["NodeJS"]["avg_time"]
+        js_checksum = "Passed" if results["NodeJS"]["checksum_ok"] else "Failed"
+        js_speedup = scsa_avg / js_avg if js_avg > 0 else 0
+        js_row = f"| Node.js | {js_min:.4f}s | {js_avg:.4f}s | {js_checksum} | {js_speedup:.1f}x |"
+    else:
+        js_row = "| Node.js | N/A | N/A | Skipped/Missing | N/A |"
+        
+    table = f"""| Language | Min Time | Avg Time | Checksum | Relative Speed (vs SCSA) |
+| --- | --- | --- | --- | --- |
+| SCSA Pseudocode | {scsa_min:.4f}s | {scsa_avg:.4f}s | {scsa_checksum} | 1.0x (Baseline) |
+| Python 3 | {py_min:.4f}s | {py_avg:.4f}s | {py_checksum} | {py_speedup:.1f}x |
+{js_row}"""
+    return table
 
 def main():
-    parser = argparse.ArgumentParser(description="Run SCSA matrix multiplication benchmarks.")
+    parser = argparse.ArgumentParser(description="Run SCSA benchmarks.")
     parser.add_argument("-s", "--size", type=int, default=60, help="Dimension N of NxN matrices (default: 60)")
+    parser.add_argument("-l", "--sieve-limit", type=int, default=12000, help="Limit N for Sieve of Eratosthenes (default: 12000)")
     parser.add_argument("-r", "--runs", type=int, default=3, help="Number of runs to average (default: 3)")
     parser.add_argument("-p", "--scsa-path", type=str, default=None, help="Path to scsa interpreter binary")
     parser.add_argument("--skip-js", action="store_true", help="Skip Node.js benchmarking")
@@ -103,6 +172,7 @@ def main():
     
     print(f"=== SCSA Benchmark Runner ===")
     print(f"Matrix Size: {args.size}x{args.size}")
+    print(f"Sieve Limit: {args.sieve_limit}")
     print(f"Runs: {args.runs}")
     
     # Find scsa
@@ -123,29 +193,28 @@ def main():
             print("Node.js: Not available (skipping JS benchmarks)")
             run_js = False
             
-    # Generate datasets
-    print("Generating random matrices A and B...")
+    # ==========================================
+    # Benchmark 1: Matrix Multiplication Setup
+    # ==========================================
+    print("\n--- Preparing Matrix Multiplication Dataset ---")
     A = generate_matrix(args.size)
     B = generate_matrix(args.size)
     
     print("Calculating expected checksum in Python...")
     expected_C = multiply_matrices(A, B)
-    expected_checksum = compute_checksum(expected_C)
-    print(f"Expected Checksum: {expected_checksum}")
+    expected_matrix_checksum = compute_checksum(expected_C)
+    print(f"Expected Checksum: {expected_matrix_checksum}")
     
-    # Serialize matrices to JSON strings
     a_str = json.dumps(A)
     b_str = json.dumps(B)
     
-    # Create target benchmark files
-    scsa_file = os.path.join(benchmarks_dir, "matrix_multiply.scsa")
-    py_file = os.path.join(benchmarks_dir, "matrix_multiply.py")
-    js_file = os.path.join(benchmarks_dir, "matrix_multiply.js")
+    scsa_matrix_file = os.path.join(benchmarks_dir, "matrix_multiply.scsa")
+    py_matrix_file = os.path.join(benchmarks_dir, "matrix_multiply.py")
+    js_matrix_file = os.path.join(benchmarks_dir, "matrix_multiply.js")
     
-    # SCSA
-    scsa_code = f"""# Auto-generated matrix multiplication benchmark
-# Matrix size: {args.size}x{args.size}
-
+    # Generate files
+    with open(scsa_matrix_file, "w") as f:
+        f.write(f"""# Auto-generated matrix multiplication benchmark
 A = {a_str}
 B = {b_str}
 
@@ -187,13 +256,10 @@ END FOR
 
 PRINT("Checksum: " + STRING(checksum))
 PRINT("Execution Time: " + STRING(end - start) + "s")
-"""
-    with open(scsa_file, "w") as f:
-        f.write(scsa_code)
-        
-    # Python
-    py_code = f"""# Auto-generated matrix multiplication benchmark
-# Matrix size: {args.size}x{args.size}
+""")
+
+    with open(py_matrix_file, "w") as f:
+        f.write(f"""# Auto-generated matrix multiplication benchmark
 import time
 
 A = {a_str}
@@ -222,13 +288,10 @@ for i in range(n):
 
 print(f"Checksum: {{checksum}}")
 print(f"Execution Time: {{end - start}}s")
-"""
-    with open(py_file, "w") as f:
-        f.write(py_code)
-        
-    # JavaScript
-    js_code = f"""// Auto-generated matrix multiplication benchmark
-// Matrix size: {args.size}x{args.size}
+""")
+
+    with open(js_matrix_file, "w") as f:
+        f.write(f"""// Auto-generated matrix multiplication benchmark
 const {{ performance }} = require('perf_hooks');
 
 const A = {a_str};
@@ -263,122 +326,197 @@ for (let i = 0; i < n; i++) {{
 
 console.log("Checksum: " + checksum);
 console.log("Execution Time: " + ((end - start) / 1000) + "s");
-"""
-    with open(js_file, "w") as f:
-        f.write(js_code)
+""")
+
+    # ==========================================
+    # Benchmark 2: Sieve of Eratosthenes Setup
+    # ==========================================
+    print("\n--- Preparing Sieve of Eratosthenes Dataset ---")
+    expected_sieve_checksum = run_sieve_python(args.sieve_limit)
+    print(f"Expected Checksum: {expected_sieve_checksum}")
+    
+    scsa_sieve_file = os.path.join(benchmarks_dir, "sieve.scsa")
+    py_sieve_file = os.path.join(benchmarks_dir, "sieve.py")
+    js_sieve_file = os.path.join(benchmarks_dir, "sieve.js")
+    
+    # Generate files
+    with open(scsa_sieve_file, "w") as f:
+        f.write(f"""# Auto-generated sieve of Eratosthenes benchmark
+# Limit: {args.sieve_limit}
+
+FUNCTION sieve(n)
+    is_prime = [TRUE] * (n + 1)
+    is_prime[0] = FALSE
+    is_prime[1] = FALSE
+    p = 2
+    WHILE p * p <= n
+        IF is_prime[p] THEN
+            i = p * p
+            WHILE i <= n
+                is_prime[i] = FALSE
+                i = i + p
+            END WHILE
+        END IF
+        p = p + 1
+    END WHILE
+    
+    checksum = 0
+    FOR i = 0 TO n
+        IF is_prime[i] THEN
+            checksum = checksum + i
+        END IF
+    END FOR
+    RETURN checksum
+END sieve
+
+start = TIME()
+checksum = sieve({args.sieve_limit})
+end = TIME()
+
+PRINT("Checksum: " + STRING(checksum))
+PRINT("Execution Time: " + STRING(end - start) + "s")
+""")
+
+    with open(py_sieve_file, "w") as f:
+        f.write(f"""# Auto-generated sieve of Eratosthenes benchmark
+# Limit: {args.sieve_limit}
+import time
+
+def sieve(n):
+    is_prime = [True] * (n + 1)
+    is_prime[0] = False
+    is_prime[1] = False
+    p = 2
+    while p * p <= n:
+        if is_prime[p]:
+            i = p * p
+            while i <= n:
+                is_prime[i] = False
+                i += p
+        p += 1
         
+    checksum = 0
+    for i in range(n + 1):
+        if is_prime[i]:
+            checksum += i
+    return checksum
+
+start = time.time()
+checksum = sieve({args.sieve_limit})
+end = time.time()
+
+print(f"Checksum: {{checksum}}")
+print(f"Execution Time: {{end - start}}s")
+""")
+
+    with open(js_sieve_file, "w") as f:
+        f.write(f"""// Auto-generated sieve of Eratosthenes benchmark
+// Limit: {args.sieve_limit}
+const {{ performance }} = require('perf_hooks');
+
+function sieve(n) {{
+    const is_prime = Array(n + 1).fill(true);
+    is_prime[0] = false;
+    is_prime[1] = false;
+    let p = 2;
+    while (p * p <= n) {{
+        if (is_prime[p]) {{
+            let i = p * p;
+            while (i <= n) {{
+                is_prime[i] = false;
+                i += p;
+            }}
+        }}
+        p += 1;
+    }}
+    let checksum = 0;
+    for (let i = 0; i <= n; i++) {{
+        if (is_prime[i]) {{
+            checksum += i;
+        }}
+    }}
+    return checksum;
+}}
+
+const start = performance.now();
+const checksum = sieve({args.sieve_limit});
+const end = performance.now();
+
+console.log("Checksum: " + checksum);
+console.log("Execution Time: " + ((end - start) / 1000) + "s");
+""")
+
     print(f"Generated benchmark source files in {benchmarks_dir}.")
     
-    results = {}
+    # Run Matrix multiplication benchmarks
+    print("\n==========================================")
+    print("Running Matrix Multiplication Benchmarks")
+    print("==========================================")
     
-    # Runner configurations
-    runs_to_do = [
-        ("SCSA", [scsa_bin, scsa_file]),
-        ("Python", [sys.executable, py_file])
+    runs_to_do_matrix = [
+        ("SCSA", [scsa_bin, scsa_matrix_file]),
+        ("Python", [sys.executable, py_matrix_file])
     ]
     if run_js:
-        runs_to_do.append(("NodeJS", ["node", js_file]))
+        runs_to_do_matrix.append(("NodeJS", ["node", js_matrix_file]))
         
-    for name, cmd in runs_to_do:
-        print(f"\nRunning {name} benchmark...")
-        alg_times = []
-        proc_times = []
-        checksum_ok = True
+    matrix_results = {}
+    for name, cmd in runs_to_do_matrix:
+        print(f"\nRunning {name}...")
+        matrix_results[name] = run_benchmark_runs(name, cmd, args.runs, expected_matrix_checksum)
+
+    # Run Sieve of Eratosthenes benchmarks
+    print("\n==========================================")
+    print("Running Sieve of Eratosthenes Benchmarks")
+    print("==========================================")
+    
+    runs_to_do_sieve = [
+        ("SCSA", [scsa_bin, scsa_sieve_file]),
+        ("Python", [sys.executable, py_sieve_file])
+    ]
+    if run_js:
+        runs_to_do_sieve.append(("NodeJS", ["node", js_sieve_file]))
         
-        for r in range(args.runs):
-            t0 = time.perf_counter()
-            res = subprocess.run(cmd, capture_output=True, text=True)
-            t1 = time.perf_counter()
-            
-            if res.returncode != 0:
-                print(f"  Run {r+1} failed with return code {res.returncode}")
-                print(f"  stderr: {res.stderr}")
-                checksum_ok = False
-                continue
-                
-            checksum, alg_time = parse_output(res.stdout)
-            
-            if checksum != expected_checksum:
-                print(f"  Run {r+1} Checksum Mismatch! Got {checksum}, expected {expected_checksum}")
-                checksum_ok = False
-            else:
-                proc_times.append(t1 - t0)
-                if alg_time is not None:
-                    alg_times.append(alg_time)
-                else:
-                    # fallback to process time if script didn't output time correctly
-                    alg_times.append(t1 - t0)
-            
-            print(f"  Run {r+1}: Alg Time = {alg_time if alg_time is not None else 'N/A':.4f}s, Proc Time = {t1-t0:.4f}s")
-            
-        if proc_times:
-            results[name] = {
-                "alg_min": min(alg_times),
-                "alg_avg": sum(alg_times) / len(alg_times),
-                "proc_min": min(proc_times),
-                "proc_avg": sum(proc_times) / len(proc_times),
-                "checksum_ok": checksum_ok
-            }
-        else:
-            results[name] = {
-                "alg_min": 0,
-                "alg_avg": 0,
-                "proc_min": 0,
-                "proc_avg": 0,
-                "checksum_ok": False
-            }
-            
-    # Compile markdown output
+    sieve_results = {}
+    for name, cmd in runs_to_do_sieve:
+        print(f"\nRunning {name}...")
+        sieve_results[name] = run_benchmark_runs(name, cmd, args.runs, expected_sieve_checksum)
+
+    # System specs
     cpu_info = get_cpu_info()
     os_name = platform.system()
     os_release = platform.release()
     date_time = time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
-    iterations = args.size ** 3
     
-    scsa_alg_min = results["SCSA"]["alg_min"]
-    scsa_alg_avg = results["SCSA"]["alg_avg"]
-    scsa_proc_min = results["SCSA"]["proc_min"]
-    scsa_proc_avg = results["SCSA"]["proc_avg"]
-    scsa_checksum = "Passed" if results["SCSA"]["checksum_ok"] else "Failed"
+    matrix_iterations = args.size ** 3
     
-    py_alg_min = results["Python"]["alg_min"]
-    py_alg_avg = results["Python"]["alg_avg"]
-    py_proc_min = results["Python"]["proc_min"]
-    py_proc_avg = results["Python"]["proc_avg"]
-    py_checksum = "Passed" if results["Python"]["checksum_ok"] else "Failed"
-    py_speedup = scsa_alg_avg / py_alg_avg if py_alg_avg > 0 else 0
-    
-    if "NodeJS" in results:
-        js_alg_min = results["NodeJS"]["alg_min"]
-        js_alg_avg = results["NodeJS"]["alg_avg"]
-        js_proc_min = results["NodeJS"]["proc_min"]
-        js_proc_avg = results["NodeJS"]["proc_avg"]
-        js_checksum = "Passed" if results["NodeJS"]["checksum_ok"] else "Failed"
-        js_speedup = scsa_alg_avg / js_alg_avg if js_alg_avg > 0 else 0
-        js_row = f"| Node.js | {js_alg_min:.4f}s | {js_alg_avg:.4f}s | {js_proc_min:.4f}s | {js_proc_avg:.4f}s | {js_checksum} | {js_speedup:.1f}x |"
-    else:
-        js_row = "| Node.js | N/A | N/A | N/A | N/A | Skipped/Missing | N/A |"
-        
     markdown_content = f"""# Performance Benchmark Results
 
-Matrix multiplication benchmark ($N \\times N$) comparing the SCSA Pseudocode Interpreter to Python and Node.js.
+System specifications and performance results comparing the SCSA Pseudocode Interpreter to Python and Node.js.
 
 ## System Information
 - **OS**: {os_name} {os_release}
 - **CPU**: {cpu_info}
 - **Date**: {date_time}
-- **Matrix Size**: {args.size}x{args.size} ({iterations:,} inner loop operations)
 - **Runs**: {args.runs}
 
-## Results
+---
 
-| Language | Min Alg Time | Avg Alg Time | Min Process Time | Avg Process Time | Checksum | Relative Speed (vs SCSA) |
-| --- | --- | --- | --- | --- | --- | --- |
-| SCSA Pseudocode | {scsa_alg_min:.4f}s | {scsa_alg_avg:.4f}s | {scsa_proc_min:.4f}s | {scsa_proc_avg:.4f}s | {scsa_checksum} | 1.0x (Baseline) |
-| Python 3 | {py_alg_min:.4f}s | {py_alg_avg:.4f}s | {py_proc_min:.4f}s | {py_proc_avg:.4f}s | {py_checksum} | {py_speedup:.1f}x |
-{js_row}
+## Benchmark 1: Matrix Multiplication
 
-*Note: Alg Time measures pure execution of the matrix multiplication algorithm, whereas Process Time includes process startup, bytecode compilation, and AST parsing.*
+- **Matrix Size**: {args.size}x{args.size} ({matrix_iterations:,} inner loop operations)
+
+{format_markdown_table(matrix_results, run_js)}
+
+---
+
+## Benchmark 2: Sieve of Eratosthenes
+
+- **Limit**: {args.sieve_limit:,}
+
+{format_markdown_table(sieve_results, run_js)}
+
+---
 """
 
     results_md_path = os.path.join(benchmarks_dir, "README.md")

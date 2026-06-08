@@ -1,0 +1,34 @@
+# Auto-generated sieve of Eratosthenes benchmark
+# Limit: 12000
+
+FUNCTION sieve(n)
+    is_prime = [TRUE] * (n + 1)
+    is_prime[0] = FALSE
+    is_prime[1] = FALSE
+    p = 2
+    WHILE p * p <= n
+        IF is_prime[p] THEN
+            i = p * p
+            WHILE i <= n
+                is_prime[i] = FALSE
+                i = i + p
+            END WHILE
+        END IF
+        p = p + 1
+    END WHILE
+    
+    checksum = 0
+    FOR i = 0 TO n
+        IF is_prime[i] THEN
+            checksum = checksum + i
+        END IF
+    END FOR
+    RETURN checksum
+END sieve
+
+start = TIME()
+checksum = sieve(12000)
+end = TIME()
+
+PRINT("Checksum: " + STRING(checksum))
+PRINT("Execution Time: " + STRING(end - start) + "s")

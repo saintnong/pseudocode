@@ -37,6 +37,7 @@ Lexer::Lexer(const std::string &src, ErrorReporter &errReporter, size_t startLin
     keywords["AND"]       = TOK_AND;
     keywords["OR"]        = TOK_OR;
     keywords["NOT"]       = TOK_NOT;
+    keywords["MOD"]       = TOK_MOD;
 
     keywords["TRUE"]  = TOK_TRUE;
     keywords["FALSE"] = TOK_FALSE;
@@ -334,6 +335,9 @@ void Lexer::scanToken() {
         break;
     case '*':
         addToken(TOK_MULTIPLY);
+        break;
+    case '%':
+        addToken(TOK_MOD);
         break;
 
     case '#':
